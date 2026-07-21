@@ -12,20 +12,7 @@ import './assets/css/icomon.css';
 import './assets/css/main.css';
 import App from './App.jsx'
 
-// JavaScript
-import './assets/js/jquery-3.7.1.min.js';
-import './assets/js/bootstrap.bundle.min.js';
-import './assets/js/jquery.nice-select.min.js';
-import './assets/js/odometer.min.js';
-import './assets/js/jquery.appear.min.js';
-import './assets/js/swiper-bundle.min.js';
-import './assets/js/jquery.meanmenu.min.js';
-import './assets/js/jquery.magnific-popup.min.js';
-import './assets/js/wow.min.js';
-import './assets/js/gsap.min.js';
-import './assets/js/ScrollTrigger.min.js';
-import './assets/js/SplitText.min.js';
-import './assets/js/splitType.js';
+
 createRoot(document.getElementById('root')).render(
   <StrictMode>
     <App />

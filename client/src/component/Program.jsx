@@ -7,7 +7,7 @@ import bottom1 from '../assets/img/program/bottom-1.png';
 import bottom2 from '../assets/img/program/bottom-2.png';
 import bottom3 from '../assets/img/program/bottom-3.png';
 import bottom4 from '../assets/img/program/bottom-4.png';
-
+import {  ArrowRight } from 'lucide-react';
 import bookIcon from '../assets/img/program/book.png';
 import phoneIcon from '../assets/img/program/phone.png';
 import boyIcon from '../assets/img/program/boy.png';
@@ -15,10 +15,10 @@ import chemicalBookIcon from '../assets/img/program/camical-book.png';
 
 const programs = [
   {
-    title: 'Toddler',
-    age: '(1,5 – 3 years)',
+    title: 'Number & Algebra',
+    age: 'Australian Grade 6',
     description:
-      'Dolor sit amet, adipiscing elit. Nibh ullamcorper felis arcu elementum.',
+      'Build strong number skills with your friendly AI Math Tutor. Learn fractions, decimals, percentages, integers, and algebra through step-by-step explanations and interactive practice.',
     topImage: top1,
     bottomImage: bottom1,
     icon: bookIcon,
@@ -26,10 +26,10 @@ const programs = [
     delay: '.2s',
   },
   {
-    title: 'Preschool',
-    age: '(2 – 3 years)',
+    title: 'Measurement & Geometry',
+    age: 'Australian Grade 6',
     description:
-      'Dolor sit amet, adipiscing elit. Nibh ullamcorper felis arcu elementum.',
+      'Explore measurement, shapes, angles, area, perimeter, and volume with your AI tutor. Understand mathematical ideas through clear examples and guided problem-solving.',
     topImage: top2,
     bottomImage: bottom2,
     icon: phoneIcon,
@@ -38,10 +38,10 @@ const programs = [
     delay: '.4s',
   },
   {
-    title: 'Kindergarten',
-    age: '(3 – 4 years)',
+    title: 'Statistics & Probability',
+    age: 'Australian Grade 6',
     description:
-      'Dolor sit amet, adipiscing elit. Nibh ullamcorper felis arcu elementum.',
+      'Learn how to read and understand data, graphs, tables, and probability. Your AI Math Tutor helps you discover patterns and solve real-world maths problems with confidence.',
     topImage: top3,
     bottomImage: bottom3,
     icon: boyIcon,
@@ -50,10 +50,10 @@ const programs = [
     delay: '.6s',
   },
   {
-    title: 'Pre-K Program',
-    age: '(4 – 5 years)',
+    title: 'Problem Solving',
+    age: 'Australian Grade 6',
     description:
-      'Dolor sit amet, adipiscing elit. Nibh ullamcorper felis arcu elementum.',
+      'Put your maths skills into action with fun challenges and real-life problems. Get friendly AI guidance, hints, and step-by-step support without simply giving away the answer.',
     topImage: top4,
     bottomImage: bottom4,
     icon: chemicalBookIcon,
@@ -84,7 +84,7 @@ const Program = () => {
                 <div className="top-bar">
                   <img
                     src={program.topImage}
-                    alt="Program decoration"
+                    alt="AI Math Tutor decoration"
                   />
                 </div>
 
@@ -92,7 +92,7 @@ const Program = () => {
                 <div className="bottom-bar">
                   <img
                     src={program.bottomImage}
-                    alt="Program decoration"
+                    alt="AI Math Tutor decoration"
                   />
                 </div>
 
@@ -105,7 +105,7 @@ const Program = () => {
                 <div className="program-icon">
                   <img
                     src={program.icon}
-                    alt={`${program.title} icon`}
+                    alt={`${program.title} AI Math Tutor icon`}
                   />
                 </div>
 
@@ -128,9 +128,9 @@ const Program = () => {
                     href="/program-details"
                     className="link-btn"
                   >
-                    Learn More
-                    <i className="icon-arrow-icon"></i>
-                  </a>
+                    Explore Topic
+                    <ArrowRight/>
+                        </a>
 
                 </div>
 

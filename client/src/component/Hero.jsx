@@ -7,8 +7,7 @@ import crownImage from '../assets/img/hero/crown.png';
 import frameImage from '../assets/img/hero/frame.png';
 import lineImage from '../assets/img/hero/hero-line.png';
 import heroImage from '../assets/img/hero/hero1.png';
-import textImage from '../assets/img/hero/text.png';
-
+import {  ArrowRight } from 'lucide-react';
 const Hero = () => {
   return (
     <section className="hero-section hero-1 hero-bg fix">
@@ -74,7 +73,7 @@ const Hero = () => {
                 className="wow fadeInUp"
                 data-wow-delay=".3s"
               >
-                Kindergarten is an early childhood educational
+                Numora is an early childhood educational
                 environment where most young for your children life.
               </p>
 
@@ -89,8 +88,8 @@ const Hero = () => {
                   href="/contact"
                   className="theme-btn"
                 >
-                  Online Admission
-                  <i className="icon-arrow-icon"></i>
+                   Start Learning
+                  <ArrowRight/>
                 </a>
 
                 {/* Video */}
@@ -108,7 +107,7 @@ const Hero = () => {
                     {/* Play Button */}
                     <a
                       className="video-popup"
-                      href="https://www.youtube.com/watch?v=Cn4G2lZ_g2I"
+                      href="https://youtu.be/0x1jJaIcWIo?si=Rjs5KjmtFpBanXxg"
                       target="_blank"
                       rel="noopener noreferrer"
                       aria-label="Play video"
@@ -144,14 +143,7 @@ const Hero = () => {
               />
 
               {/* Text Shape */}
-              <div className="text-shape float-bob-y">
-
-                <img
-                  src={textImage}
-                  alt="Learning"
-                />
-
-              </div>
+             
 
             </div>
 

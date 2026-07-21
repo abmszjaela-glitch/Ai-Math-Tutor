@@ -2,7 +2,7 @@ import bottomShape from '../assets/img/footer/bg-bottom.png';
 import basketShape from '../assets/img/footer/busket.png';
 import ballShape from '../assets/img/footer/ball.png';
 
-import footerLogo from '../assets/img/footer/Logo.svg';
+import NUMORA from '../assets/img/logo/NUMORA.png';
 import emailIcon from '../assets/img/footer/email.svg';
 import locationIcon from '../assets/img/footer/location.svg';
 
@@ -14,7 +14,7 @@ const Footer = () => {
       <div className="bottom-shape">
         <img
           src={bottomShape}
-          alt="Footer background"
+          alt="AI Math Tutor footer background"
         />
       </div>
 
@@ -22,7 +22,7 @@ const Footer = () => {
       <div className="busket-shape float-bob-x">
         <img
           src={basketShape}
-          alt="Decorative basket"
+          alt="Decorative learning basket"
         />
       </div>
 
@@ -30,7 +30,7 @@ const Footer = () => {
       <div className="ball-shape float-bob-y">
         <img
           src={ballShape}
-          alt="Decorative ball"
+          alt="Decorative learning ball"
         />
       </div>
 
@@ -51,8 +51,8 @@ const Footer = () => {
                 <div className="widget-head">
                   <a href="/">
                     <img
-                      src={footerLogo}
-                      alt="Kidza Logo"
+                      src={NUMORA}
+                      alt="AI Math Tutor Logo"
                     />
                   </a>
                 </div>
@@ -60,9 +60,11 @@ const Footer = () => {
                 <div className="widget-content">
 
                   <p>
-                    Kidza is an early childhood education school
-                    where all children, typically aged 4 to 6,
-                    begin their learning journey.
+                    NUMORA is an AI-powered Math Tutor platform designed
+                    to help Australian Grade 1 to 6 students learn
+                    mathematics through friendly AI tutors, interactive
+                    lessons, practice activities, and personalised
+                    learning support.
                   </p>
 
                   {/* Social Media */}
@@ -119,19 +121,19 @@ const Footer = () => {
 
                     <li>
                       <a href="/program">
-                        Courses
+                        Math Lessons
                       </a>
                     </li>
 
                     <li>
                       <a href="/program">
-                        Program
+                        Practice
                       </a>
                     </li>
 
                     <li>
                       <a href="/about">
-                        About Us
+                        About NUMORA
                       </a>
                     </li>
 
@@ -149,7 +151,7 @@ const Footer = () => {
             </div>
 
 
-            {/* Company Info */}
+            {/* Learning Resources */}
             <div
               className="col-xl-2 col-lg-3 col-md-6 col-sm-6 wow fadeInUp"
               data-wow-delay=".6s"
@@ -158,7 +160,7 @@ const Footer = () => {
 
                 <div className="widget-head">
                   <h3>
-                    Company info
+                    Learning
                   </h3>
                 </div>
 
@@ -167,26 +169,26 @@ const Footer = () => {
                   <ul className="list-area">
 
                     <li>
-                      <a href="/contact">
-                        Our Support
+                      <a href="/program">
+                        Grade 1–6 Maths
                       </a>
                     </li>
 
                     <li>
-                      <a href="/contact">
-                        System Status
+                      <a href="/program">
+                        AI Math Tutor
                       </a>
                     </li>
 
                     <li>
-                      <a href="/contact">
-                        Knowledge base
+                      <a href="/program">
+                        Maths Practice
                       </a>
                     </li>
 
                     <li>
                       <a href="/news">
-                        Blog &amp; News
+                        Learning Tips
                       </a>
                     </li>
 
@@ -224,8 +226,8 @@ const Footer = () => {
                       </h3>
 
                       <p>
-                        <a href="mailto:support@kidza.com">
-                          support@kidza.com
+                        <a href="mailto:support@numora.com">
+                          support@numora.com
                         </a>
                       </p>
 
@@ -247,14 +249,14 @@ const Footer = () => {
                     <div className="content">
 
                       <h3>
-                        Location
+                        Serving Australian Students
                       </h3>
 
                       <p>
                         <a href="#">
-                          Office: 2220 Plymouth R02 Road,
+                          Supporting young learners across
                           <br />
-                          Hopkins, Minnesota (MN), UK
+                          Australia with AI-powered maths learning.
                         </a>
                       </p>
 

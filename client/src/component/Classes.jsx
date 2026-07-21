@@ -7,28 +7,28 @@ import crown from '../assets/img/classes/crown.png';
 import star from '../assets/img/classes/star.png';
 import zikzak from '../assets/img/classes/zikzak.png';
 import border from '../assets/img/classes/border.png';
-
+import {  ArrowRight,Calculator } from 'lucide-react';
 const classesData = [
   {
     image: classes1,
-    date: 'Jan 16, 2024',
-    title: 'Last Day of School end of Year Picnic',
+    date: 'Grade 1–2',
+    title: 'Build Strong Foundations in Mathematics',
     animation: 'fadeInRight',
     delay: '.5s',
     active: false,
   },
   {
     image: classes2,
-    date: 'Jan 16, 2024',
-    title: 'Spring Garden Exploration Week for Children',
+    date: 'Grade 3–4',
+    title: 'Explore Mathematics With Your AI Tutor',
     animation: 'fadeInUp',
     delay: '.1s',
     active: true,
   },
   {
     image: classes3,
-    date: 'Jan 16, 2024',
-    title: 'Color Day Creative Festival With Creative Design',
+    date: 'Grade 5–6',
+    title: 'Master Advanced Maths Skills With AI',
     animation: 'fadeInLeft',
     delay: '.5s',
     active: false,
@@ -41,23 +41,23 @@ const Classes = () => {
 
       {/* Decorative Shapes */}
       <div className="perasute-shape float-bob-y">
-        <img src={perasute} alt="shape-img" />
+        <img src={perasute} alt="Decorative shape" />
       </div>
 
       <div className="crown-shape">
-        <img src={crown} alt="shape-img" />
+        <img src={crown} alt="Decorative crown" />
       </div>
 
       <div className="star-shape">
-        <img src={star} alt="shape-img" />
+        <img src={star} alt="Decorative star" />
       </div>
 
       <div className="zikzak-shape">
-        <img src={zikzak} alt="shape-img" />
+        <img src={zikzak} alt="Decorative zigzag shape" />
       </div>
 
       <div className="border-shape">
-        <img src={border} alt="shape-img" />
+        <img src={border} alt="Decorative border" />
       </div>
 
       <div className="container">
@@ -65,17 +65,17 @@ const Classes = () => {
         {/* Section Title */}
         <div className="section-title text-center custom-padding-top">
           <span className="sub-title tittle-bg-2">
-            Our Classes
+            AI Maths Learning
           </span>
 
           <h2 className="char-animation text-white">
-            Nurturing & Young Minds – with
+            Learn Maths Your Way – with
             <br className="d-none d-lg-block" />
-            Love & Learning
+            Your Friendly AI Tutor
           </h2>
         </div>
 
-        {/* Classes */}
+        {/* Learning Levels */}
         <div className="row">
 
           {classesData.map((item, index) => (
@@ -90,32 +90,32 @@ const Classes = () => {
                 data-wow-delay={item.delay}
               >
 
-                {/* Class Image */}
+                {/* Learning Level Image */}
                 <div className="classes-image">
 
                   <img
                     src={item.image}
-                    alt="classes-image"
+                    alt={item.title}
                   />
 
-                  {/* Date */}
+                  {/* Grade Level */}
                   <div className="date-box">
                     <span>
-                      <i className="far fa-calendar-alt"></i>
+                      <i className="fas fa-graduation-cap"></i>
                       {item.date}
                     </span>
                   </div>
 
                 </div>
 
-                {/* Class Content */}
+                {/* Learning Content */}
                 <div className="classes-content">
 
-                  {/* Location */}
+                  {/* Subject */}
                   <div className="location">
                     <span>
-                      <i className="fa-solid fa-location-dot"></i>
-                      6391 Elgin St. Celina, USA
+                    <Calculator/>
+                      Australian Mathematics Curriculum
                     </span>
                   </div>
 
@@ -133,15 +133,14 @@ const Classes = () => {
                       href="/program-details"
                       className="theme-btn"
                     >
-                      Get Ticket
-                      <i className="icon-arrow-icon"></i>
+                      Start Learning<ArrowRight/>
                     </a>
 
-                    {/* Rating */}
+                    {/* AI Tutor Rating */}
                     <div className="rate">
 
                       <p>
-                        (10 Review)
+                        AI Tutor
                       </p>
 
                       <ul>

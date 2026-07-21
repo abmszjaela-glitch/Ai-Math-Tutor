@@ -12,13 +12,13 @@ const Session = () => {
                   <span
                     className="sub-title wow fadeInUp"
                   >
-                    Session Times
+                    Learning Sessions
                   </span>
 
                   <h2 className="char-animation">
-                    Our{" "}
+                    Learn Maths{" "}
                     <span>
-                      Session Times
+                      Your Way
                     </span>
                   </h2>
                 </div>
@@ -27,47 +27,48 @@ const Session = () => {
                   className="wow fadeInUp"
                   data-wow-delay=".5s"
                 >
-                  Dolor sit amet, consectetur adipiscing elit.
-                  Nibh <br /> ullamcorper felis arcu elementum.
+                  Get personalised maths support with your friendly AI tutor.
+                  <br />
+                  Learn, practise, and improve at your own pace.
                 </p>
               </div>
 
               <span className="vertical-dashed"></span>
             </div>
 
-            {/* Right Session Times */}
+            {/* Right Learning Sessions */}
             <div className="col-xl-6 col-lg-6">
 
               <div
                 className="session-box wow zoomInUp"
                 data-wow-delay=".2s"
               >
-                <h3>Early Drop Off</h3>
-                <p>8.00am – 10.00am</p>
+                <h3>Quick Practice</h3>
+                <p>10–15 minutes</p>
               </div>
 
               <div
                 className="session-box wow zoomInUp"
                 data-wow-delay=".4s"
               >
-                <h3>Morning</h3>
-                <p>10.30am – 12.00pm</p>
+                <h3>Daily Maths</h3>
+                <p>20–30 minutes</p>
               </div>
 
               <div
                 className="session-box wow zoomInUp"
                 data-wow-delay=".6s"
               >
-                <h3>Lunch</h3>
-                <p>12.00pm – 1.00pm</p>
+                <h3>Focused Learning</h3>
+                <p>30–45 minutes</p>
               </div>
 
               <div
                 className="session-box wow zoomInUp"
                 data-wow-delay=".7s"
               >
-                <h3>Afternoon</h3>
-                <p>2.00pm – 4.00pm</p>
+                <h3>Challenge Time</h3>
+                <p>45+ minutes</p>
               </div>
 
             </div>

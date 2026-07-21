@@ -44,11 +44,11 @@ const Contact = () => {
               className="sub-title wow fadeInUp"
               data-wow-delay=".3s"
             >
-              Quick Contact
+              We're Here to Help
             </span>
 
             <h2 className="char-animation text-white">
-              Quick Contact With Us
+              Get in Touch With Your Math Tutor Team
             </h2>
 
           </div>
@@ -57,11 +57,11 @@ const Contact = () => {
             className="text-white wow fadeInUp"
             data-wow-delay=".4s"
           >
-            Dolor sit amet, consectetur adipiscing elit.
-            Nibh ullamcorper as <br />
-            felis arcu elementum viverra lectus nullam.
-            Dolor sit amet, <br />
-            consectetur adipiscing elit. Nibh ullamcorper.
+            Have a question about learning mathematics with our AI Math Tutor?
+            <br />
+            Our friendly support team is here to help students, parents, and teachers.
+            <br />
+            Send us a message and we'll be happy to assist you.
           </p>
 
         </div>
@@ -83,29 +83,29 @@ const Contact = () => {
                 <div className="icon">
                   <img
                     src={microphoneIcon}
-                    alt="Contact icon"
+                    alt="Support contact icon"
                   />
                 </div>
 
                 <div className="content">
 
                   <h3>
-                    Contact us:
+                    Contact Support:
                   </h3>
 
                   <p>
                     <a
-                      href="tel:+483939993900"
+                      href="tel:+61000000000"
                       className="text-white d-block"
                     >
-                      +483 9399 939 00
+                      +61 000 000 000
                     </a>
 
                     <a
-                      href="mailto:helloflybed@gmail.com"
+                      href="mailto:support@aimathtutor.com"
                       className="text-white"
                     >
-                      helloflybed@gmail.com
+                      support@aimathtutor.com
                     </a>
                   </p>
 
@@ -132,9 +132,9 @@ const Contact = () => {
                   </h3>
 
                   <p>
-                    2220 Plymouth Rd #302,
+                    Supporting Australian students
                     <br />
-                    Hopkins, New York, USA
+                    from Grade 1 to Grade 6
                   </p>
 
                 </div>
@@ -149,20 +149,20 @@ const Contact = () => {
                 <div className="icon">
                   <img
                     src={clockIcon}
-                    alt="Clock icon"
+                    alt="Support hours icon"
                   />
                 </div>
 
                 <div className="content">
 
                   <h3>
-                    Working Time:
+                    Support Hours:
                   </h3>
 
                   <p>
-                    Mon - Fri: 8:00am - 6.00pm
+                    Mon - Fri: 8:00am - 6:00pm
                     <br />
-                    Sunday: Closed
+                    Saturday - Sunday: 9:00am - 4:00pm
                   </p>
 
                 </div>
@@ -177,7 +177,7 @@ const Contact = () => {
               <div className="contact-from">
 
                 <h3 className="text-white mb-3">
-                  Send Your Message
+                  Ask Our Math Tutor Team
                 </h3>
 
                 <form className="contFrm">
@@ -206,7 +206,7 @@ const Contact = () => {
                       <input
                         type="email"
                         name="email"
-                        placeholder="Email Address"
+                        placeholder="Parent or Student Email"
                         className="inptFld"
                       />
                     </div>
@@ -234,7 +234,7 @@ const Contact = () => {
                       <input
                         type="text"
                         name="subject"
-                        placeholder="Subject"
+                        placeholder="What Can We Help With?"
                         className="inptFld"
                       />
                     </div>
@@ -248,7 +248,7 @@ const Contact = () => {
                       <textarea
                         name="message"
                         className="inptFld mb-0"
-                        placeholder="Your Message..."
+                        placeholder="Tell us how we can help you with your maths learning journey..."
                       ></textarea>
                     </div>
 

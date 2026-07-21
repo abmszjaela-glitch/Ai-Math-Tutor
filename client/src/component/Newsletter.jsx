@@ -23,15 +23,17 @@ const Newsletter = () => {
             className="sub-title wow fadeInUp"
             data-wow-delay=".3s"
           >
-            Subscribe Now
+            Learn Smarter with AI
           </span>
 
           <h2 className="char-animation">
-            Sign up for our newsletter
+            Get the Latest Math Learning Tips
           </h2>
 
           <p className="mt-4 wow fadeInUp">
-            Keep up to date with the latest news and offers
+            Join our learning community and receive helpful mathematics
+            tips, fun learning activities, and updates designed for
+            Australian Grade 1–6 students.
           </p>
 
         </div>
@@ -65,7 +67,7 @@ const Newsletter = () => {
               className="theme-btn wow fadeInRight"
               data-wow-delay=".5s"
             >
-              Subscribe Now
+              Join Our Learning Community
 
               <i className="icon-arrow-icon"></i>
 
@@ -83,7 +85,7 @@ const Newsletter = () => {
         >
           <img
             src={newsletterImage}
-            alt="Newsletter"
+            alt="AI Math Tutor learning mathematics"
           />
         </div>
 

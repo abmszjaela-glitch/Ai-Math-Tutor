@@ -1,28 +1,20 @@
 import flower from '../assets/img/team/flower.png';
 
-import team1 from '../assets/img/team/team1.png';
-import team2 from '../assets/img/team/team2.png';
-import team3 from '../assets/img/team/team3.png';
+import team1 from '../assets/img/team/kanga.jpeg';
+import team2 from '../assets/img/team/panda.png';
 
 const teachers = [
   {
-    name: 'John Smith',
-    role: 'Online Teacher',
+    name: 'Kanga',
+    role: 'Friendly AI Math Tutor',
     image: team1,
     animation: 'fadeInRight',
     delay: '.5s',
   },
   {
-    name: 'David William',
-    role: 'Online Teacher',
+    name: 'Pandy',
+    role: 'Friendly AI Math Tutor',
     image: team2,
-    animation: 'fadeInUp',
-    delay: '.1s',
-  },
-  {
-    name: 'Sarah William',
-    role: 'Online Teacher',
-    image: team3,
     animation: 'fadeInLeft',
     delay: '.5s',
   },
@@ -37,7 +29,7 @@ const Team = () => {
         <div className="flower-shape">
           <img
             src={flower}
-            alt="flower-shape"
+            alt="decorative-shape"
           />
         </div>
 
@@ -47,11 +39,11 @@ const Team = () => {
           <div className="section-title">
 
             <span className="sub-title">
-              Our Teacher
+              Meet Your AI Math Tutors
             </span>
 
             <h2 className="char-animation">
-              Meet With <span>Our Teacher</span>
+              Learn Maths With Your <span>AI Tutor Friends</span>
             </h2>
 
           </div>
@@ -60,15 +52,15 @@ const Team = () => {
             className="wow fadeInLeft"
             data-wow-delay=".5s"
           >
-            Dolor sit amet, consectetur adipiscing elit. Nibh
-            ullamcorper as <br />
-            felis arcu elementum viverra lectus nullam.
+            Meet Kanga and Pandy, your friendly AI math tutor friends.
+            They are here to help Australian students learn mathematics
+            through fun explanations, guided practice, and problem-solving.
           </p>
 
         </div>
 
-        {/* Teachers */}
-        <div className="row text-center">
+        {/* AI Math Tutors */}
+        <div className="row text-center justify-content-center">
 
           {teachers.map((teacher, index) => (
             <div
@@ -81,15 +73,31 @@ const Team = () => {
                 className={`team-card-item ${teacher.animation}`}
               >
 
-                {/* Teacher Image */}
-                <div className="team-image">
+                {/* AI Tutor Character Image */}
+                <div
+                  className="team-image"
+                  style={{
+                    width: '100%',
+                    height: '300px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    overflow: 'hidden',
+                  }}
+                >
                   <img
                     src={teacher.image}
-                    alt={teacher.name}
+                    alt={`${teacher.name} - AI Math Tutor`}
+                    style={{
+                      width: '100%',
+                      height: '100%',
+                      objectFit: 'contain',
+                      objectPosition: 'center',
+                    }}
                   />
                 </div>
 
-                {/* Teacher Details */}
+                {/* AI Tutor Details */}
                 <div className="team-content">
 
                   <h3>

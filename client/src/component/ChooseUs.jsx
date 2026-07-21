@@ -57,20 +57,20 @@ const ChooseUs = () => {
                 <img
                   className="style-2 img-custom-anim-left"
                   src={choose2}
-                  alt="choose-image"
+                  alt="AI Math Tutor helping a Grade 6 student learn mathematics"
                 />
 
                 <img
                   className="img-custom-anim-bottom"
                   src={choose1}
-                  alt="choose-image"
+                  alt="Interactive mathematics learning for Australian students"
                 />
 
                 <div className="img-3">
                   <img
                     className="img-custom-anim-right"
                     src={choose3}
-                    alt="choose-image"
+                    alt="Friendly AI tutor character for mathematics learning"
                   />
                 </div>
 
@@ -90,16 +90,16 @@ const ChooseUs = () => {
                     className="sub-title wow fadeInUp"
                     data-wow-delay=".3s"
                   >
-                    Why Choose Us
+                    Why Choose Our AI Math Tutor
                   </span>
 
                   <h2 className="char-animation">
-                    Where Every
+                    Learn Maths
                     <span>
-                      Little Step
+                      Your Way
                     </span>
                     <br />
-                    Leads to Big Discoveries
+                    With Your AI Tutor
                   </h2>
 
                 </div>
@@ -109,12 +109,13 @@ const ChooseUs = () => {
                   className="mt-3 mt-md-0 wow fadeInUp"
                   data-wow-delay=".5s"
                 >
-                  Dolor sit amet, consectetur adipiscing elit.
-                  Nibh ullamcorper felis arcu elementum. Viverra
-                  lectus nullam sagittis nunc imperdiet.
+                  Make mathematics easier and more enjoyable with a friendly
+                  AI tutor designed for Australian Grade 6 students. Learn
+                  step by step, practise important maths skills, and get
+                  helpful guidance whenever you need it.
                 </p>
 
-                {/* Early Learning */}
+                {/* AI-Powered Learning */}
                 <div
                   className="icon-items wow fadeInUp"
                   data-wow-delay=".6s"
@@ -123,20 +124,21 @@ const ChooseUs = () => {
                   <div className="icon">
                     <img
                       src={bricksIcon}
-                      alt="Early Learning"
+                      alt="AI-powered mathematics learning"
                     />
                   </div>
 
                   <div className="content">
 
                     <h3 className="mb-2">
-                      Early Learning
+                      Learn With Your AI Tutor
                     </h3>
 
                     <p>
-                      Kindergarten is an early childhood
-                      educational environment where most young
-                      children engage in foundational.
+                      Get friendly, step-by-step support from AI tutor
+                      characters that help you understand mathematical
+                      concepts, solve problems, practise your skills, and
+                      build confidence in learning.
                     </p>
 
                   </div>
@@ -149,13 +151,13 @@ const ChooseUs = () => {
                   data-wow-delay=".7s"
                 >
 
-                  {/* Creativity */}
+                  {/* Problem Solving */}
                   <div className="pro-items">
 
                     <div className="pro-head">
 
                       <h4 className="title">
-                        Creativity
+                        Problem Solving
                       </h4>
 
                       <span className="point">
@@ -177,13 +179,13 @@ const ChooseUs = () => {
 
                   </div>
 
-                  {/* Experiences */}
+                  {/* Maths Confidence */}
                   <div className="pro-items">
 
                     <div className="pro-head">
 
                       <h4 className="title">
-                        Experiences
+                        Maths Confidence
                       </h4>
 
                       <span className="point">
@@ -219,7 +221,7 @@ const ChooseUs = () => {
                     href="/contact"
                     className="theme-btn"
                   >
-                    Start Your Learning
+                    Start Learning Maths
                     <i className="icon-arrow-icon"></i>
                   </a>
 

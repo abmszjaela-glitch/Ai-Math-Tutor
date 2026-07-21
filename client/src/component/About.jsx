@@ -1,7 +1,7 @@
 import aboutImage from '../assets/img/about/about-1.png';
 import aboutBg from '../assets/img/about/about-bg-1.png';
 import counterImage from '../assets/img/about/ab-counter.png';
-
+import {  ArrowRight } from 'lucide-react';
 import tubelightImage from '../assets/img/about/tubelight.png';
 import sunImage from '../assets/img/about/sun.png';
 import starImage from '../assets/img/about/star.png';
@@ -18,35 +18,35 @@ const About = () => {
       <div className="tubelight-shape">
         <img
           src={tubelightImage}
-          alt="Tubelight"
+          alt="AI Math Learning"
         />
       </div>
 
       <div className="sun-shape float-bob-y">
         <img
           src={sunImage}
-          alt="Sun"
+          alt="Fun Mathematics Learning"
         />
       </div>
 
       <div className="star-shape">
         <img
           src={starImage}
-          alt="Star"
+          alt="Math Learning Star"
         />
       </div>
 
       <div className="love-shape float-bob-x">
         <img
           src={loveImage}
-          alt="Love"
+          alt="Friendly AI Tutor"
         />
       </div>
 
       <div className="frame-shape">
         <img
           src={frameImage}
-          alt="Frame"
+          alt="Interactive Math Learning"
         />
       </div>
 
@@ -65,7 +65,7 @@ const About = () => {
 
                   <img
                     src={aboutImage}
-                    alt="About Us"
+                    alt="Australian Students Learning Mathematics with AI Tutor"
                     className="wow fadeInUp"
                     data-wow-delay=".5s"
                   />
@@ -76,18 +76,18 @@ const About = () => {
                   >
                     <img
                       src={aboutBg}
-                      alt="Background Shape"
+                      alt="AI Math Tutor Background"
                     />
                   </div>
 
                 </div>
 
-                {/* Experience Counter */}
+                {/* Learning Counter */}
                 <div className="counter-image float-bob-x">
 
                   <img
                     src={counterImage}
-                    alt="Experience"
+                    alt="Interactive Math Lessons"
                   />
 
                   <div className="counter-box">
@@ -95,7 +95,7 @@ const About = () => {
                     <div className="count">
 
                       <h2 className="odometer">
-                        38
+                        6
                       </h2>
 
                       <span className="plus">
@@ -105,7 +105,7 @@ const About = () => {
                     </div>
 
                     <p>
-                      Experience
+                      Grade Levels
                     </p>
 
                   </div>
@@ -126,12 +126,12 @@ const About = () => {
                   <span
                     className="sub-title wow fadeInUp text-left"
                   >
-                    About Us
+                    About Our AI Math Tutor
                   </span>
 
                   <h2 className="char-animation">
-                    Safe, Fun &amp; Educational
-                    – Just What Your Child Needs
+                    Making Mathematics Fun,
+                    Interactive &amp; Easy to Understand
                   </h2>
 
                 </div>
@@ -142,12 +142,14 @@ const About = () => {
                     className="wow fadeInUp"
                     data-wow-delay=".7s"
                   >
-                    Dolor sit amet, consectetur adipiscing
-                    elit. Nibh ullamcorper felis arcu elementum.
-                    Viverra lectus nullam sagittis nunc
-                    imperdiet leo felis. Ultrices mauris vitae
-                    cum bibendum Dolor sit amet, consectetur
-                    adipiscing elit.
+                    Our AI Math Tutor helps Australian students
+                    from Grade 1 to Grade 6 build strong
+                    mathematics skills through fun, interactive
+                    and personalised learning. Students can learn
+                    step by step with friendly AI tutor characters
+                    that explain mathematical concepts, guide
+                    them through problems and help them learn
+                    from their mistakes.
                   </p>
 
                   {/* Features List */}
@@ -160,12 +162,12 @@ const About = () => {
 
                       <li className="mb-3">
                         <Check size={18} />
-                        Learning &amp; Fun
+                        AI-Powered Math Learning
                       </li>
 
                       <li>
                         <Check size={18} />
-                        Children Safety
+                        Australian Curriculum Aligned
                       </li>
 
                     </ul>
@@ -174,12 +176,12 @@ const About = () => {
 
                       <li className="mb-3">
                         <Check size={18} />
-                        Healthy Meals
+                        Friendly AI Tutor Characters
                       </li>
 
                       <li>
                         <Check size={18} />
-                        Cute Environment
+                        Personalised Learning Support
                       </li>
 
                     </ul>
@@ -196,8 +198,8 @@ const About = () => {
                       href="/about"
                       className="theme-btn"
                     >
-                      Online Admission
-                      <i className="icon-arrow-icon"></i>
+                      Explore AI Math Learning
+                      <ArrowRight/>
                     </a>
 
                   </div>

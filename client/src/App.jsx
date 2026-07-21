@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-
+import "tailwindcss";
 import Header from './component/Header';
 import Loading from './component/Loading';
 import Hero from './component/Hero';

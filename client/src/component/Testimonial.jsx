@@ -14,19 +14,22 @@ import koma from '../assets/img/testimonial/koma.png';
 
 const testimonials = [
   {
-    name: 'John Smith',
-    role: 'Student Father',
+    name: 'Emily Johnson',
+    role: 'Grade 6 Student',
     image: client1,
+    text: 'My AI Math Tutor makes maths much easier to understand. I can ask questions whenever I get stuck, and the AI explains each step in a simple way.',
   },
   {
-    name: 'Sarah William',
-    role: 'Student Father',
+    name: 'Michael Williams',
+    role: 'Parent of a Grade 6 Student',
     image: client2,
+    text: 'The AI Math Tutor has helped my child become more confident with mathematics. The interactive lessons make learning maths more enjoyable and engaging.',
   },
   {
     name: 'Sarah Taylor',
-    role: 'Student Father',
+    role: 'Parent of a Grade 5 Student',
     image: client3,
+    text: 'My daughter enjoys learning maths with her friendly AI tutor. She can practise topics at her own pace and get instant help when she needs it.',
   },
 ];
 
@@ -38,7 +41,7 @@ const Testimonial = () => {
       <div className="pencil-icon">
         <img
           src={pencil}
-          alt="Pencil"
+          alt="Math learning pencil"
         />
       </div>
 
@@ -46,7 +49,7 @@ const Testimonial = () => {
       <div className="flower-shape">
         <img
           src={flower}
-          alt="Flower"
+          alt="Educational decoration"
         />
       </div>
 
@@ -56,13 +59,13 @@ const Testimonial = () => {
         <div className="section-title text-center">
 
           <span className="sub-title">
-            Our Testimonials
+            What Our Learners Say
           </span>
 
           <h2>
-            Read &amp; Student's Parent
+            Loved by Students &amp; Parents
             <br />
-            Testimonials
+            Across Australian Classrooms
           </h2>
 
         </div>
@@ -107,7 +110,7 @@ const Testimonial = () => {
                   <div className="item-border">
                     <img
                       src={border}
-                      alt="Border"
+                      alt="Decorative border"
                     />
                   </div>
 
@@ -118,7 +121,7 @@ const Testimonial = () => {
 
                       <img
                         src={testimonial.image}
-                        alt={testimonial.name}
+                        alt={`${testimonial.name} - ${testimonial.role}`}
                       />
 
                       {/* Stars */}
@@ -144,9 +147,7 @@ const Testimonial = () => {
 
                     {/* Testimonial */}
                     <p className="testi-text">
-                      “Flexible Classes refers to the process of
-                      acquiring knowledge or skills through the
-                      use of digital supply and the internet.”
+                      “{testimonial.text}”
                     </p>
 
                     {/* Client Info */}
@@ -166,7 +167,7 @@ const Testimonial = () => {
                     <div className="koma-icon">
                       <img
                         src={koma}
-                        alt="Quote"
+                        alt="Testimonial quote"
                       />
                     </div>
 

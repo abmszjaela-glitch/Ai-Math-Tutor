@@ -11,26 +11,26 @@ import icon4 from '../assets/img/counter/icon4.svg';
 const counterData = [
   {
     icon: icon1,
-    count: 563,
-    label: 'Experts Instructors',
+    count: 5000,
+    label: 'Math Problems Solved',
     delay: '.2s',
   },
   {
     icon: icon2,
-    count: 6539,
-    label: 'Class Completed',
+    count: 1500,
+    label: 'AI Learning Sessions',
     delay: '.4s',
   },
   {
     icon: icon3,
-    count: 34,
-    label: 'Year of Experience',
+    count: 6,
+    label: 'Australian Grade Levels',
     delay: '.6s',
   },
   {
     icon: icon4,
-    count: 6632,
-    label: 'Students Enroll',
+    count: 2500,
+    label: 'Students Learning Math',
     delay: '.8s',
   },
 ];
@@ -79,9 +79,7 @@ const CounterItem = ({ item, index }) => {
 
         {/* Counter */}
         <div className="counter-box">
-
           <div className="count">
-
             <h3 className="odometer">
               {count.toLocaleString()}
             </h3>
@@ -89,13 +87,11 @@ const CounterItem = ({ item, index }) => {
             <span className="plus">
               +
             </span>
-
           </div>
 
           <p>
             {item.label}
           </p>
-
         </div>
       </div>
     </div>
