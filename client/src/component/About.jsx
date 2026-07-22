@@ -1,54 +1,113 @@
+import { motion } from 'framer-motion';
+import { ArrowRight, Check } from 'lucide-react';
+
 import aboutImage from '../assets/img/about/about-1.png';
 import aboutBg from '../assets/img/about/about-bg-1.png';
 import counterImage from '../assets/img/about/ab-counter.png';
-import {  ArrowRight } from 'lucide-react';
 import tubelightImage from '../assets/img/about/tubelight.png';
 import sunImage from '../assets/img/about/sun.png';
 import starImage from '../assets/img/about/star.png';
 import loveImage from '../assets/img/about/love.png';
 import frameImage from '../assets/img/about/frame.png';
 
-import { Check } from 'lucide-react';
+const easeOut = [0.25, 0.1, 0.25, 1];
+
+// Continuous floating loops
+const floatY = {
+  animate: { y: [0, -16, 0], transition: { duration: 4, repeat: Infinity, ease: 'easeInOut' } },
+};
+const floatX = {
+  animate: { x: [0, 14, 0], transition: { duration: 5, repeat: Infinity, ease: 'easeInOut' } },
+};
+
+// Text/content stagger
+const containerVariants = {
+  hidden: {},
+  visible: { transition: { staggerChildren: 0.18, delayChildren: 0.1 } },
+};
+
+const itemUp = {
+  hidden: { opacity: 0, y: 40 },
+  visible: { opacity: 1, y: 0, transition: { duration: 0.7, ease: easeOut } },
+};
+
+const listContainer = {
+  hidden: {},
+  visible: { transition: { staggerChildren: 0.12 } },
+};
+
+const listItem = {
+  hidden: { opacity: 0, x: -20 },
+  visible: { opacity: 1, x: 0, transition: { duration: 0.5, ease: easeOut } },
+};
 
 const About = () => {
   return (
     <section className="about-section section-padding fix">
 
       {/* Decorative Shapes */}
-      <div className="tubelight-shape">
-        <img
-          src={tubelightImage}
-          alt="AI Math Learning"
-        />
-      </div>
+      <motion.div
+        className="tubelight-shape"
+        initial={{ opacity: 0, y: -30 }}
+        whileInView={{ opacity: 1, y: 0 }}
+        viewport={{ once: true, amount: 0.3 }}
+        transition={{ duration: 1, ease: easeOut }}
+      >
+        <img src={tubelightImage} alt="AI Math Learning" />
+      </motion.div>
 
-      <div className="sun-shape float-bob-y">
-        <img
+      <motion.div
+        className="sun-shape"
+        initial={{ opacity: 0, scale: 0.6, rotate: -20 }}
+        whileInView={{ opacity: 1, scale: 1, rotate: 0 }}
+        viewport={{ once: true, amount: 0.3 }}
+        transition={{ duration: 0.9, delay: 0.15, ease: easeOut }}
+      >
+        <motion.img
           src={sunImage}
           alt="Fun Mathematics Learning"
+          animate={floatY.animate}
         />
-      </div>
+      </motion.div>
 
-      <div className="star-shape">
-        <img
+      <motion.div
+        className="star-shape"
+        initial={{ opacity: 0, scale: 0 }}
+        whileInView={{ opacity: 1, scale: 1 }}
+        viewport={{ once: true, amount: 0.3 }}
+        transition={{ duration: 0.6, delay: 0.3, ease: easeOut }}
+      >
+        <motion.img
           src={starImage}
           alt="Math Learning Star"
+          animate={{ rotate: [0, 15, 0, -15, 0] }}
+          transition={{ duration: 6, repeat: Infinity, ease: 'easeInOut' }}
         />
-      </div>
+      </motion.div>
 
-      <div className="love-shape float-bob-x">
-        <img
+      <motion.div
+        className="love-shape"
+        initial={{ opacity: 0, y: 30 }}
+        whileInView={{ opacity: 1, y: 0 }}
+        viewport={{ once: true, amount: 0.3 }}
+        transition={{ duration: 0.8, delay: 0.2, ease: easeOut }}
+      >
+        <motion.img
           src={loveImage}
           alt="Friendly AI Tutor"
+          animate={floatX.animate}
         />
-      </div>
+      </motion.div>
 
-      <div className="frame-shape">
-        <img
-          src={frameImage}
-          alt="Interactive Math Learning"
-        />
-      </div>
+      <motion.div
+        className="frame-shape"
+        initial={{ opacity: 0, rotate: 10 }}
+        whileInView={{ opacity: 1, rotate: 0 }}
+        viewport={{ once: true, amount: 0.3 }}
+        transition={{ duration: 0.9, delay: 0.25, ease: easeOut }}
+      >
+        <img src={frameImage} alt="Interactive Math Learning" />
+      </motion.div>
 
       <div className="container">
 
@@ -63,54 +122,65 @@ const About = () => {
 
                 <div className="about-image">
 
-                  <img
+                  <motion.img
                     src={aboutImage}
                     alt="Australian Students Learning Mathematics with AI Tutor"
-                    className="wow fadeInUp"
-                    data-wow-delay=".5s"
+                    initial={{ opacity: 0, y: 60 }}
+                    whileInView={{ opacity: 1, y: 0 }}
+                    viewport={{ once: true, amount: 0.3 }}
+                    transition={{ duration: 0.9, delay: 0.2, ease: easeOut }}
                   />
 
-                  <div
-                    className="shape-bg wow zoomIn"
-                    data-wow-delay=".5s"
+                  <motion.div
+                    className="shape-bg"
+                    initial={{ opacity: 0, scale: 0.7 }}
+                    whileInView={{ opacity: 1, scale: 1 }}
+                    viewport={{ once: true, amount: 0.3 }}
+                    transition={{ duration: 0.8, delay: 0.4, ease: easeOut }}
                   >
-                    <img
-                      src={aboutBg}
-                      alt="AI Math Tutor Background"
-                    />
-                  </div>
+                    <img src={aboutBg} alt="AI Math Tutor Background" />
+                  </motion.div>
 
                 </div>
 
                 {/* Learning Counter */}
-                <div className="counter-image float-bob-x">
+                <motion.div
+                  className="counter-image"
+                  initial={{ opacity: 0, scale: 0.8, y: 30 }}
+                  whileInView={{ opacity: 1, scale: 1, y: 0 }}
+                  viewport={{ once: true, amount: 0.3 }}
+                  transition={{ duration: 0.7, delay: 0.6, ease: easeOut }}
+                >
 
-                  <img
+                  <motion.img
                     src={counterImage}
                     alt="Interactive Math Lessons"
+                    animate={floatX.animate}
                   />
 
                   <div className="counter-box">
 
                     <div className="count">
 
-                      <h2 className="odometer">
+                      <motion.h2
+                        className="odometer"
+                        initial={{ opacity: 0 }}
+                        whileInView={{ opacity: 1 }}
+                        viewport={{ once: true, amount: 0.3 }}
+                        transition={{ duration: 0.5, delay: 0.8 }}
+                      >
                         6
-                      </h2>
+                      </motion.h2>
 
-                      <span className="plus">
-                        +
-                      </span>
+                      <span className="plus">+</span>
 
                     </div>
 
-                    <p>
-                      Grade Levels
-                    </p>
+                    <p>Grade Levels</p>
 
                   </div>
 
-                </div>
+                </motion.div>
 
               </div>
 
@@ -119,29 +189,33 @@ const About = () => {
             {/* About Content */}
             <div className="col-lg-6">
 
-              <div className="about-content">
+              <motion.div
+                className="about-content"
+                variants={containerVariants}
+                initial="hidden"
+                whileInView="visible"
+                viewport={{ once: true, amount: 0.2 }}
+              >
 
                 <div className="section-title text-left">
 
-                  <span
-                    className="sub-title wow fadeInUp text-left"
+                  <motion.span
+                    className="sub-title text-left"
+                    variants={itemUp}
                   >
                     About Our AI Math Tutor
-                  </span>
+                  </motion.span>
 
-                  <h2 className="char-animation">
+                  <motion.h2 variants={itemUp}>
                     Making Mathematics Fun,
                     Interactive &amp; Easy to Understand
-                  </h2>
+                  </motion.h2>
 
                 </div>
 
                 <div className="content-bottom mt-4 mt-md-0">
 
-                  <p
-                    className="wow fadeInUp"
-                    data-wow-delay=".7s"
-                  >
+                  <motion.p variants={itemUp}>
                     Our AI Math Tutor helps Australian students
                     from Grade 1 to Grade 6 build strong
                     mathematics skills through fun, interactive
@@ -150,63 +224,66 @@ const About = () => {
                     that explain mathematical concepts, guide
                     them through problems and help them learn
                     from their mistakes.
-                  </p>
+                  </motion.p>
 
                   {/* Features List */}
-                  <div
-                    className="about-list wow fadeInUp"
-                    data-wow-delay=".8s"
+                  <motion.div
+                    className="about-list"
+                    variants={listContainer}
                   >
 
                     <ul>
 
-                      <li className="mb-3">
+                      <motion.li className="mb-3" variants={listItem}>
                         <Check size={18} />
                         AI-Powered Math Learning
-                      </li>
+                      </motion.li>
 
-                      <li>
+                      <motion.li variants={listItem}>
                         <Check size={18} />
                         Australian Curriculum Aligned
-                      </li>
+                      </motion.li>
 
                     </ul>
 
                     <ul>
 
-                      <li className="mb-3">
+                      <motion.li className="mb-3" variants={listItem}>
                         <Check size={18} />
                         Friendly AI Tutor Characters
-                      </li>
+                      </motion.li>
 
-                      <li>
+                      <motion.li variants={listItem}>
                         <Check size={18} />
                         Personalised Learning Support
-                      </li>
+                      </motion.li>
 
                     </ul>
 
-                  </div>
+                  </motion.div>
 
                   {/* Button */}
-                  <div
-                    className="about-button wow fadeInUp"
-                    data-wow-delay=".9s"
+                  <motion.div
+                    className="about-button"
+                    variants={itemUp}
                   >
 
-                    <a
+                    <motion.a
                       href="/about"
                       className="theme-btn"
+                      whileHover={{ scale: 1.06, y: -3 }}
+                      whileTap={{ scale: 0.96 }}
+                      transition={{ duration: 0.3, ease: easeOut }}
                     >
                       Explore AI Math Learning
-                      <ArrowRight/>
-                    </a>
+                      <ArrowRight />
+                    </motion.a>
 
-                  </div>
+                  </motion.div>
 
                 </div>
 
-              </div>
+              </motion.div>
 
             </div>
 

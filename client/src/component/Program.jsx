@@ -1,3 +1,6 @@
+import { motion } from 'framer-motion';
+import { ArrowRight } from 'lucide-react';
+
 import top1 from '../assets/img/program/top-1.png';
 import top2 from '../assets/img/program/top-2.png';
 import top3 from '../assets/img/program/top-3.png';
@@ -7,11 +10,13 @@ import bottom1 from '../assets/img/program/bottom-1.png';
 import bottom2 from '../assets/img/program/bottom-2.png';
 import bottom3 from '../assets/img/program/bottom-3.png';
 import bottom4 from '../assets/img/program/bottom-4.png';
-import {  ArrowRight } from 'lucide-react';
+
 import bookIcon from '../assets/img/program/book.png';
 import phoneIcon from '../assets/img/program/phone.png';
 import boyIcon from '../assets/img/program/boy.png';
 import chemicalBookIcon from '../assets/img/program/camical-book.png';
+
+const easeOut = [0.25, 0.1, 0.25, 1];
 
 const programs = [
   {
@@ -23,7 +28,7 @@ const programs = [
     bottomImage: bottom1,
     icon: bookIcon,
     styleClass: 'style-2',
-    delay: '.2s',
+    delay: 0.1,
   },
   {
     title: 'Measurement & Geometry',
@@ -35,7 +40,7 @@ const programs = [
     icon: phoneIcon,
     styleClass: '',
     bgClass: 'bg-2',
-    delay: '.4s',
+    delay: 0.25,
   },
   {
     title: 'Statistics & Probability',
@@ -47,7 +52,7 @@ const programs = [
     icon: boyIcon,
     styleClass: 'style-2',
     bgClass: 'bg-3',
-    delay: '.6s',
+    delay: 0.4,
   },
   {
     title: 'Problem Solving',
@@ -59,9 +64,19 @@ const programs = [
     icon: chemicalBookIcon,
     styleClass: '',
     bgClass: 'bg-4',
-    delay: '.8s',
+    delay: 0.55,
   },
 ];
+
+const cardVariants = {
+  hidden: { opacity: 0, y: 60, scale: 0.92 },
+  visible: {
+    opacity: 1,
+    y: 0,
+    scale: 1,
+    transition: { duration: 0.75, ease: easeOut },
+  },
+};
 
 const Program = () => {
   return (
@@ -73,28 +88,49 @@ const Program = () => {
           {programs.map((program, index) => (
             <div
               key={index}
-              className="col-xl-3 col-lg-4 col-md-6 col-sm-6 wow fadeInUp"
-              data-wow-delay={program.delay}
+              className="col-xl-3 col-lg-4 col-md-6 col-sm-6"
             >
-              <div
+              <motion.div
                 className={`program-box-item ${program.styleClass}`}
+                variants={cardVariants}
+                initial="hidden"
+                whileInView="visible"
+                viewport={{ once: true, amount: 0.25 }}
+                transition={{ delay: program.delay }}
+                whileHover={{
+                  y: -14,
+                  boxShadow: '0 20px 40px rgba(0,0,0,0.12)',
+                  transition: { duration: 0.35, ease: easeOut },
+                }}
               >
 
                 {/* Top Decoration */}
-                <div className="top-bar">
+                <motion.div
+                  className="top-bar"
+                  initial={{ opacity: 0, y: -20 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true, amount: 0.5 }}
+                  transition={{ duration: 0.6, delay: program.delay + 0.15, ease: easeOut }}
+                >
                   <img
                     src={program.topImage}
                     alt="AI Math Tutor decoration"
                   />
-                </div>
+                </motion.div>
 
                 {/* Bottom Decoration */}
-                <div className="bottom-bar">
+                <motion.div
+                  className="bottom-bar"
+                  initial={{ opacity: 0, y: 20 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true, amount: 0.5 }}
+                  transition={{ duration: 0.6, delay: program.delay + 0.15, ease: easeOut }}
+                >
                   <img
                     src={program.bottomImage}
                     alt="AI Math Tutor decoration"
                   />
-                </div>
+                </motion.div>
 
                 {/* Background */}
                 <div
@@ -102,12 +138,19 @@ const Program = () => {
                 ></div>
 
                 {/* Program Icon */}
-                <div className="program-icon">
+                <motion.div
+                  className="program-icon"
+                  initial={{ opacity: 0, scale: 0, rotate: -30 }}
+                  whileInView={{ opacity: 1, scale: 1, rotate: 0 }}
+                  viewport={{ once: true, amount: 0.5 }}
+                  transition={{ duration: 0.6, delay: program.delay + 0.25, ease: easeOut }}
+                  whileHover={{ scale: 1.15, rotate: 10 }}
+                >
                   <img
                     src={program.icon}
                     alt={`${program.title} AI Math Tutor icon`}
                   />
-                </div>
+                </motion.div>
 
                 {/* Program Content */}
                 <div className="program-content">
@@ -124,17 +167,19 @@ const Program = () => {
                     {program.description}
                   </p>
 
-                  <a
+                  <motion.a
                     href="/program-details"
                     className="link-btn"
+                    whileHover={{ x: 6 }}
+                    transition={{ duration: 0.25, ease: easeOut }}
                   >
                     Explore Topic
-                    <ArrowRight/>
-                        </a>
+                    <ArrowRight />
+                  </motion.a>
 
                 </div>
 
-              </div>
+              </motion.div>
             </div>
           ))}
 

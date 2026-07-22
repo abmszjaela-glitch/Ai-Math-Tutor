@@ -1,3 +1,5 @@
+import { motion } from 'framer-motion';
+
 import bottomShape from '../assets/img/footer/bg-bottom.png';
 import basketShape from '../assets/img/footer/busket.png';
 import ballShape from '../assets/img/footer/ball.png';
@@ -5,6 +7,35 @@ import ballShape from '../assets/img/footer/ball.png';
 import NUMORA from '../assets/img/logo/NUMORA.png';
 import emailIcon from '../assets/img/footer/email.svg';
 import locationIcon from '../assets/img/footer/location.svg';
+
+const easeOut = [0.25, 0.1, 0.25, 1];
+
+const floatY = {
+  animate: { y: [0, -16, 0], transition: { duration: 4, repeat: Infinity, ease: 'easeInOut' } },
+};
+const floatX = {
+  animate: { x: [0, 14, 0], transition: { duration: 5, repeat: Infinity, ease: 'easeInOut' } },
+};
+
+const rowContainer = {
+  hidden: {},
+  visible: { transition: { staggerChildren: 0.15, delayChildren: 0.1 } },
+};
+
+const widgetItem = {
+  hidden: { opacity: 0, y: 40 },
+  visible: { opacity: 1, y: 0, transition: { duration: 0.7, ease: easeOut } },
+};
+
+const socialContainer = {
+  hidden: {},
+  visible: { transition: { staggerChildren: 0.08, delayChildren: 0.4 } },
+};
+
+const socialItem = {
+  hidden: { opacity: 0, scale: 0 },
+  visible: { opacity: 1, scale: 1, transition: { duration: 0.4, ease: easeOut } },
+};
 
 const Footer = () => {
   return (
@@ -19,32 +50,44 @@ const Footer = () => {
       </div>
 
       {/* Basket Shape */}
-      <div className="busket-shape float-bob-x">
-        <img
-          src={basketShape}
-          alt="Decorative learning basket"
-        />
-      </div>
+      <motion.div
+        className="busket-shape"
+        initial={{ opacity: 0, x: -30 }}
+        whileInView={{ opacity: 1, x: 0 }}
+        viewport={{ once: true, amount: 0.3 }}
+        transition={{ duration: 1, ease: easeOut }}
+      >
+        <motion.img src={basketShape} alt="Decorative learning basket" animate={floatX.animate} />
+      </motion.div>
 
       {/* Ball Shape */}
-      <div className="ball-shape float-bob-y">
-        <img
-          src={ballShape}
-          alt="Decorative learning ball"
-        />
-      </div>
+      <motion.div
+        className="ball-shape"
+        initial={{ opacity: 0, y: -30, scale: 0.7 }}
+        whileInView={{ opacity: 1, y: 0, scale: 1 }}
+        viewport={{ once: true, amount: 0.3 }}
+        transition={{ duration: 0.9, delay: 0.15, ease: easeOut }}
+      >
+        <motion.img src={ballShape} alt="Decorative learning ball" animate={floatY.animate} />
+      </motion.div>
 
 
       <div className="container">
 
         <div className="footer-widgets-wrapper">
 
-          <div className="row">
+          <motion.div
+            className="row"
+            variants={rowContainer}
+            initial="hidden"
+            whileInView="visible"
+            viewport={{ once: true, amount: 0.15 }}
+          >
 
             {/* About / Logo */}
-            <div
-              className="col-xl-4 col-lg-6 col-md-8 wow fadeInUp"
-              data-wow-delay=".2s"
+            <motion.div
+              className="col-xl-4 col-lg-6 col-md-8"
+              variants={widgetItem}
             >
               <div className="single-footer-widget">
 
@@ -68,44 +111,70 @@ const Footer = () => {
                   </p>
 
                   {/* Social Media */}
-                  <ul className="social-icon">
+                  <motion.ul
+                    className="social-icon"
+                    variants={socialContainer}
+                    initial="hidden"
+                    whileInView="visible"
+                    viewport={{ once: true, amount: 0.5 }}
+                  >
 
-                    <li>
-                      <a href="#">
+                    <motion.li variants={socialItem}>
+                      <motion.a
+                        href="#"
+                        whileHover={{ scale: 1.15, y: -4 }}
+                        whileTap={{ scale: 0.9 }}
+                        transition={{ duration: 0.25, ease: easeOut }}
+                      >
                         <i className="fab fa-facebook-f"></i>
-                      </a>
-                    </li>
+                      </motion.a>
+                    </motion.li>
 
-                    <li>
-                      <a href="#">
+                    <motion.li variants={socialItem}>
+                      <motion.a
+                        href="#"
+                        whileHover={{ scale: 1.15, y: -4 }}
+                        whileTap={{ scale: 0.9 }}
+                        transition={{ duration: 0.25, ease: easeOut }}
+                      >
                         <i className="fab fa-twitter"></i>
-                      </a>
-                    </li>
+                      </motion.a>
+                    </motion.li>
 
-                    <li>
-                      <a href="#">
+                    <motion.li variants={socialItem}>
+                      <motion.a
+                        href="#"
+                        whileHover={{ scale: 1.15, y: -4 }}
+                        whileTap={{ scale: 0.9 }}
+                        transition={{ duration: 0.25, ease: easeOut }}
+                      >
                         <i className="fab fa-youtube"></i>
-                      </a>
-                    </li>
+                      </motion.a>
+                    </motion.li>
 
-                    <li>
-                      <a href="#">
+                    <motion.li variants={socialItem}>
+                      <motion.a
+                        href="#"
+                        whileHover={{ scale: 1.15, y: -4 }}
+                        whileTap={{ scale: 0.9 }}
+                        transition={{ duration: 0.25, ease: easeOut }}
+                      >
                         <i className="fab fa-linkedin-in"></i>
-                      </a>
-                    </li>
+                      </motion.a>
+                    </motion.li>
 
-                  </ul>
+                  </motion.ul>
 
                 </div>
 
               </div>
-            </div>
+            </motion.div>
 
 
             {/* Quick Links */}
-            <div
-              className="col-xl-2 col-lg-3 col-md-4 col-sm-6 wow fadeInUp"
-              data-wow-delay=".4s"
+            <motion.div
+              className="col-xl-2 col-lg-3 col-md-4 col-sm-6"
+              variants={widgetItem}
             >
               <div className="single-footer-widget">
 
@@ -148,13 +217,13 @@ const Footer = () => {
                 </div>
 
               </div>
-            </div>
+            </motion.div>
 
 
             {/* Learning Resources */}
-            <div
-              className="col-xl-2 col-lg-3 col-md-6 col-sm-6 wow fadeInUp"
-              data-wow-delay=".6s"
+            <motion.div
+              className="col-xl-2 col-lg-3 col-md-6 col-sm-6"
+              variants={widgetItem}
             >
               <div className="single-footer-widget">
 
@@ -197,20 +266,24 @@ const Footer = () => {
                 </div>
 
               </div>
-            </div>
+            </motion.div>
 
 
             {/* Contact Information */}
-            <div
-              className="col-xl-4 col-lg-6 col-md-6 wow fadeInUp"
-              data-wow-delay=".8s"
+            <motion.div
+              className="col-xl-4 col-lg-6 col-md-6"
+              variants={widgetItem}
             >
               <div className="single-footer-widget">
 
                 <div className="widget-content">
 
                   {/* Email */}
-                  <div className="contact-info">
+                  <motion.div
+                    className="contact-info"
+                    whileHover={{ x: 6 }}
+                    transition={{ duration: 0.25, ease: easeOut }}
+                  >
 
                     <div className="icon">
                       <img
@@ -233,11 +306,15 @@ const Footer = () => {
 
                     </div>
 
-                  </div>
+                  </motion.div>
 
 
                   {/* Location */}
-                  <div className="contact-info">
+                  <motion.div
+                    className="contact-info"
+                    whileHover={{ x: 6 }}
+                    transition={{ duration: 0.25, ease: easeOut }}
+                  >
 
                     <div className="icon">
                       <img
@@ -262,27 +339,30 @@ const Footer = () => {
 
                     </div>
 
-                  </div>
+                  </motion.div>
 
                 </div>
 
               </div>
-            </div>
+            </motion.div>
 
-          </div>
+          </motion.div>
 
 
           {/* Copyright */}
-          <p
-            className="footer-bottom wow fadeInUp"
-            data-wow-delay=".5s"
+          <motion.p
+            className="footer-bottom"
+            initial={{ opacity: 0 }}
+            whileInView={{ opacity: 1 }}
+            viewport={{ once: true, amount: 0.5 }}
+            transition={{ duration: 0.6, delay: 0.3 }}
           >
             ©{' '}
             <a href="/">
               NUMORA
             </a>{' '}
             2026. All Rights Reserved, ABMSZ
-          </p>
+          </motion.p>
 
         </div>
 

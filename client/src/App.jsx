@@ -23,6 +23,7 @@ import Footer from './component/Footer';
 
 const App = () => {
   const [isLoading, setIsLoading] = useState(true);
+  const [offcanvasOpen, setOffcanvasOpen] = useState(false);
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -45,7 +46,7 @@ const App = () => {
 
   return (
     <>
-      <Header />
+      <Header onMenuClick={() => setOffcanvasOpen(true)} />
 
       <main>
 
@@ -58,18 +59,21 @@ const App = () => {
         <Classes />
 
         <ChooseUs />
-  <Team />
+        <Team />
 
-  <Counter />
-  <Session/>
-  <Testimonial/>
-  <Brand/>
-  <Contact/>
-  <Newsletter/>
-  <Footer/>
+        <Counter />
+        <Session />
+        <Testimonial />
+        <Brand />
+        <Contact />
+        <Newsletter />
+        <Footer />
       </main>
 
-      <Offcanvas />
+      <Offcanvas
+        isOpen={offcanvasOpen}
+        onClose={() => setOffcanvasOpen(false)}
+      />
 
       <SearchPopup />
 

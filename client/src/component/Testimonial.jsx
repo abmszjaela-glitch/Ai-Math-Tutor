@@ -1,5 +1,6 @@
 import { Swiper, SwiperSlide } from 'swiper/react';
 import { Navigation, Autoplay } from 'swiper/modules';
+import { motion } from 'framer-motion';
 
 import 'swiper/css';
 import 'swiper/css/navigation';
@@ -11,6 +12,24 @@ import client1 from '../assets/img/testimonial/client1.png';
 import client2 from '../assets/img/testimonial/client2.png';
 import client3 from '../assets/img/testimonial/client3.png';
 import koma from '../assets/img/testimonial/koma.png';
+
+const easeOut = [0.25, 0.1, 0.25, 1];
+
+const floatY = {
+  animate: { y: [0, -16, 0], transition: { duration: 4, repeat: Infinity, ease: 'easeInOut' } },
+};
+const floatX = {
+  animate: { x: [0, 14, 0], transition: { duration: 5, repeat: Infinity, ease: 'easeInOut' } },
+};
+
+const titleContainer = {
+  hidden: {},
+  visible: { transition: { staggerChildren: 0.15 } },
+};
+const titleItem = {
+  hidden: { opacity: 0, y: 30 },
+  visible: { opacity: 1, y: 0, transition: { duration: 0.7, ease: easeOut } },
+};
 
 const testimonials = [
   {
@@ -38,40 +57,58 @@ const Testimonial = () => {
     <section className="testimonial-section section-padding fix pb-0">
 
       {/* Pencil Shape */}
-      <div className="pencil-icon">
-        <img
-          src={pencil}
-          alt="Math learning pencil"
-        />
-      </div>
+      <motion.div
+        className="pencil-icon"
+        initial={{ opacity: 0, y: -30, rotate: -15 }}
+        whileInView={{ opacity: 1, y: 0, rotate: 0 }}
+        viewport={{ once: true, amount: 0.3 }}
+        transition={{ duration: 0.9, ease: easeOut }}
+      >
+        <motion.img src={pencil} alt="Math learning pencil" animate={floatY.animate} />
+      </motion.div>
 
       {/* Flower Shape */}
-      <div className="flower-shape">
-        <img
-          src={flower}
-          alt="Educational decoration"
-        />
-      </div>
+      <motion.div
+        className="flower-shape"
+        initial={{ opacity: 0, scale: 0.6 }}
+        whileInView={{ opacity: 1, scale: 1 }}
+        viewport={{ once: true, amount: 0.3 }}
+        transition={{ duration: 0.8, delay: 0.15, ease: easeOut }}
+      >
+        <motion.img src={flower} alt="Educational decoration" animate={floatX.animate} />
+      </motion.div>
 
       <div className="container">
 
         {/* Section Title */}
-        <div className="section-title text-center">
+        <motion.div
+          className="section-title text-center"
+          variants={titleContainer}
+          initial="hidden"
+          whileInView="visible"
+          viewport={{ once: true, amount: 0.3 }}
+        >
 
-          <span className="sub-title">
+          <motion.span className="sub-title" variants={titleItem}>
             What Our Learners Say
-          </span>
+          </motion.span>
 
-          <h2>
+          <motion.h2 variants={titleItem}>
             Loved by Students &amp; Parents
             <br />
             Across Australian Classrooms
-          </h2>
+          </motion.h2>
 
-        </div>
+        </motion.div>
 
         {/* Testimonials */}
-        <div className="testimonial-wrapper">
+        <motion.div
+          className="testimonial-wrapper"
+          initial={{ opacity: 0, y: 50 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true, amount: 0.15 }}
+          transition={{ duration: 0.8, delay: 0.2, ease: easeOut }}
+        >
 
           <Swiper
             modules={[Navigation, Autoplay]}
@@ -104,7 +141,11 @@ const Testimonial = () => {
 
               <SwiperSlide key={index}>
 
-                <div className="testimonial-box-items">
+                <motion.div
+                  className="testimonial-box-items"
+                  whileHover={{ y: -10 }}
+                  transition={{ duration: 0.35, ease: easeOut }}
+                >
 
                   {/* Border */}
                   <div className="item-border">
@@ -119,28 +160,26 @@ const Testimonial = () => {
                     {/* Client Image */}
                     <div className="client-image">
 
-                      <img
+                      <motion.img
                         src={testimonial.image}
                         alt={`${testimonial.name} - ${testimonial.role}`}
+                        whileHover={{ scale: 1.08 }}
+                        transition={{ duration: 0.4, ease: easeOut }}
                       />
 
                       {/* Stars */}
                       <ul className="icon">
-                        <li>
-                          <i className="fas fa-star"></i>
-                        </li>
-                        <li>
-                          <i className="fas fa-star"></i>
-                        </li>
-                        <li>
-                          <i className="fas fa-star"></i>
-                        </li>
-                        <li>
-                          <i className="fas fa-star"></i>
-                        </li>
-                        <li>
-                          <i className="fas fa-star"></i>
-                        </li>
+                        {[...Array(5)].map((_, i) => (
+                          <motion.li
+                            key={i}
+                            initial={{ opacity: 0, scale: 0 }}
+                            whileInView={{ opacity: 1, scale: 1 }}
+                            viewport={{ once: true, amount: 0.5 }}
+                            transition={{ duration: 0.3, delay: i * 0.08, ease: easeOut }}
+                          >
+                            <i className="fas fa-star"></i>
+                          </motion.li>
+                        ))}
                       </ul>
 
                     </div>
@@ -164,16 +203,20 @@ const Testimonial = () => {
                     </div>
 
                     {/* Quote Icon */}
-                    <div className="koma-icon">
+                    <motion.div
+                      className="koma-icon"
+                      animate={{ rotate: [0, 8, 0, -8, 0] }}
+                      transition={{ duration: 6, repeat: Infinity, ease: 'easeInOut' }}
+                    >
                       <img
                         src={koma}
                         alt="Testimonial quote"
                       />
-                    </div>
+                    </motion.div>
 
                   </div>
 
-                </div>
+                </motion.div>
 
               </SwiperSlide>
 
@@ -184,23 +227,29 @@ const Testimonial = () => {
           {/* Slider Buttons */}
           <div className="array-button">
 
-            <button
+            <motion.button
               className="array-prev"
               aria-label="Previous testimonial"
+              whileHover={{ scale: 1.15, x: -3 }}
+              whileTap={{ scale: 0.9 }}
+              transition={{ duration: 0.25, ease: easeOut }}
             >
               <i className="fal fa-arrow-left"></i>
-            </button>
+            </motion.button>
 
-            <button
+            <motion.button
               className="array-next"
               aria-label="Next testimonial"
+              whileHover={{ scale: 1.15, x: 3 }}
+              whileTap={{ scale: 0.9 }}
+              transition={{ duration: 0.25, ease: easeOut }}
             >
               <i className="fal fa-arrow-right"></i>
-            </button>
+            </motion.button>
 
           </div>
 
-        </div>
+        </motion.div>
 
       </div>
 
