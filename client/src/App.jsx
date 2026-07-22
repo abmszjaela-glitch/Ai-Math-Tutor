@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
-import "tailwindcss";
+import { BrowserRouter, Routes, Route } from 'react-router-dom';
+
 import Header from './component/Header';
 import Loading from './component/Loading';
 import Hero from './component/Hero';
@@ -21,32 +22,18 @@ import Offcanvas from './component/Offcanvas';
 import SearchPopup from './component/SearchPopup';
 import Footer from './component/Footer';
 
-const App = () => {
-  const [isLoading, setIsLoading] = useState(true);
+import Login from './component/Login';
+import Register from './component/Register';
+
+
+const Home = () => {
   const [offcanvasOpen, setOffcanvasOpen] = useState(false);
-
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      setIsLoading(false);
-    }, 6000);
-
-    return () => clearTimeout(timer);
-  }, []);
-
-  if (isLoading) {
-    return (
-      <div
-        id="preloader"
-        className="preloader"
-      >
-        <Loading />
-      </div>
-    );
-  }
 
   return (
     <>
-      <Header onMenuClick={() => setOffcanvasOpen(true)} />
+      <Header
+        onMenuClick={() => setOffcanvasOpen(true)}
+      />
 
       <main>
 
@@ -59,16 +46,25 @@ const App = () => {
         <Classes />
 
         <ChooseUs />
+
         <Team />
 
         <Counter />
+
         <Session />
+
         <Testimonial />
+
         <Brand />
+
         <Contact />
+
         <Newsletter />
+
         <Footer />
+
       </main>
+
 
       <Offcanvas
         isOpen={offcanvasOpen}
@@ -84,5 +80,72 @@ const App = () => {
     </>
   );
 };
+
+
+const App = () => {
+
+  const [isLoading, setIsLoading] = useState(true);
+
+
+  useEffect(() => {
+
+    const timer = setTimeout(() => {
+      setIsLoading(false);
+    }, 6000);
+
+
+    return () => clearTimeout(timer);
+
+  }, []);
+
+
+  if (isLoading) {
+
+    return (
+      <div
+        id="preloader"
+        className="preloader"
+      >
+        <Loading />
+      </div>
+    );
+
+  }
+
+
+  return (
+
+    <BrowserRouter>
+
+      <Routes>
+
+        {/* Home Page */}
+        <Route
+          path="/"
+          element={<Home />}
+        />
+
+
+        {/* Login Page */}
+        <Route
+          path="/login"
+          element={<Login />}
+        />
+
+
+        {/* Register Page */}
+        <Route
+          path="/register"
+          element={<Register />}
+        />
+
+      </Routes>
+
+    </BrowserRouter>
+
+  );
+
+};
+
 
 export default App;
