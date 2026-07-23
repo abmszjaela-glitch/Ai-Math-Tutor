@@ -25,6 +25,12 @@ import Footer from './component/Footer';
 import Login from './component/Login';
 import Register from './component/Register';
 
+import Algebra from './component/Learning/Algebra';
+import Measurement from './component/Learning/Measurement';
+import ProblemSolving from './component/Learning/ProblemSolving';
+import Statistics from './component/Learning/Statistics';
+
+import SelectFriend from './component/SelectFriend';
 
 const Home = () => {
   const [offcanvasOpen, setOffcanvasOpen] = useState(false);
@@ -137,6 +143,28 @@ const App = () => {
         <Route
           path="/register"
           element={<Register />}
+        />
+
+        <Route
+          path="/Algebra"
+          element={<Algebra />}
+        />
+
+        <Route
+          path="/Statistics"
+          element={<Statistics />}
+        />
+        <Route
+          path="/ProblemSolving"
+          element={<ProblemSolving />}
+        />
+        <Route
+          path="/Measurement"
+          element={<Measurement />}
+        />
+          <Route
+          path="/SelectFriend"
+          element={<SelectFriend />}
         />
 
       </Routes>

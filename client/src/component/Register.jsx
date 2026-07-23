@@ -2,7 +2,7 @@ import { useEffect } from 'react';
 import graphicImage from '../assets/img/Login/graphic15.svg';
 import logoImage from '../assets/img/logo/NUMORA.png';
 import authStyles from '../assets/Hooks/Authstyles.js';
-
+import { FaFacebookF, FaGoogle, FaLinkedinIn } from "react-icons/fa";
 const Register = () => {
 
   // Inject the auth-page CSS only while this component is mounted,
@@ -64,14 +64,13 @@ const Register = () => {
 
 
               {/* Title */}
-              <h3 className="font-md">
-                Get more things done with Login platform.
-              </h3>
+           <h3 className="font-md">
+  Start Learning with Your AI Math Tutor!
+</h3>
 
-              <p>
-                Access to the most powerful tool in the entire
-                design and web industry.
-              </p>
+<p>
+  Create your account and start improving your maths skills with AI.
+</p>
 
 
               {/* Register Form */}
@@ -133,15 +132,15 @@ const Register = () => {
                 </span>
 
                 <a href="#">
-                  <i className="fab fa-facebook-f"></i>
+                 <FaFacebookF/>
                 </a>
 
                 <a href="#">
-                  <i className="fab fa-google"></i>
+                 <FaGoogle/>
                 </a>
 
                 <a href="#">
-                  <i className="fab fa-linkedin-in"></i>
+                 <FaLinkedinIn/>
                 </a>
 
               </div>
