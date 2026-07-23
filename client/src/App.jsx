@@ -31,7 +31,7 @@ import ProblemSolving from './component/Learning/ProblemSolving';
 import Statistics from './component/Learning/Statistics';
 
 import SelectFriend from './component/SelectFriend';
-
+import TutorSession from "./component/TutorSession"
 const Home = () => {
   const [offcanvasOpen, setOffcanvasOpen] = useState(false);
 
@@ -166,7 +166,7 @@ const App = () => {
           path="/SelectFriend"
           element={<SelectFriend />}
         />
-
+<Route path="/tutor-session" element={<TutorSession />} />
       </Routes>
 
     </BrowserRouter>
