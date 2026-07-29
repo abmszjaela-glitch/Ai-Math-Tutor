@@ -1,5 +1,6 @@
 import { motion } from 'framer-motion';
 import { ArrowRight } from 'lucide-react';
+import { Link } from 'react-router-dom';
 
 import top1 from '../assets/img/program/top-1.png';
 import top2 from '../assets/img/program/top-2.png';
@@ -18,9 +19,14 @@ import chemicalBookIcon from '../assets/img/program/camical-book.png';
 
 const easeOut = [0.25, 0.1, 0.25, 1];
 
+// Create the motion-wrapped Link ONCE, outside the component,
+// so it isn't recreated on every render.
+const MotionLink = motion(Link);
+
 const programs = [
   {
     title: 'Number & Algebra',
+    path: '/Algebra',
     age: 'Australian Grade 6',
     description:
       'Build strong number skills with your friendly AI Math Tutor. Learn fractions, decimals, percentages, integers, and algebra through step-by-step explanations and interactive practice.',
@@ -32,6 +38,7 @@ const programs = [
   },
   {
     title: 'Measurement & Geometry',
+    path: '/Measurement',
     age: 'Australian Grade 6',
     description:
       'Explore measurement, shapes, angles, area, perimeter, and volume with your AI tutor. Understand mathematical ideas through clear examples and guided problem-solving.',
@@ -44,6 +51,7 @@ const programs = [
   },
   {
     title: 'Statistics & Probability',
+    path: '/Statistics',
     age: 'Australian Grade 6',
     description:
       'Learn how to read and understand data, graphs, tables, and probability. Your AI Math Tutor helps you discover patterns and solve real-world maths problems with confidence.',
@@ -56,6 +64,7 @@ const programs = [
   },
   {
     title: 'Problem Solving',
+    path: '/ProblemSolving',
     age: 'Australian Grade 6',
     description:
       'Put your maths skills into action with fun challenges and real-life problems. Get friendly AI guidance, hints, and step-by-step support without simply giving away the answer.',
@@ -69,12 +78,19 @@ const programs = [
 ];
 
 const cardVariants = {
-  hidden: { opacity: 0, y: 60, scale: 0.92 },
+  hidden: {
+    opacity: 0,
+    y: 60,
+    scale: 0.92,
+  },
   visible: {
     opacity: 1,
     y: 0,
     scale: 1,
-    transition: { duration: 0.75, ease: easeOut },
+    transition: {
+      duration: 0.75,
+      ease: easeOut,
+    },
   },
 };
 
@@ -82,7 +98,6 @@ const Program = () => {
   return (
     <section className="program-section section-padding pt-0 fix">
       <div className="container">
-
         <div className="row g-4">
 
           {programs.map((program, index) => (
@@ -91,16 +106,24 @@ const Program = () => {
               className="col-xl-3 col-lg-4 col-md-6 col-sm-6"
             >
               <motion.div
-                className={`program-box-item ${program.styleClass}`}
+                className={`program-box-item ${program.styleClass || ''}`}
                 variants={cardVariants}
                 initial="hidden"
                 whileInView="visible"
-                viewport={{ once: true, amount: 0.25 }}
-                transition={{ delay: program.delay }}
+                viewport={{
+                  once: true,
+                  amount: 0.25,
+                }}
+                transition={{
+                  delay: program.delay,
+                }}
                 whileHover={{
                   y: -14,
                   boxShadow: '0 20px 40px rgba(0,0,0,0.12)',
-                  transition: { duration: 0.35, ease: easeOut },
+                  transition: {
+                    duration: 0.35,
+                    ease: easeOut,
+                  },
                 }}
               >
 
@@ -110,12 +133,13 @@ const Program = () => {
                   initial={{ opacity: 0, y: -20 }}
                   whileInView={{ opacity: 1, y: 0 }}
                   viewport={{ once: true, amount: 0.5 }}
-                  transition={{ duration: 0.6, delay: program.delay + 0.15, ease: easeOut }}
+                  transition={{
+                    duration: 0.6,
+                    delay: program.delay + 0.15,
+                    ease: easeOut,
+                  }}
                 >
-                  <img
-                    src={program.topImage}
-                    alt="AI Math Tutor decoration"
-                  />
+                  <img src={program.topImage} alt="AI Math Tutor decoration" />
                 </motion.div>
 
                 {/* Bottom Decoration */}
@@ -124,18 +148,17 @@ const Program = () => {
                   initial={{ opacity: 0, y: 20 }}
                   whileInView={{ opacity: 1, y: 0 }}
                   viewport={{ once: true, amount: 0.5 }}
-                  transition={{ duration: 0.6, delay: program.delay + 0.15, ease: easeOut }}
+                  transition={{
+                    duration: 0.6,
+                    delay: program.delay + 0.15,
+                    ease: easeOut,
+                  }}
                 >
-                  <img
-                    src={program.bottomImage}
-                    alt="AI Math Tutor decoration"
-                  />
+                  <img src={program.bottomImage} alt="AI Math Tutor decoration" />
                 </motion.div>
 
                 {/* Background */}
-                <div
-                  className={`program-bg ${program.bgClass || ''}`}
-                ></div>
+                <div className={`program-bg ${program.bgClass || ''}`}></div>
 
                 {/* Program Icon */}
                 <motion.div
@@ -143,7 +166,11 @@ const Program = () => {
                   initial={{ opacity: 0, scale: 0, rotate: -30 }}
                   whileInView={{ opacity: 1, scale: 1, rotate: 0 }}
                   viewport={{ once: true, amount: 0.5 }}
-                  transition={{ duration: 0.6, delay: program.delay + 0.25, ease: easeOut }}
+                  transition={{
+                    duration: 0.6,
+                    delay: program.delay + 0.25,
+                    ease: easeOut,
+                  }}
                   whileHover={{ scale: 1.15, rotate: 10 }}
                 >
                   <img
@@ -155,27 +182,22 @@ const Program = () => {
                 {/* Program Content */}
                 <div className="program-content">
 
-                  <h3>
-                    {program.title}
-                  </h3>
+                  <h3>{program.title}</h3>
 
-                  <span>
-                    {program.age}
-                  </span>
+                  <span>{program.age}</span>
 
-                  <p>
-                    {program.description}
-                  </p>
+                  <p>{program.description}</p>
 
-                  <motion.a
-                    href="/program-details"
+                  {/* Navigate to Topic */}
+                  <MotionLink
+                    to={program.path}
                     className="link-btn"
                     whileHover={{ x: 6 }}
                     transition={{ duration: 0.25, ease: easeOut }}
                   >
                     Explore Topic
-                    <ArrowRight />
-                  </motion.a>
+                    <ArrowRight size={18} />
+                  </MotionLink>
 
                 </div>
 
@@ -184,7 +206,6 @@ const Program = () => {
           ))}
 
         </div>
-
       </div>
     </section>
   );
