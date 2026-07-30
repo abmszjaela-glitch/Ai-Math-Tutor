@@ -1,51 +1,136 @@
-import { useState, useRef } from "react";
-import { Mic, MicOff, ChevronDown } from "lucide-react";
+import { useState, useRef, useEffect } from "react";
+import { Mic, MicOff, ChevronDown, Play } from "lucide-react";
 import pandaVideo from "../assets/video/intro-lesson-panda.mp4";
 import kangarooVideo from "../assets/video/intro-lesson-kangaroo.mp4";
+import pandaAfterQuestion from "../assets/video/panda-after-question.mp4";
+import kangarooAfterQuestion from "../assets/video/kangaroo-after-question.mp4";
 
 const TUTORS = [
-  { id: "panda", name: "Panda", src: pandaVideo },
-  { id: "kangaroo", name: "Kangaroo", src: kangarooVideo },
+  { id: "panda", name: "Panda", introSrc: pandaVideo, afterSrc: pandaAfterQuestion },
+  { id: "kangaroo", name: "Kangaroo", introSrc: kangarooVideo, afterSrc: kangarooAfterQuestion },
 ];
 
 const StartLearning = () => {
+  const [hasEnteredExperience, setHasEnteredExperience] = useState(false);
   const [isRecording, setIsRecording] = useState(false);
-  const [hasStarted, setHasStarted] = useState(false);
+  const [videoEnded, setVideoEnded] = useState(false);
+  const [currentClip, setCurrentClip] = useState("intro");
   const [selectedTutor, setSelectedTutor] = useState(TUTORS[0]);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const [transcript, setTranscript] = useState("");
   const videoRef = useRef(null);
+  const recognitionRef = useRef(null);
 
-  const toggleMic = () => {
-    if (!hasStarted && videoRef.current) {
-      videoRef.current.muted = false;
-      videoRef.current.currentTime = 0;
+  useEffect(() => {
+    const SpeechRecognition =
+      window.SpeechRecognition || window.webkitSpeechRecognition;
+
+    if (!SpeechRecognition) {
+      console.warn("SpeechRecognition not supported in this browser.");
+      return;
+    }
+
+    const recognition = new SpeechRecognition();
+    recognition.continuous = true;
+    recognition.interimResults = true;
+    recognition.lang = "en-US";
+
+    recognition.onresult = (event) => {
+      let finalText = "";
+      let interimText = "";
+
+      for (let i = event.resultIndex; i < event.results.length; i++) {
+        const result = event.results[i];
+        if (result.isFinal) {
+          finalText += result[0].transcript;
+        } else {
+          interimText += result[0].transcript;
+        }
+      }
+
+      setTranscript((prev) => prev + finalText);
+      if (interimText) {
+        setTranscript((prev) => prev.replace(/\[\.\.\..*?\]$/, "") + `[...${interimText}]`);
+      }
+    };
+
+    recognition.onerror = (event) => {
+      console.error("Speech recognition error:", event.error);
+    };
+
+    recognition.onend = () => {
+      setIsRecording(false);
+      setCurrentClip("after");
+    };
+
+    recognitionRef.current = recognition;
+
+    return () => {
+      recognition.stop();
+    };
+  }, []);
+
+  // This click is the user gesture that unlocks audio for the whole page.
+  const handleEnterExperience = () => {
+    setHasEnteredExperience(true);
+    // videoRef will remount with the intro clip; play() happens in the
+    // useEffect below once the new element exists.
+  };
+
+  // Whenever hasEnteredExperience flips true, or the clip/tutor changes,
+  // explicitly call play() with sound (autoPlay alone can be flaky right
+  // after a remount).
+  useEffect(() => {
+    if (hasEnteredExperience && videoRef.current) {
       videoRef.current.play().catch((err) => {
         console.error("Playback with audio failed:", err);
       });
-      setHasStarted(true);
     }
-    setIsRecording((prev) => !prev);
-    // TODO: hook this up to your actual speech/audio capture logic
+  }, [hasEnteredExperience, currentClip, selectedTutor]);
+
+  const toggleMic = () => {
+    if (!videoEnded || !recognitionRef.current) return;
+
+    if (isRecording) {
+      recognitionRef.current.stop();
+    } else {
+      setTranscript("");
+      recognitionRef.current.start();
+      setIsRecording(true);
+    }
+  };
+
+  const handleVideoEnded = (e) => {
+    e.currentTarget.pause();
+    if (currentClip === "intro") {
+      setVideoEnded(true);
+    }
   };
 
   const handleTutorChange = (tutor) => {
     setSelectedTutor(tutor);
     setIsDropdownOpen(false);
-    setHasStarted(false);
+    setVideoEnded(false);
+    setCurrentClip("intro");
     setIsRecording(false);
+    setTranscript("");
+    if (recognitionRef.current) recognitionRef.current.stop();
   };
+
+  const activeVideoSrc =
+    currentClip === "intro" ? selectedTutor.introSrc : selectedTutor.afterSrc;
 
   return (
     <section className="section-padding" style={{ position: "relative" }}>
-      {/* Tutor switcher — fixed to viewport, sits below header/orange button */}
-      <div
-        style={{
-          position: "fixed",
-          top: "100px",
-          right: "24px",
-          zIndex: 999,
-        }}
-      >
+      {/* Tutor switcher */}
+     <div
+  style={{
+    position: "fixed",
+    top: "210px",
+    right: "24px",
+    zIndex: 999,
+  }}
+>
         <button
           onClick={() => setIsDropdownOpen((prev) => !prev)}
           style={{
@@ -115,70 +200,152 @@ const StartLearning = () => {
           dashboard, course information, or a free trial.
         </p>
 
-        {/* Avatar (left) + Mic (right) row */}
         <div
           style={{
             display: "flex",
-            alignItems: "center",
+            alignItems: "stretch",
             justifyContent: "space-between",
             gap: "40px",
             marginTop: "24px",
             flexWrap: "wrap",
           }}
         >
-          <div style={{ flex: "1 1 400px", maxWidth: "500px" }}>
-            <video
-              key={selectedTutor.id}
-              ref={videoRef}
-              src={selectedTutor.src}
-              muted
-              loop
-              playsInline
-              disablePictureInPicture
-              style={{
-                width: "100%",
-                borderRadius: "16px",
-                pointerEvents: "none",
-              }}
-            />
-          </div>
-
+          {/* Left: transcript screen + mic */}
           <div
             style={{
-              flex: "1 1 200px",
+              flex: "1 1 400px",
               display: "flex",
               flexDirection: "column",
-              alignItems: "center",
-              gap: "12px",
+              gap: "16px",
             }}
           >
-            <button
-              onClick={toggleMic}
-              aria-label={isRecording ? "Stop recording" : "Start recording"}
+            <div
               style={{
-                width: "96px",
-                height: "96px",
-                borderRadius: "50%",
-                border: "none",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                cursor: "pointer",
-                backgroundColor: isRecording ? "#ef4444" : "#4f46e5",
-                color: "#fff",
-                boxShadow: "0 8px 24px rgba(79, 70, 229, 0.35)",
-                transition: "background-color 0.2s ease, transform 0.15s ease",
+                flex: 1,
+                minHeight: "280px",
+                backgroundColor: "#f9fafb",
+                border: "1px solid #e5e7eb",
+                borderRadius: "16px",
+                padding: "20px",
+                fontSize: "16px",
+                color: transcript ? "#111827" : "#9ca3af",
+                overflowY: "auto",
               }}
-              onMouseDown={(e) => (e.currentTarget.style.transform = "scale(0.95)")}
-              onMouseUp={(e) => (e.currentTarget.style.transform = "scale(1)")}
             >
-              {isRecording ? <MicOff size={40} /> : <Mic size={40} />}
-            </button>
+              {transcript ||
+                (!hasEnteredExperience
+                  ? "Tap the play button to meet your tutor."
+                  : videoEnded
+                  ? "Tap the mic and start speaking — your words will appear here."
+                  : "Waiting for the intro to finish...")}
+            </div>
 
-            {!hasStarted && (
-              <p style={{ fontSize: "14px", color: "#6b7280", textAlign: "center" }}>
-                Tap to start talking with {selectedTutor.name}
+            <div
+              style={{
+                display: "flex",
+                flexDirection: "column",
+                alignItems: "center",
+                gap: "8px",
+              }}
+            >
+              <button
+                onClick={toggleMic}
+                disabled={!videoEnded}
+                aria-label={isRecording ? "Stop recording" : "Start recording"}
+                style={{
+                  width: "80px",
+                  height: "80px",
+                  borderRadius: "50%",
+                  border: "none",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  cursor: videoEnded ? "pointer" : "not-allowed",
+                  backgroundColor: !videoEnded
+                    ? "#c7c7c7"
+                    : isRecording
+                    ? "#ef4444"
+                    : "#4f46e5",
+                  color: "#fff",
+                  boxShadow: videoEnded
+                    ? "0 8px 24px rgba(79, 70, 229, 0.35)"
+                    : "none",
+                  transition: "background-color 0.2s ease, transform 0.15s ease",
+                  opacity: videoEnded ? 1 : 0.6,
+                }}
+                onMouseDown={(e) =>
+                  videoEnded && (e.currentTarget.style.transform = "scale(0.95)")
+                }
+                onMouseUp={(e) => (e.currentTarget.style.transform = "scale(1)")}
+              >
+                {isRecording ? <MicOff size={32} /> : <Mic size={32} />}
+              </button>
+
+              <p style={{ fontSize: "13px", color: "#6b7280" }}>
+                {!hasEnteredExperience
+                  ? "Tap play to begin"
+                  : !videoEnded
+                  ? "Mic unlocks after the intro"
+                  : isRecording
+                  ? "Listening..."
+                  : `Tap to talk to ${selectedTutor.name}`}
               </p>
+            </div>
+          </div>
+
+          {/* Right: avatar video */}
+          <div
+            style={{
+              flex: "1 1 400px",
+              maxWidth: "500px",
+              position: "relative",
+            }}
+          >
+            {hasEnteredExperience ? (
+              <video
+                key={`${selectedTutor.id}-${currentClip}`}
+                ref={videoRef}
+                src={activeVideoSrc}
+                playsInline
+                disablePictureInPicture
+                onEnded={handleVideoEnded}
+                style={{
+                  width: "100%",
+                  borderRadius: "16px",
+                  pointerEvents: "none",
+                }}
+              />
+            ) : (
+              <div
+                style={{
+                  width: "100%",
+                  aspectRatio: "16 / 9",
+                  borderRadius: "16px",
+                  backgroundColor: "#111827",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                }}
+              >
+                <button
+                  onClick={handleEnterExperience}
+                  aria-label="Start"
+                  style={{
+                    width: "72px",
+                    height: "72px",
+                    borderRadius: "50%",
+                    border: "none",
+                    backgroundColor: "#fff",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    cursor: "pointer",
+                    boxShadow: "0 8px 24px rgba(0,0,0,0.35)",
+                  }}
+                >
+                  <Play size={32} fill="#4f46e5" color="#4f46e5" />
+                </button>
+              </div>
             )}
           </div>
         </div>
