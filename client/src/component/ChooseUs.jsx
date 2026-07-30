@@ -11,6 +11,7 @@ import zikzak from '../assets/img/choose/zikzak.png';
 import counShape from '../assets/img/choose/coun-shape.png';
 
 import bricksIcon from '../assets/img/choose/bricks-1.svg';
+import { Link } from "react-router-dom";
 
 const easeOut = [0.25, 0.1, 0.25, 1];
 
@@ -234,16 +235,16 @@ const ChooseUs = () => {
                 {/* Button */}
                 <motion.div className="choose-button" variants={itemUp}>
 
-                  <motion.a
-                    href="/contact"
-                    className="theme-btn"
-                    whileHover={{ scale: 1.06, y: -3 }}
-                    whileTap={{ scale: 0.96 }}
-                    transition={{ duration: 0.3, ease: easeOut }}
-                  >
-                    Start Learning Maths
-                    <i className="icon-arrow-icon"></i>
-                  </motion.a>
+                 <motion.div
+  whileHover={{ scale: 1.06, y: -3 }}
+  whileTap={{ scale: 0.96 }}
+  transition={{ duration: 0.3, ease: easeOut }}
+>
+  <Link to="/start-learning" className="theme-btn">
+    Start Learning Maths
+    <i className="icon-arrow-icon"></i>
+  </Link>
+</motion.div>
 
                 </motion.div>
 

@@ -32,57 +32,37 @@ import Statistics from './component/Learning/Statistics';
 
 import SelectFriend from './component/SelectFriend';
 import TutorSession from "./component/TutorSession"
-const Home = () => {
-  const [offcanvasOpen, setOffcanvasOpen] = useState(false);
 
+
+import MainLayout from "./component/MainLayout";
+import StartLearning from "./component/StartLearning";
+
+const Home = () => {
   return (
     <>
-      <Header
-        onMenuClick={() => setOffcanvasOpen(true)}
-      />
+      <Hero />
 
-      <main>
+      <About />
 
-        <Hero />
+      <Program />
 
-        <About />
+      <Classes />
 
-        <Program />
+      <ChooseUs />
 
-        <Classes />
+      <Team />
 
-        <ChooseUs />
+      <Counter />
 
-        <Team />
+      <Session />
 
-        <Counter />
+      <Testimonial />
 
-        <Session />
+      <Brand />
 
-        <Testimonial />
+      <Contact />
 
-        <Brand />
-
-        <Contact />
-
-        <Newsletter />
-
-        <Footer />
-
-      </main>
-
-
-      <Offcanvas
-        isOpen={offcanvasOpen}
-        onClose={() => setOffcanvasOpen(false)}
-      />
-
-      <SearchPopup />
-
-      <MouseCursor />
-
-      <BackToTop />
-
+      <Newsletter />
     </>
   );
 };
@@ -125,49 +105,55 @@ const App = () => {
 
       <Routes>
 
-        {/* Home Page */}
-        <Route
-          path="/"
-          element={<Home />}
-        />
+  <Route element={<MainLayout />}>
+    <Route path="/" element={<Home />} />
+    <Route
+      path="/start-learning"
+      element={<StartLearning />}
+    />
+  </Route>
 
+  <Route
+    path="/login"
+    element={<Login />}
+  />
 
-        {/* Login Page */}
-        <Route
-          path="/login"
-          element={<Login />}
-        />
+  <Route
+    path="/register"
+    element={<Register />}
+  />
 
+  <Route
+    path="/Algebra"
+    element={<Algebra />}
+  />
 
-        {/* Register Page */}
-        <Route
-          path="/register"
-          element={<Register />}
-        />
+  <Route
+    path="/Statistics"
+    element={<Statistics />}
+  />
 
-        <Route
-          path="/Algebra"
-          element={<Algebra />}
-        />
+  <Route
+    path="/ProblemSolving"
+    element={<ProblemSolving />}
+  />
 
-        <Route
-          path="/Statistics"
-          element={<Statistics />}
-        />
-        <Route
-          path="/ProblemSolving"
-          element={<ProblemSolving />}
-        />
-        <Route
-          path="/Measurement"
-          element={<Measurement />}
-        />
-          <Route
-          path="/SelectFriend"
-          element={<SelectFriend />}
-        />
-<Route path="/tutor-session" element={<TutorSession />} />
-      </Routes>
+  <Route
+    path="/Measurement"
+    element={<Measurement />}
+  />
+
+  <Route
+    path="/SelectFriend"
+    element={<SelectFriend />}
+  />
+
+  <Route
+    path="/tutor-session"
+    element={<TutorSession />}
+  />
+
+</Routes>
 
     </BrowserRouter>
 
