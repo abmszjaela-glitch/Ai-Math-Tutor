@@ -37,6 +37,7 @@ import TutorSession from "./component/TutorSession"
 import MainLayout from "./component/MainLayout";
 import StartLearning from "./component/StartLearning";
 
+import Stdashboard from "./component/admin/StudentDashboard"
 const Home = () => {
   return (
     <>
@@ -122,6 +123,10 @@ const App = () => {
     path="/register"
     element={<Register />}
   />
+  <Route
+    path="/dashboard"
+    element={<Stdashboard />}
+  />
 
   <Route
     path="/Algebra"
@@ -154,6 +159,7 @@ const App = () => {
   />
 
 </Routes>
+
 
     </BrowserRouter>
 

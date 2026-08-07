@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ArrowLeft, ArrowRight, Mic, MicOff, Sparkles, Volume2, X } from 'lucide-react';
+import { AlertCircle, ArrowLeft, ArrowRight, Mic, MicOff, Sparkles, Volume2, X } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
 // === DUMMY PLACEHOLDER IMAGES ===
@@ -11,12 +11,48 @@ import slideDummy2 from '../assets/img/lessons/k2.jpeg';
 import slideDummy3 from '../assets/img/lessons/k3.jpeg';
 import slideDummy4 from '../assets/img/lessons/k4.jpeg';
 
+// === REDESIGN NOTES ===
+// Same voice-tutor logic as before (speech recognition + synthesis, lesson
+// data, the reply engine) — nothing about how it *works* has changed.
+// What changed is the visual layer:
+//  - a small, deliberate color/type token system instead of scattered hexes
+//  - a signature "tutor mark" (a mascot silhouette — kangaroo ears for Kanga,
+//    panda ears for Pandy) built from CSS, replacing the letter-in-a-circle
+//  - glass surfaces on the header and tutor bubbles
+//  - a "thinking…" indicator while a reply is on its way
+//  - an inline toast instead of a blocking alert() for the unsupported-mic case
+//  - keyboard (← →, Esc) and swipe navigation in the lesson viewer
+//  - prefers-reduced-motion is respected throughout
+
 const easeOut = [0.25, 0.1, 0.25, 1];
 const STORAGE_KEY = 'selectedTutorId';
+
+// === DESIGN TOKENS ===
+const palette = {
+  ink: '#161A2E',
+  paper: '#F5F6FA',
+  surface: '#FFFFFF',
+  mist: '#E3E6EF',
+  slate: '#6B7288',
+  faint: '#9AA1B4',
+  listening: '#E2483F',
+};
+
+const fontDisplay = "'Outfit', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif";
+const fontBody = "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif";
+const fontMono = "'IBM Plex Mono', 'SFMono-Regular', Consolas, monospace";
+
+const shadow = {
+  sm: '0 2px 10px rgba(22,26,46,0.06)',
+  md: '0 10px 28px rgba(22,26,46,0.10)',
+  lg: '0 24px 56px rgba(22,26,46,0.16)',
+};
 
 // Voice personalities — tuned for a warm, clear, kid-friendly Australian accent.
 // lang 'en-AU' asks the browser for an Australian voice first; namePreferHints
 // are common Australian voice names shipped on Chrome/Edge/Safari/Windows.
+// color/deep/gradient/buttonGradient/glow/earStyle drive the tutor's visual
+// mark (see TutorMark below) — everything else here is unchanged.
 const tutorProfiles = {
   kanga: {
     label: 'Kanga',
@@ -25,7 +61,12 @@ const tutorProfiles = {
     rate: 0.96,
     namePreferHints: ['Australia', 'Karen', 'Catherine', 'female'],
     greeting: "G'day, I'm Kanga! I'm so excited to help you learn maths today. Tap the microphone and ask me anything, or ask me to show you a step-by-step example.",
-    color: '#F5A623',
+    color: '#F0A23D',
+    deep: '#C4611A',
+    gradient: 'linear-gradient(135deg, #FFCB82 0%, #F0A23D 55%, #E1791F 100%)',
+    buttonGradient: 'linear-gradient(135deg, #F0A23D 0%, #C4611A 100%)',
+    glow: 'rgba(240,162,61,0.38)',
+    earStyle: 'kangaroo',
   },
   pandy: {
     label: 'Pandy',
@@ -34,7 +75,12 @@ const tutorProfiles = {
     rate: 0.94,
     namePreferHints: ['Australia', 'male', 'Lee', 'William'],
     greeting: "G'day, I'm Pandy! Ready to work through some maths together? Tap the microphone and ask me a question, or ask for a step-by-step example.",
-    color: '#4C6EF5',
+    color: '#4A5FE0',
+    deep: '#1E1A4A',
+    gradient: 'linear-gradient(135deg, #93A4FF 0%, #4A5FE0 55%, #3626B8 100%)',
+    buttonGradient: 'linear-gradient(135deg, #4A5FE0 0%, #1E1A4A 100%)',
+    glow: 'rgba(74,95,224,0.38)',
+    earStyle: 'panda',
   },
 };
 
@@ -173,16 +219,214 @@ const lessons = {
   },
 };
 
+// Respects the OS-level "reduce motion" setting so looping/ambient
+// animation can stand down for anyone who's asked for that.
+const usePrefersReducedMotion = () => {
+  const [reduced, setReduced] = useState(false);
+
+  useEffect(() => {
+    if (!window.matchMedia) return;
+    const query = window.matchMedia('(prefers-reduced-motion: reduce)');
+    setReduced(query.matches);
+    const handleChange = (e) => setReduced(e.matches);
+    if (query.addEventListener) query.addEventListener('change', handleChange);
+    else query.addListener(handleChange);
+    return () => {
+      if (query.removeEventListener) query.removeEventListener('change', handleChange);
+      else query.removeListener(handleChange);
+    };
+  }, []);
+
+  return reduced;
+};
+
+// A small voice-reactive equalizer — shows "audio is actively happening"
+// (speaking or listening) without relying on words alone.
+const SoundBars = ({ active, reducedMotion, color = '#fff', count = 4, height = 15 }) => (
+  <div style={{ display: 'flex', alignItems: 'flex-end', gap: '3px', height }}>
+    {Array.from({ length: count }).map((_, i) =>
+      reducedMotion ? (
+        <span
+          key={i}
+          style={{
+            display: 'block',
+            width: '3px',
+            height: active ? '70%' : '30%',
+            borderRadius: '2px',
+            background: color,
+          }}
+        />
+      ) : (
+        <motion.span
+          key={i}
+          animate={active ? { scaleY: [0.3, 1, 0.45, 0.85, 0.3] } : { scaleY: 0.3 }}
+          transition={{ duration: 0.9, repeat: active ? Infinity : 0, ease: 'easeInOut', delay: i * 0.12 }}
+          style={{
+            display: 'block',
+            width: '3px',
+            height: '100%',
+            borderRadius: '2px',
+            background: color,
+            transformOrigin: 'bottom',
+          }}
+        />
+      )
+    )}
+  </div>
+);
+
+// Shown in place of a reply while the tutor "thinks" — a standard chat
+// affordance so a short pause never reads as the app having stalled.
+const ThinkingDots = ({ color, reducedMotion }) => (
+  <div style={{ display: 'flex', gap: '5px', padding: '3px 2px' }}>
+    {[0, 1, 2].map((i) =>
+      reducedMotion ? (
+        <span
+          key={i}
+          style={{ width: 6, height: 6, borderRadius: '50%', background: color, opacity: 0.5 + i * 0.15 }}
+        />
+      ) : (
+        <motion.span
+          key={i}
+          animate={{ y: [0, -5, 0] }}
+          transition={{ duration: 0.9, repeat: Infinity, ease: 'easeInOut', delay: i * 0.15 }}
+          style={{ width: 6, height: 6, borderRadius: '50%', background: color, display: 'inline-block' }}
+        />
+      )
+    )}
+  </div>
+);
+
+// The signature mark: a mascot silhouette built from a gradient core plus
+// a pair of ear shapes unique to each tutor — Kanga's angled kangaroo ears,
+// Pandy's round panda ears — instead of a generic orb or a letter-in-a-circle.
+// Ears only render above a legible size; small chip-sized uses fall back to
+// a clean glowing dot so nothing turns to mush at 30px.
+const TutorMark = ({ profile, size = 112, speaking = false, reducedMotion = false }) => {
+  const earSize = size * 0.34;
+  const wrapHeight = size + earSize * 0.62;
+  const showEars = size >= 80;
+
+  return (
+    <div style={{ position: 'relative', width: size, height: wrapHeight, flexShrink: 0 }}>
+      {/* static ambient glow — gives presence at rest without any motion */}
+      <div
+        style={{
+          position: 'absolute',
+          left: '50%',
+          bottom: 0,
+          transform: 'translateX(-50%)',
+          width: size * 1.3,
+          height: size * 1.3,
+          borderRadius: '50%',
+          background: profile.gradient,
+          opacity: 0.24,
+          filter: `blur(${Math.round(size * 0.22)}px)`,
+        }}
+      />
+
+      {showEars && profile.earStyle === 'kangaroo' && (
+        <>
+          <div
+            style={{
+              position: 'absolute',
+              top: 0,
+              left: size * 0.06,
+              width: earSize * 0.6,
+              height: earSize,
+              borderRadius: '60% 60% 55% 55% / 70% 70% 35% 35%',
+              background: profile.deep,
+              transform: 'rotate(-26deg)',
+              transformOrigin: 'bottom center',
+            }}
+          />
+          <div
+            style={{
+              position: 'absolute',
+              top: 0,
+              right: size * 0.06,
+              width: earSize * 0.6,
+              height: earSize,
+              borderRadius: '60% 60% 55% 55% / 70% 70% 35% 35%',
+              background: profile.deep,
+              transform: 'rotate(26deg)',
+              transformOrigin: 'bottom center',
+            }}
+          />
+        </>
+      )}
+
+      {showEars && profile.earStyle === 'panda' && (
+        <>
+          <div
+            style={{
+              position: 'absolute',
+              top: earSize * 0.05,
+              left: -earSize * 0.1,
+              width: earSize,
+              height: earSize,
+              borderRadius: '50%',
+              background: profile.deep,
+            }}
+          />
+          <div
+            style={{
+              position: 'absolute',
+              top: earSize * 0.05,
+              right: -earSize * 0.1,
+              width: earSize,
+              height: earSize,
+              borderRadius: '50%',
+              background: profile.deep,
+            }}
+          />
+        </>
+      )}
+
+      <motion.div
+        animate={speaking && !reducedMotion ? { scale: [1, 1.045, 1] } : { scale: 1 }}
+        transition={{ duration: 1.1, repeat: speaking && !reducedMotion ? Infinity : 0, ease: 'easeInOut' }}
+        style={{
+          position: 'absolute',
+          bottom: 0,
+          left: 0,
+          width: size,
+          height: size,
+          borderRadius: '50%',
+          background: profile.gradient,
+          boxShadow: `0 ${Math.round(size * 0.12)}px ${Math.round(size * 0.3)}px ${profile.glow}`,
+        }}
+      >
+        <div
+          style={{
+            position: 'absolute',
+            top: '15%',
+            left: '19%',
+            width: '34%',
+            height: '26%',
+            borderRadius: '50%',
+            background: 'rgba(255,255,255,0.32)',
+            filter: 'blur(4px)',
+          }}
+        />
+      </motion.div>
+    </div>
+  );
+};
+
 const TutorSession = () => {
   const navigate = useNavigate();
+  const reducedMotion = usePrefersReducedMotion();
 
   const [tutorId, setTutorId] = useState(DEFAULT_TUTOR_ID);
   const [messages, setMessages] = useState([]);
   const [isListening, setIsListening] = useState(false);
   const [isSpeaking, setIsSpeaking] = useState(false);
+  const [isThinking, setIsThinking] = useState(false);
   const [voicesReady, setVoicesReady] = useState(false);
   const [micSupported, setMicSupported] = useState(true);
   const [interimText, setInterimText] = useState('');
+  const [notice, setNotice] = useState(null);
 
   // Lesson slide state
   const [activeLessonKey, setActiveLessonKey] = useState(null);
@@ -192,6 +436,8 @@ const TutorSession = () => {
   const recognitionRef = useRef(null);
   const messagesEndRef = useRef(null);
   const hasGreetedRef = useRef(false);
+  const noticeTimeoutRef = useRef(null);
+  const touchStartXRef = useRef(null);
 
   const profile = tutorProfiles[tutorId] || tutorProfiles[DEFAULT_TUTOR_ID];
   const activeLesson = activeLessonKey ? lessons[activeLessonKey] : null;
@@ -261,12 +507,13 @@ const TutorSession = () => {
     return () => {
       if ('speechSynthesis' in window) window.speechSynthesis.cancel();
       if (recognitionRef.current) recognitionRef.current.abort();
+      if (noticeTimeoutRef.current) clearTimeout(noticeTimeoutRef.current);
     };
   }, []);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [messages, interimText]);
+  }, [messages, interimText, isThinking]);
 
   useEffect(() => {
     if (voicesReady && !hasGreetedRef.current) {
@@ -275,6 +522,21 @@ const TutorSession = () => {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [voicesReady, tutorId]);
+
+  // Keyboard navigation for the lesson viewer — arrow keys move between
+  // slides, Escape closes it. Purely additive; the on-screen buttons and
+  // swipe gesture below still work exactly the same.
+  useEffect(() => {
+    if (!activeLessonKey) return;
+    const handleKeyDown = (e) => {
+      if (e.key === 'ArrowRight') goToSlide(slideIndex + 1);
+      else if (e.key === 'ArrowLeft') goToSlide(slideIndex - 1);
+      else if (e.key === 'Escape') closeLesson();
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeLessonKey, slideIndex]);
 
   const pickVoice = () => {
     if (!('speechSynthesis' in window)) return null;
@@ -330,11 +592,19 @@ const TutorSession = () => {
     setMessages((prev) => [...prev, { sender: 'student', text }]);
   };
 
+  const showNotice = (text) => {
+    setNotice(text);
+    if (noticeTimeoutRef.current) clearTimeout(noticeTimeoutRef.current);
+    noticeTimeoutRef.current = setTimeout(() => setNotice(null), 4000);
+  };
+
   const handleStudentMessage = (text) => {
     addStudentMessage(text);
     setInterimText('');
+    setIsThinking(true);
 
     setTimeout(() => {
+      setIsThinking(false);
       const entry = getReplyEntry(text);
       const reply = entry ? entry.reply : fallbackReplies[Math.floor(Math.random() * fallbackReplies.length)];
       addTutorMessage(reply);
@@ -343,12 +613,12 @@ const TutorSession = () => {
         // Give the reply a moment to finish, then open the lesson slides.
         setTimeout(() => startLesson(entry.lesson), 400);
       }
-    }, 500);
+    }, 700);
   };
 
   const toggleMic = () => {
     if (!micSupported) {
-      alert("Sorry, your browser doesn't support voice input. Try Chrome on desktop or Android.");
+      showNotice("Voice input isn't available in this browser. Try Chrome on desktop or Android.");
       return;
     }
     if (isListening) {
@@ -402,26 +672,98 @@ const TutorSession = () => {
     handleStudentMessage('Can you show me a step-by-step example?');
   };
 
+  // Swipe left/right on the slide image — an alternate path to the same
+  // Back/Next functions, handy on phones and tablets.
+  const handleTouchStart = (e) => {
+    touchStartXRef.current = e.touches[0].clientX;
+  };
+
+  const handleTouchEnd = (e) => {
+    if (touchStartXRef.current === null) return;
+    const deltaX = e.changedTouches[0].clientX - touchStartXRef.current;
+    touchStartXRef.current = null;
+    if (Math.abs(deltaX) < 40) return;
+    if (deltaX < 0) goToSlide(slideIndex + 1);
+    else goToSlide(slideIndex - 1);
+  };
+
   const isLastSlide = activeLesson && slideIndex === activeLesson.slides.length - 1;
+
+  const tutorBubbleStyle = {
+    maxWidth: '78%',
+    padding: '13px 17px',
+    borderRadius: '18px',
+    borderBottomLeftRadius: '6px',
+    fontFamily: fontBody,
+    fontSize: '0.93rem',
+    lineHeight: 1.55,
+    background: 'rgba(255,255,255,0.82)',
+    backdropFilter: 'blur(10px)',
+    WebkitBackdropFilter: 'blur(10px)',
+    color: palette.ink,
+    border: `1px solid ${palette.mist}`,
+    borderLeft: `3px solid ${profile.color}`,
+    boxShadow: shadow.sm,
+  };
+
+  const studentBubbleStyle = {
+    maxWidth: '78%',
+    padding: '13px 17px',
+    borderRadius: '18px',
+    borderBottomRightRadius: '6px',
+    fontFamily: fontBody,
+    fontSize: '0.93rem',
+    lineHeight: 1.55,
+    background: 'linear-gradient(135deg, #1E2440 0%, #12172B 100%)',
+    color: '#fff',
+    boxShadow: shadow.sm,
+  };
 
   return (
     <section
       style={{
+        '--accent': profile.color,
         minHeight: '100vh',
-        background: '#FAF9F6',
+        background: palette.paper,
         display: 'flex',
         flexDirection: 'column',
+        fontFamily: fontBody,
       }}
     >
+      <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@500;600&family=Inter:wght@400;500;600;700&family=Outfit:wght@600;700;800&display=swap');
+
+        .focus-ring:focus-visible {
+          outline: 2px solid var(--accent, #4A5FE0);
+          outline-offset: 2px;
+        }
+        .focus-ring:focus:not(:focus-visible) {
+          outline: none;
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+          *, *::before, *::after {
+            animation-duration: 0.01ms !important;
+            animation-iteration-count: 1 !important;
+            transition-duration: 0.01ms !important;
+          }
+        }
+      `}</style>
+
       {/* Header */}
       <div
         style={{
+          position: 'sticky',
+          top: 0,
+          zIndex: 20,
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
-          padding: '18px 24px',
-          borderBottom: '1px solid #E6E4DD',
-          background: '#fff',
+          padding: '16px 24px',
+          borderBottom: `1px solid ${palette.mist}`,
+          background: 'rgba(255,255,255,0.78)',
+          backdropFilter: 'blur(14px)',
+          WebkitBackdropFilter: 'blur(14px)',
         }}
       >
         <motion.button
@@ -429,106 +771,90 @@ const TutorSession = () => {
           onClick={() => navigate(-1)}
           whileHover={{ x: -3 }}
           whileTap={{ scale: 0.95 }}
+          className="focus-ring"
           style={{
             display: 'flex',
             alignItems: 'center',
             gap: '8px',
             background: 'none',
             border: 'none',
-            color: '#14213D',
+            color: palette.ink,
+            fontFamily: fontBody,
             fontWeight: 600,
             fontSize: '0.95rem',
             cursor: 'pointer',
+            padding: '6px 8px',
+            borderRadius: '10px',
           }}
         >
           <ArrowLeft size={18} />
           Back
         </motion.button>
 
-        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-          <div
-            style={{
-              width: '34px',
-              height: '34px',
-              borderRadius: '50%',
-              background: profile.color,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              color: '#fff',
-              fontWeight: 700,
-              fontSize: '0.85rem',
-            }}
-          >
-            {profile.label.charAt(0)}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', lineHeight: 1.15 }}>
+            <span style={{ fontFamily: fontDisplay, fontWeight: 700, color: palette.ink, fontSize: '0.95rem' }}>
+              {profile.label}
+            </span>
+            <span
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '5px',
+                fontSize: '0.72rem',
+                color: palette.slate,
+                fontWeight: 500,
+              }}
+            >
+              <span
+                style={{
+                  width: 6,
+                  height: 6,
+                  borderRadius: '50%',
+                  background: isSpeaking ? profile.color : isListening ? palette.listening : palette.faint,
+                }}
+              />
+              {isSpeaking ? 'Speaking' : isListening ? 'Listening' : 'Ready'}
+            </span>
           </div>
-          <span style={{ fontWeight: 700, color: '#14213D', fontSize: '1rem' }}>
-            {profile.label}
-          </span>
+          <TutorMark profile={profile} size={38} speaking={isSpeaking} reducedMotion={reducedMotion} />
         </div>
       </div>
 
-      {/* Tutor avatar + status */}
+      {/* Hero: tutor mark + live status */}
       <div
         style={{
           display: 'flex',
           flexDirection: 'column',
           alignItems: 'center',
-          padding: '32px 20px 12px',
+          padding: '36px 20px 16px',
         }}
       >
-        <motion.div
-          animate={isSpeaking ? { scale: [1, 1.06, 1] } : { scale: 1 }}
-          transition={{ duration: 0.9, repeat: isSpeaking ? Infinity : 0, ease: 'easeInOut' }}
-          style={{
-            position: 'relative',
-            width: '110px',
-            height: '110px',
-            borderRadius: '50%',
-            background: profile.color,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            color: '#fff',
-            fontSize: '2.2rem',
-            fontWeight: 700,
-            boxShadow: `0 10px 30px ${profile.color}55`,
-          }}
-        >
-          {profile.label.charAt(0)}
-          {isSpeaking && (
-            <motion.span
-              initial={{ opacity: 0.5, scale: 1 }}
-              animate={{ opacity: 0, scale: 1.6 }}
-              transition={{ duration: 1.1, repeat: Infinity, ease: 'easeOut' }}
-              style={{
-                position: 'absolute',
-                inset: 0,
-                borderRadius: '50%',
-                border: `3px solid ${profile.color}`,
-              }}
-            />
-          )}
-        </motion.div>
+        <TutorMark profile={profile} size={116} speaking={isSpeaking} reducedMotion={reducedMotion} />
 
         <p
           style={{
-            marginTop: '14px',
-            fontSize: '0.9rem',
+            marginTop: '18px',
+            fontFamily: fontBody,
+            fontSize: '0.92rem',
             fontWeight: 600,
-            color: '#5B6B85',
+            color: palette.slate,
             display: 'flex',
             alignItems: 'center',
-            gap: '6px',
+            gap: '8px',
+            minHeight: '20px',
           }}
         >
           {isSpeaking ? (
             <>
-              <Volume2 size={16} color={profile.color} />
+              <SoundBars active reducedMotion={reducedMotion} color={profile.color} height={14} />
               {profile.label} is speaking…
             </>
           ) : isListening ? (
-            'Listening…'
+            <>
+              <SoundBars active reducedMotion={reducedMotion} color={palette.listening} height={14} />
+              Listening…
+            </>
           ) : (
             `Tap the microphone to talk with ${profile.label}`
           )}
@@ -538,18 +864,20 @@ const TutorSession = () => {
         <motion.button
           type="button"
           onClick={requestExample}
-          whileHover={{ scale: 1.03 }}
+          whileHover={{ scale: 1.03, y: -1 }}
           whileTap={{ scale: 0.97 }}
+          className="focus-ring"
           style={{
-            marginTop: '10px',
+            marginTop: '14px',
             display: 'flex',
             alignItems: 'center',
-            gap: '6px',
-            padding: '8px 16px',
+            gap: '7px',
+            padding: '9px 18px',
             borderRadius: '999px',
             border: `1.5px solid ${profile.color}`,
-            background: `${profile.color}12`,
-            color: '#14213D',
+            background: `${profile.color}14`,
+            color: palette.ink,
+            fontFamily: fontBody,
             fontWeight: 600,
             fontSize: '0.82rem',
             cursor: 'pointer',
@@ -562,10 +890,12 @@ const TutorSession = () => {
 
       {/* Conversation */}
       <div
+        role="log"
+        aria-live="polite"
         style={{
           flex: 1,
           overflowY: 'auto',
-          padding: '10px 20px 140px',
+          padding: '10px 20px 150px',
           maxWidth: '640px',
           width: '100%',
           margin: '0 auto',
@@ -584,37 +914,32 @@ const TutorSession = () => {
                 marginBottom: '10px',
               }}
             >
-              <div
-                style={{
-                  maxWidth: '78%',
-                  padding: '12px 16px',
-                  borderRadius: '16px',
-                  borderBottomRightRadius: msg.sender === 'student' ? '4px' : '16px',
-                  borderBottomLeftRadius: msg.sender === 'tutor' ? '4px' : '16px',
-                  background: msg.sender === 'student' ? '#14213D' : '#fff',
-                  color: msg.sender === 'student' ? '#fff' : '#14213D',
-                  border: msg.sender === 'tutor' ? '1px solid #E6E4DD' : 'none',
-                  fontSize: '0.92rem',
-                  lineHeight: 1.5,
-                  boxShadow: msg.sender === 'tutor' ? '0 2px 8px rgba(0,0,0,0.04)' : 'none',
-                }}
-              >
-                {msg.text}
-              </div>
+              <div style={msg.sender === 'student' ? studentBubbleStyle : tutorBubbleStyle}>{msg.text}</div>
             </motion.div>
           ))}
+
+          {isThinking && (
+            <motion.div
+              key="thinking"
+              initial={{ opacity: 0, y: 12 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.3, ease: easeOut }}
+              style={{ display: 'flex', justifyContent: 'flex-start', marginBottom: '10px' }}
+            >
+              <div style={tutorBubbleStyle}>
+                <ThinkingDots color={profile.color} reducedMotion={reducedMotion} />
+              </div>
+            </motion.div>
+          )}
         </AnimatePresence>
 
         {interimText && (
           <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '10px' }}>
             <div
               style={{
-                maxWidth: '78%',
-                padding: '12px 16px',
-                borderRadius: '16px',
-                background: 'rgba(20,33,61,0.5)',
-                color: '#fff',
-                fontSize: '0.92rem',
+                ...studentBubbleStyle,
+                background: 'rgba(18,23,43,0.5)',
                 fontStyle: 'italic',
               }}
             >
@@ -626,6 +951,42 @@ const TutorSession = () => {
         <div ref={messagesEndRef} />
       </div>
 
+      {/* Inline notice — replaces a jarring browser alert() */}
+      <AnimatePresence>
+        {notice && (
+          <motion.div
+            initial={{ opacity: 0, y: 14, scale: 0.96 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: 8, scale: 0.96 }}
+            transition={{ duration: 0.25, ease: easeOut }}
+            role="alert"
+            style={{
+              position: 'fixed',
+              bottom: '114px',
+              left: '50%',
+              transform: 'translateX(-50%)',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '9px',
+              padding: '11px 18px',
+              borderRadius: '14px',
+              background: palette.ink,
+              color: '#fff',
+              fontFamily: fontBody,
+              fontSize: '0.82rem',
+              fontWeight: 500,
+              boxShadow: shadow.lg,
+              zIndex: 60,
+              maxWidth: '86vw',
+              textAlign: 'center',
+            }}
+          >
+            <AlertCircle size={16} color={profile.color} style={{ flexShrink: 0 }} />
+            {notice}
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       {/* Mic button */}
       <div style={{ position: 'fixed', bottom: '28px', left: '50%', transform: 'translateX(-50%)' }}>
         <motion.button
@@ -633,37 +994,41 @@ const TutorSession = () => {
           onClick={toggleMic}
           whileHover={{ scale: 1.06 }}
           whileTap={{ scale: 0.94 }}
+          className="focus-ring"
+          aria-label={!micSupported ? 'Voice input not supported' : isListening ? 'Stop listening' : 'Start voice input'}
           style={{
             position: 'relative',
             width: '68px',
             height: '68px',
             borderRadius: '50%',
             border: 'none',
-            background: isListening ? '#E24C4C' : '#F5A623',
-            color: '#14213D',
+            background: !micSupported
+              ? palette.slate
+              : isListening
+              ? 'linear-gradient(135deg, #FF8A80, #E2483F)'
+              : profile.buttonGradient,
+            color: '#fff',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            cursor: 'pointer',
-            boxShadow: isListening ? '0 10px 30px rgba(226,76,76,0.4)' : '0 10px 30px rgba(245,166,35,0.4)',
+            cursor: micSupported ? 'pointer' : 'not-allowed',
+            opacity: micSupported ? 1 : 0.85,
+            boxShadow: isListening ? '0 16px 36px rgba(226,72,63,0.42)' : `0 16px 36px ${profile.glow}`,
           }}
         >
-          {micSupported ? (
-            isListening ? <MicOff size={26} color="#fff" /> : <Mic size={26} />
-          ) : (
-            <MicOff size={26} />
-          )}
-          {isListening && (
+          {isListening ? <MicOff size={26} color="#fff" /> : <Mic size={26} color="#fff" />}
+
+          {isListening && !reducedMotion && (
             <>
               <motion.span
                 animate={{ opacity: [0.5, 0], scale: [1, 1.8] }}
                 transition={{ duration: 1.2, repeat: Infinity, ease: 'easeOut' }}
-                style={{ position: 'absolute', inset: 0, borderRadius: '50%', border: '3px solid #E24C4C' }}
+                style={{ position: 'absolute', inset: 0, borderRadius: '50%', border: '3px solid #E2483F' }}
               />
               <motion.span
                 animate={{ opacity: [0.5, 0], scale: [1, 1.8] }}
                 transition={{ duration: 1.2, repeat: Infinity, ease: 'easeOut', delay: 0.4 }}
-                style={{ position: 'absolute', inset: 0, borderRadius: '50%', border: '3px solid #E24C4C' }}
+                style={{ position: 'absolute', inset: 0, borderRadius: '50%', border: '3px solid #E2483F' }}
               />
             </>
           )}
@@ -680,8 +1045,9 @@ const TutorSession = () => {
             style={{
               position: 'fixed',
               inset: 0,
-              background: 'rgba(15,29,56,0.55)',
+              background: 'rgba(15,20,40,0.58)',
               backdropFilter: 'blur(4px)',
+              WebkitBackdropFilter: 'blur(4px)',
               zIndex: 50,
               display: 'flex',
               alignItems: 'center',
@@ -697,73 +1063,110 @@ const TutorSession = () => {
               style={{
                 width: '100%',
                 maxWidth: '480px',
-                background: '#fff',
-                borderRadius: '20px',
+                background: palette.surface,
+                borderRadius: '22px',
                 overflow: 'hidden',
-                boxShadow: '0 30px 60px rgba(0,0,0,0.25)',
+                boxShadow: shadow.lg,
               }}
             >
+              <div style={{ height: '5px', background: profile.gradient }} />
+
               {/* Slide header */}
               <div
                 style={{
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'space-between',
-                  padding: '16px 18px',
-                  borderBottom: '1px solid #E6E4DD',
+                  padding: '15px 18px',
+                  borderBottom: `1px solid ${palette.mist}`,
                 }}
               >
-                <span style={{ fontWeight: 700, color: '#14213D', fontSize: '0.95rem' }}>
-                  {activeLesson.title}
-                </span>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                  <TutorMark profile={profile} size={30} speaking={isSlideNarrating} reducedMotion={reducedMotion} />
+                  <span style={{ fontFamily: fontDisplay, fontWeight: 700, color: palette.ink, fontSize: '0.95rem' }}>
+                    {activeLesson.title}
+                  </span>
+                </div>
                 <button
                   type="button"
                   onClick={closeLesson}
                   aria-label="Close example"
+                  className="focus-ring"
                   style={{
                     width: '30px',
                     height: '30px',
                     borderRadius: '50%',
                     border: 'none',
-                    background: '#F5F4F0',
+                    background: palette.paper,
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
                     cursor: 'pointer',
+                    flexShrink: 0,
                   }}
                 >
-                  <X size={16} color="#5B6B85" />
+                  <X size={16} color={palette.slate} />
                 </button>
               </div>
 
-              {/* Slide image */}
-              <div
-                style={{
-                  width: '100%',
-                  height: '260px',
-                  background: '#FAF9F6',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  overflow: 'hidden',
-                }}
-              >
-                <AnimatePresence mode="wait">
-                  <motion.img
-                    key={slideIndex}
-                    src={activeLesson.slides[slideIndex].image}
-                    alt={activeLesson.slides[slideIndex].caption}
-                    initial={{ opacity: 0, scale: 0.94 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    exit={{ opacity: 0, scale: 1.02 }}
-                    transition={{ duration: 0.35, ease: easeOut }}
-                    style={{ maxWidth: '80%', maxHeight: '80%', objectFit: 'contain' }}
+              {/* Step counter + progress */}
+              <div style={{ padding: '14px 20px 0' }}>
+                <div
+                  style={{
+                    fontFamily: fontMono,
+                    fontSize: '0.7rem',
+                    fontWeight: 600,
+                    color: palette.faint,
+                    textTransform: 'uppercase',
+                    letterSpacing: '0.06em',
+                    marginBottom: '6px',
+                  }}
+                >
+                  Step {slideIndex + 1} of {activeLesson.slides.length}
+                </div>
+                <div style={{ height: '5px', borderRadius: '999px', background: palette.mist, overflow: 'hidden' }}>
+                  <motion.div
+                    animate={{ width: `${((slideIndex + 1) / activeLesson.slides.length) * 100}%` }}
+                    transition={{ duration: 0.4, ease: easeOut }}
+                    style={{ height: '100%', borderRadius: '999px', background: profile.gradient }}
                   />
-                </AnimatePresence>
+                </div>
+              </div>
+
+              {/* Slide image — tap the arrows, use ← →, or swipe */}
+              <div style={{ padding: '16px 20px 0' }}>
+                <div
+                  onTouchStart={handleTouchStart}
+                  onTouchEnd={handleTouchEnd}
+                  style={{
+                    width: '100%',
+                    height: '240px',
+                    borderRadius: '16px',
+                    background: palette.paper,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    overflow: 'hidden',
+                    boxShadow: `inset 0 0 0 1px ${palette.mist}`,
+                  }}
+                >
+                  <AnimatePresence mode="wait">
+                    <motion.img
+                      key={slideIndex}
+                      src={activeLesson.slides[slideIndex].image}
+                      alt={activeLesson.slides[slideIndex].caption}
+                      initial={{ opacity: 0, scale: 0.94 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      exit={{ opacity: 0, scale: 1.02 }}
+                      transition={{ duration: 0.35, ease: easeOut }}
+                      style={{ maxWidth: '80%', maxHeight: '80%', objectFit: 'contain' }}
+                    />
+                  </AnimatePresence>
+                </div>
               </div>
 
               {/* Slide caption + narration indicator */}
-              <div style={{ padding: '18px 20px 8px' }}>
+              <div style={{ padding: '18px 20px 6px' }}>
                 <AnimatePresence mode="wait">
                   <motion.h3
                     key={slideIndex}
@@ -771,10 +1174,12 @@ const TutorSession = () => {
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0, y: -8 }}
                     transition={{ duration: 0.3, ease: easeOut }}
+                    aria-live="polite"
                     style={{
+                      fontFamily: fontDisplay,
                       fontSize: '1.2rem',
                       fontWeight: 700,
-                      color: '#14213D',
+                      color: palette.ink,
                       textAlign: 'center',
                       margin: 0,
                     }}
@@ -787,14 +1192,15 @@ const TutorSession = () => {
                   <p
                     style={{
                       textAlign: 'center',
+                      fontFamily: fontBody,
                       fontSize: '0.8rem',
                       color: profile.color,
                       fontWeight: 600,
-                      marginTop: '8px',
+                      marginTop: '10px',
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'center',
-                      gap: '6px',
+                      gap: '7px',
                     }}
                   >
                     <Volume2 size={14} />
@@ -803,41 +1209,23 @@ const TutorSession = () => {
                 )}
               </div>
 
-              {/* Progress dots */}
-              <div style={{ display: 'flex', justifyContent: 'center', gap: '6px', padding: '10px 0' }}>
-                {activeLesson.slides.map((_, i) => (
-                  <span
-                    key={i}
-                    style={{
-                      width: i === slideIndex ? '20px' : '7px',
-                      height: '7px',
-                      borderRadius: '4px',
-                      background: i === slideIndex ? profile.color : '#E6E4DD',
-                      transition: 'all 0.25s ease',
-                    }}
-                  />
-                ))}
-              </div>
-
               {/* Controls */}
-              <div
-                style={{
-                  display: 'flex',
-                  gap: '10px',
-                  padding: '10px 20px 22px',
-                }}
-              >
-                <button
+              <div style={{ display: 'flex', gap: '10px', padding: '14px 20px 22px' }}>
+                <motion.button
                   type="button"
                   onClick={() => goToSlide(slideIndex - 1)}
                   disabled={slideIndex === 0}
+                  whileHover={slideIndex !== 0 ? { scale: 1.02 } : {}}
+                  whileTap={slideIndex !== 0 ? { scale: 0.97 } : {}}
+                  className="focus-ring"
                   style={{
                     flex: 1,
                     padding: '11px',
-                    borderRadius: '10px',
-                    border: '1.5px solid #E6E4DD',
-                    background: '#fff',
-                    color: '#14213D',
+                    borderRadius: '12px',
+                    border: `1.5px solid ${palette.mist}`,
+                    background: palette.surface,
+                    color: palette.ink,
+                    fontFamily: fontBody,
                     fontWeight: 600,
                     fontSize: '0.85rem',
                     cursor: slideIndex === 0 ? 'not-allowed' : 'pointer',
@@ -845,30 +1233,37 @@ const TutorSession = () => {
                   }}
                 >
                   Back
-                </button>
+                </motion.button>
 
                 {isLastSlide ? (
-                  <button
+                  <motion.button
                     type="button"
                     onClick={closeLesson}
+                    whileHover={{ scale: 1.02 }}
+                    whileTap={{ scale: 0.97 }}
+                    className="focus-ring"
                     style={{
                       flex: 2,
                       padding: '11px',
-                      borderRadius: '10px',
+                      borderRadius: '12px',
                       border: 'none',
-                      background: profile.color,
-                      color: '#14213D',
+                      background: profile.buttonGradient,
+                      color: '#fff',
+                      fontFamily: fontBody,
                       fontWeight: 700,
                       fontSize: '0.85rem',
                       cursor: 'pointer',
                     }}
                   >
                     Got it!
-                  </button>
+                  </motion.button>
                 ) : (
-                  <button
+                  <motion.button
                     type="button"
                     onClick={() => goToSlide(slideIndex + 1)}
+                    whileHover={{ scale: 1.02 }}
+                    whileTap={{ scale: 0.97 }}
+                    className="focus-ring"
                     style={{
                       flex: 2,
                       display: 'flex',
@@ -876,10 +1271,11 @@ const TutorSession = () => {
                       justifyContent: 'center',
                       gap: '6px',
                       padding: '11px',
-                      borderRadius: '10px',
+                      borderRadius: '12px',
                       border: 'none',
-                      background: profile.color,
-                      color: '#14213D',
+                      background: profile.buttonGradient,
+                      color: '#fff',
+                      fontFamily: fontBody,
                       fontWeight: 700,
                       fontSize: '0.85rem',
                       cursor: 'pointer',
@@ -887,7 +1283,7 @@ const TutorSession = () => {
                   >
                     Next
                     <ArrowRight size={15} />
-                  </button>
+                  </motion.button>
                 )}
               </div>
             </motion.div>
