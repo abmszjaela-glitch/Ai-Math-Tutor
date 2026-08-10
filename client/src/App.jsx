@@ -16,11 +16,7 @@ import Contact from './component/Contact';
 import Newsletter from './component/Newsletter';
 
 import Team from './component/Team';
-import BackToTop from './component/BackToTop';
-import MouseCursor from './component/MouseCursor';
-import Offcanvas from './component/Offcanvas';
-import SearchPopup from './component/SearchPopup';
-import Footer from './component/Footer';
+
 
 import Login from './component/Login';
 import Register from './component/Register';

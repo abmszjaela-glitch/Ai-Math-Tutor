@@ -85,7 +85,7 @@ const Hero = () => {
 
                 {/* Admission Button */}
                 <a
-                  href="/contact"
+                  href="/SelectFriend"
                   className="theme-btn"
                 >
                    Start Learning
