@@ -29,12 +29,25 @@ const floatY = {
 
 const directionVariants = {
   fadeInRight: {
-    hidden: { opacity: 0, x: 70 },
-    visible: { opacity: 1, x: 0 },
+    hidden: {
+      opacity: 0,
+      x: 70,
+    },
+    visible: {
+      opacity: 1,
+      x: 0,
+    },
   },
+
   fadeInLeft: {
-    hidden: { opacity: 0, x: -70 },
-    visible: { opacity: 1, x: 0 },
+    hidden: {
+      opacity: 0,
+      x: -70,
+    },
+    visible: {
+      opacity: 1,
+      x: 0,
+    },
   },
 };
 
@@ -47,6 +60,7 @@ const teachers = [
     animation: 'fadeInRight',
     delay: 0.2,
   },
+
   {
     id: 'pandy',
     name: 'Pandy',
@@ -55,7 +69,8 @@ const teachers = [
     animation: 'fadeInLeft',
     delay: 0.35,
   },
-    {
+
+  {
     id: 'koala',
     name: 'Koala',
     role: 'AI Math Tutor',
@@ -66,7 +81,6 @@ const teachers = [
 ];
 
 const STORAGE_KEY = 'selectedTutorId';
-
 
 const SelectFriend = ({
   onSelect = () => {},
@@ -80,7 +94,9 @@ const SelectFriend = ({
   const audioRef = useRef(null);
   const clickAudioRef = useRef(null);
 
-  // Restore previous tutor selection
+  /*
+   * Restore previous tutor selection
+   */
   useEffect(() => {
     const saved = localStorage.getItem(STORAGE_KEY);
 
@@ -89,7 +105,9 @@ const SelectFriend = ({
     }
   }, []);
 
-  // Background music
+  /*
+   * Background music
+   */
   useEffect(() => {
     const audio = audioRef.current;
 
@@ -110,14 +128,18 @@ const SelectFriend = ({
 
     tryPlay();
 
-    // Stop music when leaving page
+    /*
+     * Stop music when leaving page
+     */
     return () => {
       audio.pause();
       audio.currentTime = 0;
     };
   }, []);
 
-  // Play click sound
+  /*
+   * Play click sound
+   */
   const playClickSound = () => {
     const click = clickAudioRef.current;
 
@@ -130,7 +152,9 @@ const SelectFriend = ({
     });
   };
 
-  // Toggle background music
+  /*
+   * Toggle background music
+   */
   const toggleSound = () => {
     const audio = audioRef.current;
 
@@ -145,7 +169,13 @@ const SelectFriend = ({
     }
   };
 
-  // Select tutor
+  /*
+   * Select tutor
+   *
+   * IMPORTANT:
+   * This does NOT navigate.
+   * Navigation happens only when Continue is clicked.
+   */
   const handleSelect = (id) => {
     playClickSound();
 
@@ -156,26 +186,42 @@ const SelectFriend = ({
     onSelect(id);
   };
 
-  // Keyboard selection
+  /*
+   * Keyboard selection
+   */
   const handleKeyDown = (e, id) => {
     if (e.key === 'Enter' || e.key === ' ') {
       e.preventDefault();
+
       handleSelect(id);
     }
   };
 
-  // Continue button
+  /*
+   * Continue button
+   */
   const handleContinue = () => {
     if (!selectedId) return;
 
     playClickSound();
 
-    // Pass selected tutor to parent
+    /*
+     * Pass selected tutor to parent
+     */
     onContinue(selectedId);
 
-    // Navigate to Start Learning page
+    /*
+     * Navigate to Start Learning
+     */
     navigate('/start-learning');
   };
+
+  /*
+   * Find selected tutor
+   */
+  const selectedTeacher = teachers.find(
+    (teacher) => teacher.id === selectedId
+  );
 
   return (
     <section
@@ -203,9 +249,17 @@ const SelectFriend = ({
       <motion.button
         type="button"
         onClick={toggleSound}
-        aria-label={isMuted ? 'Turn sound on' : 'Turn sound off'}
-        whileHover={{ scale: 1.08 }}
-        whileTap={{ scale: 0.92 }}
+        aria-label={
+          isMuted
+            ? 'Turn sound on'
+            : 'Turn sound off'
+        }
+        whileHover={{
+          scale: 1.08,
+        }}
+        whileTap={{
+          scale: 0.92,
+        }}
         transition={{
           duration: 0.2,
           ease: easeOut,
@@ -223,7 +277,8 @@ const SelectFriend = ({
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
-          boxShadow: '0 4px 12px rgba(0,0,0,0.08)',
+          boxShadow:
+            '0 4px 12px rgba(0,0,0,0.08)',
           cursor: 'pointer',
         }}
       >
@@ -303,7 +358,8 @@ const SelectFriend = ({
         <div className="row text-center justify-content-center">
 
           {teachers.map((teacher) => {
-            const isSelected = selectedId === teacher.id;
+            const isSelected =
+              selectedId === teacher.id;
 
             return (
               <div
@@ -312,18 +368,27 @@ const SelectFriend = ({
               >
                 <motion.div
                   className={`team-card-item${
-                    isSelected ? ' is-selected' : ''
+                    isSelected
+                      ? ' is-selected'
+                      : ''
                   }`}
                   role="button"
                   tabIndex={0}
                   aria-pressed={isSelected}
                   aria-label={`Select ${teacher.name} as your AI math tutor`}
-                  onClick={() => handleSelect(teacher.id)}
+                  onClick={() =>
+                    handleSelect(teacher.id)
+                  }
                   onKeyDown={(e) =>
-                    handleKeyDown(e, teacher.id)
+                    handleKeyDown(
+                      e,
+                      teacher.id
+                    )
                   }
                   variants={
-                    directionVariants[teacher.animation]
+                    directionVariants[
+                      teacher.animation
+                    ]
                   }
                   initial="hidden"
                   whileInView="visible"
@@ -443,10 +508,13 @@ const SelectFriend = ({
                     }}
                     transition={{
                       duration: 0.5,
-                      delay: teacher.delay + 0.3,
+                      delay:
+                        teacher.delay + 0.3,
                     }}
                   >
-                    <h3>{teacher.name}</h3>
+                    <h3>
+                      {teacher.name}
+                    </h3>
 
                     <p>
                       {isSelected
@@ -509,12 +577,8 @@ const SelectFriend = ({
                 'background 0.25s ease',
             }}
           >
-            {selectedId
-              ? `Continue with ${
-                  teachers.find(
-                    (t) => t.id === selectedId
-                  ).name
-                }`
+            {selectedTeacher
+              ? `Continue with ${selectedTeacher.name}`
               : 'Select a tutor to continue'}
           </motion.button>
         </div>
@@ -525,3 +589,4 @@ const SelectFriend = ({
 };
 
 export default SelectFriend;
+

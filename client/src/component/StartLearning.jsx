@@ -1,36 +1,83 @@
+
 import { useState, useRef, useEffect } from "react";
-import { Mic, MicOff, ChevronDown, Play } from "lucide-react";
+import { Mic, MicOff } from "lucide-react";
+
 import pandaVideo from "../assets/video/intro-lesson-panda.mp4";
 import kangarooVideo from "../assets/video/intro-lesson-kangaroo.mp4";
+import koalaVideo from "../assets/video/intro-lesson-koala.mp4";
+
 import pandaAfterQuestion from "../assets/video/panda-after-question.mp4";
 import kangarooAfterQuestion from "../assets/video/kangaroo-after-question.mp4";
+import koalaafterVideo from "../assets/video/Koala-after-question.mp4";
 
 const TUTORS = [
-  { id: "panda", name: "Panda", introSrc: pandaVideo, afterSrc: pandaAfterQuestion },
-  { id: "kangaroo", name: "Kangaroo", introSrc: kangarooVideo, afterSrc: kangarooAfterQuestion },
+  {
+    id: "pandy",
+    name: "Pandy",
+    introSrc: pandaVideo,
+    afterSrc: pandaAfterQuestion,
+  },
+  {
+    id: "kanga",
+    name: "Kanga",
+    introSrc: kangarooVideo,
+    afterSrc: kangarooAfterQuestion,
+  },
+  {
+    id: "koala",
+    name: "Koala",
+    introSrc: koalaVideo,
+    afterSrc: koalaafterVideo,
+  },
 ];
 
+const STORAGE_KEY = "selectedTutorId";
+
 const StartLearning = () => {
-  const [hasEnteredExperience, setHasEnteredExperience] = useState(false);
-  const [isRecording, setIsRecording] = useState(false);
   const [videoEnded, setVideoEnded] = useState(false);
   const [currentClip, setCurrentClip] = useState("intro");
-  const [selectedTutor, setSelectedTutor] = useState(TUTORS[0]);
-  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const [selectedTutor, setSelectedTutor] = useState(null);
+  const [isRecording, setIsRecording] = useState(false);
   const [transcript, setTranscript] = useState("");
+
   const videoRef = useRef(null);
   const recognitionRef = useRef(null);
 
+  /*
+   * Load selected tutor
+   */
+  useEffect(() => {
+    const savedTutorId = localStorage.getItem(STORAGE_KEY);
+
+    const tutor = TUTORS.find(
+      (t) => t.id === savedTutorId
+    );
+
+    if (tutor) {
+      setSelectedTutor(tutor);
+    } else {
+      // Fallback
+      setSelectedTutor(TUTORS[0]);
+    }
+  }, []);
+
+  /*
+   * Speech Recognition setup
+   */
   useEffect(() => {
     const SpeechRecognition =
-      window.SpeechRecognition || window.webkitSpeechRecognition;
+      window.SpeechRecognition ||
+      window.webkitSpeechRecognition;
 
     if (!SpeechRecognition) {
-      console.warn("SpeechRecognition not supported in this browser.");
+      console.warn(
+        "SpeechRecognition is not supported in this browser."
+      );
       return;
     }
 
     const recognition = new SpeechRecognition();
+
     recognition.continuous = true;
     recognition.interimResults = true;
     recognition.lang = "en-US";
@@ -39,8 +86,13 @@ const StartLearning = () => {
       let finalText = "";
       let interimText = "";
 
-      for (let i = event.resultIndex; i < event.results.length; i++) {
+      for (
+        let i = event.resultIndex;
+        i < event.results.length;
+        i++
+      ) {
         const result = event.results[i];
+
         if (result.isFinal) {
           finalText += result[0].transcript;
         } else {
@@ -48,156 +100,202 @@ const StartLearning = () => {
         }
       }
 
-      setTranscript((prev) => prev + finalText);
+      if (finalText) {
+        setTranscript((prev) => prev + finalText);
+      }
+
       if (interimText) {
-        setTranscript((prev) => prev.replace(/\[\.\.\..*?\]$/, "") + `[...${interimText}]`);
+        setTranscript((prev) => {
+          const cleanPrev = prev.replace(
+            /\[\.\.\..*?\]$/,
+            ""
+          );
+
+          return (
+            cleanPrev +
+            `[...${interimText}]`
+          );
+        });
       }
     };
 
-    recognition.onerror = (event) => {
-      console.error("Speech recognition error:", event.error);
-    };
-
+    /*
+     * When microphone/speech recognition ends,
+     * play the after-question video.
+     */
     recognition.onend = () => {
       setIsRecording(false);
-      setCurrentClip("after");
+
+      /*
+       * Only change to after video if
+       * the intro has already finished.
+       */
+      setVideoEnded((wasEnded) => {
+        if (wasEnded) {
+          setCurrentClip("after");
+        }
+
+        return wasEnded;
+      });
+    };
+
+    recognition.onerror = (event) => {
+      console.error(
+        "Speech recognition error:",
+        event.error
+      );
+
+      setIsRecording(false);
     };
 
     recognitionRef.current = recognition;
 
     return () => {
-      recognition.stop();
+      try {
+        recognition.stop();
+      } catch (error) {
+        // Ignore stop errors during cleanup
+      }
     };
   }, []);
 
-  // This click is the user gesture that unlocks audio for the whole page.
-  const handleEnterExperience = () => {
-    setHasEnteredExperience(true);
-    // videoRef will remount with the intro clip; play() happens in the
-    // useEffect below once the new element exists.
-  };
-
-  // Whenever hasEnteredExperience flips true, or the clip/tutor changes,
-  // explicitly call play() with sound (autoPlay alone can be flaky right
-  // after a remount).
+  /*
+   * Automatically play video when:
+   *
+   * 1. Tutor is loaded
+   * 2. Current clip changes
+   *
+   * Since this page is reached after a user click
+   * on the Select Tutor page, the browser normally
+   * allows this video to play with sound.
+   */
   useEffect(() => {
-    if (hasEnteredExperience && videoRef.current) {
-      videoRef.current.play().catch((err) => {
-        console.error("Playback with audio failed:", err);
-      });
+    if (!selectedTutor || !videoRef.current) {
+      return;
     }
-  }, [hasEnteredExperience, currentClip, selectedTutor]);
 
-  const toggleMic = () => {
-    if (!videoEnded || !recognitionRef.current) return;
+    const video = videoRef.current;
 
-    if (isRecording) {
-      recognitionRef.current.stop();
-    } else {
-      setTranscript("");
-      recognitionRef.current.start();
-      setIsRecording(true);
-    }
-  };
+    video.currentTime = 0;
 
+    const playVideo = async () => {
+      try {
+        await video.play();
+      } catch (error) {
+        console.error(
+          "Video autoplay failed:",
+          error
+        );
+
+        /*
+         * If browser blocks autoplay with sound,
+         * try muted autoplay.
+         */
+        try {
+          video.muted = true;
+          await video.play();
+        } catch (mutedError) {
+          console.error(
+            "Muted autoplay also failed:",
+            mutedError
+          );
+        }
+      }
+    };
+
+    playVideo();
+  }, [selectedTutor, currentClip]);
+
+  /*
+   * Intro video finished
+   */
   const handleVideoEnded = (e) => {
     e.currentTarget.pause();
+
     if (currentClip === "intro") {
+      /*
+       * Intro is finished.
+       * Now microphone becomes available.
+       */
       setVideoEnded(true);
+      setCurrentClip("intro");
     }
   };
 
-  const handleTutorChange = (tutor) => {
-    setSelectedTutor(tutor);
-    setIsDropdownOpen(false);
-    setVideoEnded(false);
-    setCurrentClip("intro");
-    setIsRecording(false);
-    setTranscript("");
-    if (recognitionRef.current) recognitionRef.current.stop();
+  /*
+   * Start / stop microphone
+   */
+  const toggleMic = () => {
+    if (!videoEnded || !recognitionRef.current) {
+      return;
+    }
+
+    if (isRecording) {
+      /*
+       * Stop speaking.
+       * recognition.onend() will then
+       * switch to the after-question video.
+       */
+      recognitionRef.current.stop();
+      setIsRecording(false);
+    } else {
+      /*
+       * Start speaking.
+       */
+      setTranscript("");
+
+      /*
+       * Make sure after video is not showing
+       * while user is recording.
+       */
+      setCurrentClip("intro");
+
+      try {
+        recognitionRef.current.start();
+        setIsRecording(true);
+      } catch (error) {
+        console.error(
+          "Could not start speech recognition:",
+          error
+        );
+      }
+    }
   };
 
-  const activeVideoSrc =
-    currentClip === "intro" ? selectedTutor.introSrc : selectedTutor.afterSrc;
+  /*
+   * Get current video
+   */
+  const activeVideoSrc = selectedTutor
+    ? currentClip === "intro"
+      ? selectedTutor.introSrc
+      : selectedTutor.afterSrc
+    : null;
 
   return (
-    <section className="section-padding" style={{ position: "relative" }}>
-      {/* Tutor switcher */}
-     <div
-  style={{
-    position: "fixed",
-    top: "210px",
-    right: "24px",
-    zIndex: 999,
-  }}
->
-        <button
-          onClick={() => setIsDropdownOpen((prev) => !prev)}
-          style={{
-            display: "flex",
-            alignItems: "center",
-            gap: "6px",
-            padding: "8px 14px",
-            borderRadius: "999px",
-            border: "1px solid #d1d5db",
-            backgroundColor: "#fff",
-            cursor: "pointer",
-            fontSize: "14px",
-            fontWeight: 500,
-            color: "#374151",
-            boxShadow: "0 4px 12px rgba(0,0,0,0.08)",
-          }}
-        >
-          {selectedTutor.name}
-          <ChevronDown size={16} />
-        </button>
-
-        {isDropdownOpen && (
-          <div
-            style={{
-              position: "absolute",
-              top: "calc(100% + 8px)",
-              right: 0,
-              backgroundColor: "#fff",
-              border: "1px solid #e5e7eb",
-              borderRadius: "12px",
-              boxShadow: "0 8px 24px rgba(0,0,0,0.08)",
-              overflow: "hidden",
-              minWidth: "140px",
-            }}
-          >
-            {TUTORS.map((tutor) => (
-              <button
-                key={tutor.id}
-                onClick={() => handleTutorChange(tutor)}
-                style={{
-                  display: "block",
-                  width: "100%",
-                  textAlign: "left",
-                  padding: "10px 14px",
-                  border: "none",
-                  backgroundColor:
-                    tutor.id === selectedTutor.id ? "#f3f4f6" : "#fff",
-                  cursor: "pointer",
-                  fontSize: "14px",
-                  color: "#374151",
-                }}
-              >
-                {tutor.name}
-              </button>
-            ))}
-          </div>
-        )}
-      </div>
-
+    <section
+      className="section-padding"
+      style={{
+        position: "relative",
+      }}
+    >
       <div className="container">
+
         <br />
         <br />
-        <h1>Start Learning Maths</h1>
+
+        {/* Heading */}
+        <h1>
+          Start Learning Maths
+          {selectedTutor
+            ? ` with ${selectedTutor.name}`
+            : ""}
+        </h1>
 
         <p>
-          Welcome to your AI Maths Tutor. This page can contain your learning
-          dashboard, course information, or a free trial.
+          Welcome to your AI Maths Tutor.
+          {selectedTutor
+            ? ` ${selectedTutor.name} is ready to help you learn mathematics.`
+            : ""}
         </p>
 
         <div
@@ -210,7 +308,8 @@ const StartLearning = () => {
             flexWrap: "wrap",
           }}
         >
-          {/* Left: transcript screen + mic */}
+
+          {/* LEFT SIDE */}
           <div
             style={{
               flex: "1 1 400px",
@@ -219,6 +318,8 @@ const StartLearning = () => {
               gap: "16px",
             }}
           >
+
+            {/* Transcript */}
             <div
               style={{
                 flex: 1,
@@ -228,18 +329,23 @@ const StartLearning = () => {
                 borderRadius: "16px",
                 padding: "20px",
                 fontSize: "16px",
-                color: transcript ? "#111827" : "#9ca3af",
+                color: transcript
+                  ? "#111827"
+                  : "#9ca3af",
                 overflowY: "auto",
               }}
             >
               {transcript ||
-                (!hasEnteredExperience
-                  ? "Tap the play button to meet your tutor."
-                  : videoEnded
-                  ? "Tap the mic and start speaking — your words will appear here."
-                  : "Waiting for the intro to finish...")}
+                (!videoEnded
+                  ? `Watch ${selectedTutor?.name || "your tutor"}'s introduction...`
+                  : isRecording
+                  ? "Listening to you..."
+                  : currentClip === "after"
+                  ? `${selectedTutor?.name || "Your tutor"} is responding...`
+                  : `Tap the mic and talk to ${selectedTutor?.name || "your tutor"}.`)}
             </div>
 
+            {/* MIC */}
             <div
               style={{
                 display: "flex",
@@ -251,7 +357,11 @@ const StartLearning = () => {
               <button
                 onClick={toggleMic}
                 disabled={!videoEnded}
-                aria-label={isRecording ? "Stop recording" : "Start recording"}
+                aria-label={
+                  isRecording
+                    ? "Stop recording"
+                    : "Start recording"
+                }
                 style={{
                   width: "80px",
                   height: "80px",
@@ -260,40 +370,68 @@ const StartLearning = () => {
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "center",
-                  cursor: videoEnded ? "pointer" : "not-allowed",
+                  cursor: videoEnded
+                    ? "pointer"
+                    : "not-allowed",
+
                   backgroundColor: !videoEnded
                     ? "#c7c7c7"
                     : isRecording
                     ? "#ef4444"
                     : "#4f46e5",
+
                   color: "#fff",
+
                   boxShadow: videoEnded
                     ? "0 8px 24px rgba(79, 70, 229, 0.35)"
                     : "none",
-                  transition: "background-color 0.2s ease, transform 0.15s ease",
-                  opacity: videoEnded ? 1 : 0.6,
+
+                  transition:
+                    "background-color 0.2s ease, transform 0.15s ease",
+
+                  opacity: videoEnded
+                    ? 1
+                    : 0.6,
                 }}
-                onMouseDown={(e) =>
-                  videoEnded && (e.currentTarget.style.transform = "scale(0.95)")
-                }
-                onMouseUp={(e) => (e.currentTarget.style.transform = "scale(1)")}
+                onMouseDown={(e) => {
+                  if (videoEnded) {
+                    e.currentTarget.style.transform =
+                      "scale(0.95)";
+                  }
+                }}
+                onMouseUp={(e) => {
+                  e.currentTarget.style.transform =
+                    "scale(1)";
+                }}
               >
-                {isRecording ? <MicOff size={32} /> : <Mic size={32} />}
+                {isRecording ? (
+                  <MicOff size={32} />
+                ) : (
+                  <Mic size={32} />
+                )}
               </button>
 
-              <p style={{ fontSize: "13px", color: "#6b7280" }}>
-                {!hasEnteredExperience
-                  ? "Tap play to begin"
-                  : !videoEnded
-                  ? "Mic unlocks after the intro"
+              <p
+                style={{
+                  fontSize: "13px",
+                  color: "#6b7280",
+                }}
+              >
+                {!videoEnded
+                  ? "Mic unlocks after the introduction"
                   : isRecording
                   ? "Listening..."
-                  : `Tap to talk to ${selectedTutor.name}`}
+                  : currentClip === "after"
+                  ? "Tutor is responding..."
+                  : `Tap to talk to ${
+                      selectedTutor?.name ||
+                      "your tutor"
+                    }`}
               </p>
             </div>
           </div>
 
-          {/* Right: avatar video */}
+          {/* RIGHT SIDE - VIDEO */}
           <div
             style={{
               flex: "1 1 400px",
@@ -301,18 +439,20 @@ const StartLearning = () => {
               position: "relative",
             }}
           >
-            {hasEnteredExperience ? (
+            {selectedTutor && activeVideoSrc ? (
               <video
                 key={`${selectedTutor.id}-${currentClip}`}
                 ref={videoRef}
                 src={activeVideoSrc}
                 playsInline
+                autoPlay
+                preload="auto"
                 disablePictureInPicture
                 onEnded={handleVideoEnded}
                 style={{
                   width: "100%",
                   borderRadius: "16px",
-                  pointerEvents: "none",
+                  display: "block",
                 }}
               />
             ) : (
@@ -325,29 +465,14 @@ const StartLearning = () => {
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "center",
+                  color: "#fff",
                 }}
               >
-                <button
-                  onClick={handleEnterExperience}
-                  aria-label="Start"
-                  style={{
-                    width: "72px",
-                    height: "72px",
-                    borderRadius: "50%",
-                    border: "none",
-                    backgroundColor: "#fff",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    cursor: "pointer",
-                    boxShadow: "0 8px 24px rgba(0,0,0,0.35)",
-                  }}
-                >
-                  <Play size={32} fill="#4f46e5" color="#4f46e5" />
-                </button>
+                Loading tutor...
               </div>
             )}
           </div>
+
         </div>
       </div>
     </section>
@@ -355,3 +480,4 @@ const StartLearning = () => {
 };
 
 export default StartLearning;
+
