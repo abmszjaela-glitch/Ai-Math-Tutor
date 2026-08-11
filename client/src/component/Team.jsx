@@ -4,6 +4,7 @@ import flower from '../assets/img/team/flower.png';
 
 import team1 from '../assets/img/team/kanga.jpeg';
 import team2 from '../assets/img/team/panda.png';
+import team3 from '../assets/img/team/Koala3.png';
 
 const easeOut = [0.25, 0.1, 0.25, 1];
 
@@ -40,6 +41,14 @@ const teachers = [
     animation: 'fadeInLeft',
     delay: 0.35,
   },
+  {
+    name: 'Koala',
+    role: 'Friendly AI Math Tutor',
+    image: team3,
+    animation: 'fadeInLeft',
+    delay: 0.35,
+  },
+
 ];
 
 const Team = () => {

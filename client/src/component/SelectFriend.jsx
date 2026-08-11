@@ -8,6 +8,7 @@ import flower from '../assets/img/team/flower.png';
 
 import team1 from '../assets/img/team/kanga.jpeg';
 import team2 from '../assets/img/team/panda.png';
+import team3 from '../assets/img/team/Koala3.png';
 
 // Audio files
 import bgMusic from '../assets/auido/ChooseFriend.mp3';
@@ -54,22 +55,19 @@ const teachers = [
     animation: 'fadeInLeft',
     delay: 0.35,
   },
+    {
+    id: 'koala',
+    name: 'Koala',
+    role: 'AI Math Tutor',
+    image: team3,
+    animation: 'fadeInLeft',
+    delay: 0.35,
+  },
 ];
 
 const STORAGE_KEY = 'selectedTutorId';
 
-/**
- * SelectFriend
- *
- * Lets the student choose which AI tutor (Kanga or Pandy)
- * they want to learn with.
- *
- * Selection is persisted to localStorage.
- *
- * When Continue is clicked:
- * 1. Selected tutor is passed to onContinue
- * 2. User is navigated to /start-learning
- */
+
 const SelectFriend = ({
   onSelect = () => {},
   onContinue = () => {},
