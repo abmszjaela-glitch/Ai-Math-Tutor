@@ -45,6 +45,208 @@ const About = () => {
   return (
     <section className="about-section section-padding fix">
 
+      {/* Mobile responsive CSS - scoped to this component's markup */}
+      <style>{`
+        /* ---------- Tablet (max-width: 991px) ---------- */
+        @media (max-width: 991px) {
+          .about-section {
+            padding: 60px 0;
+            overflow: hidden;
+          }
+
+          .about-wrapper .about-image-box .about-image {
+            max-width: 480px;
+            margin: 0 auto;
+            text-align: center;
+          }
+
+          .about-wrapper .about-image-box .about-image img {
+            width: 100%;
+            height: auto;
+            display: block;
+            margin: 0 auto;
+          }
+
+          .about-wrapper .about-image-box .about-image .shape-bg {
+            width: 90%;
+            max-width: 420px;
+          }
+          .about-wrapper .about-image-box .about-image .shape-bg img {
+            width: 100%;
+            height: auto;
+          }
+
+          .about-wrapper .about-image-box .counter-image {
+            right: 0;
+            bottom: 6%;
+            max-width: 160px;
+          }
+          .about-wrapper .about-image-box .counter-image img {
+            width: 100%;
+            height: auto;
+          }
+          .about-wrapper .about-image-box .counter-image .counter-box .count .odometer,
+          .about-wrapper .about-image-box .counter-image .counter-box .count .plus {
+            font-size: 34px;
+          }
+
+          .about-wrapper .about-content {
+            margin-top: 40px;
+            text-align: center;
+          }
+          .about-wrapper .about-content .section-title.text-left,
+          .about-wrapper .about-content .sub-title.text-left {
+            text-align: center !important;
+          }
+
+          .about-wrapper .about-content .content-bottom {
+            margin-left: 0;
+          }
+
+          .about-wrapper .about-content .content-bottom .about-list {
+            justify-content: center;
+            gap: 30px;
+            flex-wrap: wrap;
+          }
+          .about-wrapper .about-content .content-bottom .about-list ul {
+            text-align: left;
+          }
+
+          .about-wrapper .about-content .content-bottom .about-button {
+            margin-top: 30px;
+            display: flex;
+            justify-content: center;
+          }
+
+          .about-section .tubelight-shape,
+          .about-section .sun-shape,
+          .about-section .star-shape,
+          .about-section .love-shape,
+          .about-section .frame-shape {
+            opacity: 0.25;
+            max-width: 60px;
+          }
+          .about-section .tubelight-shape img,
+          .about-section .sun-shape img,
+          .about-section .star-shape img,
+          .about-section .love-shape img,
+          .about-section .frame-shape img {
+            width: 100%;
+            height: auto;
+          }
+        }
+
+        /* ---------- Small tablet / large phone (max-width: 767px) ---------- */
+        @media (max-width: 767px) {
+          .about-section {
+            padding: 50px 0;
+          }
+
+          .about-wrapper .about-image-box .about-image {
+            max-width: 340px;
+          }
+
+          .about-wrapper .about-image-box .counter-image {
+            max-width: 130px;
+            bottom: 4%;
+          }
+          .about-wrapper .about-image-box .counter-image .counter-box .count .odometer,
+          .about-wrapper .about-image-box .counter-image .counter-box .count .plus {
+            font-size: 26px;
+          }
+          .about-wrapper .about-image-box .counter-image .counter-box p {
+            font-size: 12px;
+          }
+
+          .about-wrapper .about-content h2 {
+            font-size: 30px;
+            line-height: 1.3;
+          }
+
+          .about-wrapper .about-content p {
+            font-size: 15px;
+            line-height: 1.6;
+          }
+
+          .about-wrapper .about-content .content-bottom .about-list {
+            flex-direction: column;
+            align-items: center;
+            gap: 10px;
+          }
+          .about-wrapper .about-content .content-bottom .about-list ul {
+            text-align: center;
+          }
+          .about-wrapper .about-content .content-bottom .about-list ul li {
+            justify-content: center;
+          }
+
+          .about-section .tubelight-shape,
+          .about-section .sun-shape,
+          .about-section .star-shape,
+          .about-section .love-shape,
+          .about-section .frame-shape {
+            display: none;
+          }
+        }
+
+        /* ---------- Mobile (max-width: 575px) ---------- */
+        @media (max-width: 575px) {
+          .about-section {
+            padding: 40px 0;
+          }
+
+          .about-wrapper .about-image-box .about-image {
+            max-width: 280px;
+          }
+
+          .about-wrapper .about-image-box .counter-image {
+            max-width: 100px;
+            right: -4px;
+            bottom: 2%;
+          }
+          .about-wrapper .about-image-box .counter-image .counter-box .count .odometer,
+          .about-wrapper .about-image-box .counter-image .counter-box .count .plus {
+            font-size: 20px;
+          }
+          .about-wrapper .about-image-box .counter-image .counter-box p {
+            font-size: 10px;
+            margin-top: -2px;
+          }
+
+          .about-wrapper .about-content h2 {
+            font-size: 24px;
+          }
+
+          .about-wrapper .about-content .sub-title {
+            font-size: 13px;
+            height: 30px;
+            line-height: 30px;
+            padding: 0 14px;
+          }
+
+          .about-wrapper .about-content .content-bottom .about-button .theme-btn {
+            width: 100%;
+            text-align: center;
+            font-size: 14px;
+          }
+        }
+
+        /* ---------- Extra small phones (max-width: 380px) ---------- */
+        @media (max-width: 380px) {
+          .about-wrapper .about-image-box .about-image {
+            max-width: 240px;
+          }
+
+          .about-wrapper .about-content h2 {
+            font-size: 21px;
+          }
+
+          .about-wrapper .about-content p {
+            font-size: 14px;
+          }
+        }
+      `}</style>
+
       {/* Decorative Shapes */}
       <motion.div
         className="tubelight-shape"

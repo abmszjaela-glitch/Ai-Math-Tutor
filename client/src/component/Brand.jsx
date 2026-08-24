@@ -25,6 +25,53 @@ const easeOut = [0.25, 0.1, 0.25, 1];
 const Brand = () => {
   return (
     <section className="brand-section section-padding fix">
+
+      {/* Mobile responsive CSS - scoped to this component's markup */}
+      <style>{`
+        /* ---------- Tablet (max-width: 991px) ---------- */
+        @media (max-width: 991px) {
+          .brand-section {
+            padding: 50px 0;
+          }
+        }
+
+        /* ---------- Small tablet / large phone (max-width: 767px) ---------- */
+        @media (max-width: 767px) {
+          .brand-section {
+            padding: 40px 0;
+          }
+
+          .brand-slider .brand-image img {
+            max-width: 110px;
+            height: auto;
+          }
+        }
+
+        /* ---------- Mobile (max-width: 575px) ---------- */
+        @media (max-width: 575px) {
+          .brand-section {
+            padding: 30px 0;
+          }
+
+          .brand-slider .swiper-slide {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+          }
+
+          .brand-slider .brand-image img {
+            max-width: 90px;
+          }
+        }
+
+        /* ---------- Extra small phones (max-width: 380px) ---------- */
+        @media (max-width: 380px) {
+          .brand-slider .brand-image img {
+            max-width: 75px;
+          }
+        }
+      `}</style>
+
       <div className="container">
 
         <motion.div
@@ -45,20 +92,29 @@ const Brand = () => {
             spaceBetween={90}
             slidesPerView={1}
             breakpoints={{
+              0: {
+                slidesPerView: 2,
+                spaceBetween: 30,
+              },
               576: {
                 slidesPerView: 2,
+                spaceBetween: 50,
               },
               768: {
                 slidesPerView: 3,
+                spaceBetween: 60,
               },
               992: {
                 slidesPerView: 4,
+                spaceBetween: 70,
               },
               1200: {
                 slidesPerView: 5,
+                spaceBetween: 80,
               },
               1400: {
                 slidesPerView: 6,
+                spaceBetween: 90,
               },
             }}
             className="brand-slider"

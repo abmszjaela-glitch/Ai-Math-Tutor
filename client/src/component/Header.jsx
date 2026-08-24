@@ -37,6 +37,116 @@ const Header = ({ onMenuClick }) => {
   return (
     <header className="header-section">
 
+      {/* Mobile responsive CSS - scoped to this component's markup */}
+      <style>{`
+        /* ---------- Tablet / below xl (max-width: 1199px) ---------- */
+        @media (max-width: 1199px) {
+          .header-top-section {
+            display: none;
+          }
+
+          .header-1 .mega-menu-wrapper {
+            padding: 10px 15px;
+          }
+
+          .header-1 .header-main {
+            flex-wrap: nowrap;
+          }
+
+          .header-1 .header-left {
+            gap: 12px;
+          }
+
+          .header-1 .header-left .category-wrapper {
+            display: none;
+          }
+
+          .header-1 .header-left .header-logo img {
+            max-width: 130px;
+            height: auto;
+          }
+
+          /* full nav menu hidden on mobile, hamburger takes over */
+          .header-1 .mean__menu-wrapper .main-menu {
+            display: none;
+          }
+
+          .header-1 .header-right-icon .main-header__signin {
+            display: none;
+          }
+
+          .header-1 .header-right .theme-btn {
+            font-size: 14px;
+            padding: 0 18px;
+            height: 44px;
+            line-height: 44px;
+          }
+
+          .header-1 .header-right {
+            gap: 12px;
+          }
+
+          .header__hamburger {
+            display: flex !important;
+            align-items: center;
+          }
+        }
+
+        /* ---------- Small tablet / large phone (max-width: 767px) ---------- */
+        @media (max-width: 767px) {
+          .header-1 .header-left .header-logo img {
+            max-width: 110px;
+          }
+
+          .header-1 .header-right .theme-btn span,
+          .header-1 .header-right .theme-btn {
+            font-size: 13px;
+            padding: 0 14px;
+            height: 40px;
+            line-height: 40px;
+          }
+        }
+
+        /* ---------- Mobile (max-width: 575px) ---------- */
+        @media (max-width: 575px) {
+          .header-1 .mega-menu-wrapper {
+            padding: 8px 12px;
+          }
+
+          .header-1 .header-left .header-logo img {
+            max-width: 95px;
+          }
+
+          /* hide the text-heavy Start Learning button on very small
+             screens, keep just the hamburger + sign-in icon area */
+          .header-1 .header-right .theme-btn {
+            padding: 0 10px;
+            font-size: 12px;
+          }
+          .header-1 .header-right .theme-btn svg {
+            display: none;
+          }
+
+          .header-1 .header-right {
+            gap: 8px;
+          }
+        }
+
+        /* ---------- Extra small phones (max-width: 380px) ---------- */
+        @media (max-width: 380px) {
+          .header-1 .header-left .header-logo img {
+            max-width: 80px;
+          }
+
+          .header-1 .header-right .theme-btn {
+            padding: 0 8px;
+            font-size: 11px;
+            height: 36px;
+            line-height: 36px;
+          }
+        }
+      `}</style>
+
       {/* Header Top */}
       <div className="header-top-section">
         <div className="header-shape">

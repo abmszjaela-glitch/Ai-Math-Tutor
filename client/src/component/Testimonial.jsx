@@ -56,6 +56,152 @@ const Testimonial = () => {
   return (
     <section className="testimonial-section section-padding fix pb-0">
 
+      {/* Mobile responsive CSS - scoped to this component's markup */}
+      <style>{`
+        /* ---------- Tablet (max-width: 991px) ---------- */
+        @media (max-width: 991px) {
+          .testimonial-section {
+            padding: 60px 0;
+            overflow: hidden;
+          }
+
+          .testimonial-section .pencil-icon,
+          .testimonial-section .flower-shape {
+            opacity: 0.25;
+            max-width: 55px;
+          }
+          .testimonial-section .pencil-icon img,
+          .testimonial-section .flower-shape img {
+            width: 100%;
+            height: auto;
+          }
+
+          .testimonial-section .section-title h2 {
+            font-size: 32px;
+          }
+
+          .testimonial-wrapper {
+            margin-top: 30px;
+          }
+
+          .testimonial-wrapper .array-button {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            margin-top: 25px;
+          }
+
+          .testimonial-box-items {
+            max-width: 380px;
+            margin: 0 auto;
+          }
+
+          .testimonial-box-items .testimonial-item .testi-text {
+            font-size: 16px;
+          }
+        }
+
+        /* ---------- Small tablet / large phone (max-width: 767px) ---------- */
+        @media (max-width: 767px) {
+          .testimonial-section {
+            padding: 50px 0;
+          }
+
+          .testimonial-section .pencil-icon,
+          .testimonial-section .flower-shape {
+            display: none;
+          }
+
+          .testimonial-section .section-title {
+            text-align: center;
+          }
+          .testimonial-section .section-title h2 {
+            font-size: 26px;
+            line-height: 1.35;
+          }
+          .testimonial-section .section-title .sub-title {
+            font-size: 13px;
+            height: 32px;
+            line-height: 32px;
+            padding: 0 16px;
+          }
+
+          .testimonial-box-items {
+            max-width: 320px;
+          }
+
+          .testimonial-box-items .testimonial-item .client-image {
+            gap: 10px;
+          }
+
+          .testimonial-box-items .testimonial-item .testi-text {
+            font-size: 15px;
+            padding-bottom: 18px;
+            margin-bottom: 14px;
+          }
+
+          .testimonial-box-items .testimonial-item .client-info h3 {
+            font-size: 16px;
+          }
+
+          .testimonial-box-items .testimonial-item .koma-icon {
+            right: -6px;
+            bottom: -10px;
+          }
+          .testimonial-box-items .testimonial-item .koma-icon img {
+            width: 34px;
+            height: auto;
+          }
+        }
+
+        /* ---------- Mobile (max-width: 575px) ---------- */
+        @media (max-width: 575px) {
+          .testimonial-section {
+            padding: 40px 0;
+          }
+
+          .testimonial-section .section-title h2 {
+            font-size: 22px;
+          }
+
+          .testimonial-box-items {
+            max-width: 270px;
+          }
+
+          .testimonial-box-items .testimonial-item .client-image img {
+            width: 55px;
+            height: 55px;
+          }
+
+          .testimonial-box-items .testimonial-item .testi-text {
+            font-size: 14px;
+            line-height: 1.55;
+          }
+
+          .array-button .array-prev,
+          .array-button .array-next {
+            width: 44px;
+            height: 44px;
+            line-height: 44px;
+          }
+        }
+
+        /* ---------- Extra small phones (max-width: 380px) ---------- */
+        @media (max-width: 380px) {
+          .testimonial-box-items {
+            max-width: 230px;
+          }
+
+          .testimonial-section .section-title h2 {
+            font-size: 19px;
+          }
+
+          .testimonial-box-items .testimonial-item .testi-text {
+            font-size: 13px;
+          }
+        }
+      `}</style>
+
       {/* Pencil Shape */}
       <motion.div
         className="pencil-icon"

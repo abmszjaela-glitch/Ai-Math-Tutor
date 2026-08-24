@@ -54,6 +54,123 @@ const teachers = [
 const Team = () => {
   return (
     <section className="team-section section-padding pt-0 fix">
+
+      {/* Mobile responsive CSS - scoped to this component's markup */}
+      <style>{`
+        /* ---------- Tablet (max-width: 991px) ---------- */
+        @media (max-width: 991px) {
+          .team-section {
+            padding-bottom: 60px;
+            overflow: hidden;
+          }
+
+          .team-section .flower-shape {
+            opacity: 0.25;
+            max-width: 55px;
+          }
+          .team-section .flower-shape img {
+            width: 100%;
+            height: auto;
+          }
+
+          .team-section .section-title-area {
+            text-align: center !important;
+          }
+          .team-section .section-title-area h2 {
+            font-size: 32px;
+          }
+          .team-section .section-title-area p {
+            max-width: 560px;
+            margin: 0 auto;
+          }
+
+          .team-card-item {
+            max-width: 340px;
+            margin: 0 auto;
+          }
+          .team-card-item .team-image {
+            height: 260px !important;
+          }
+        }
+
+        /* ---------- Small tablet / large phone (max-width: 767px) ---------- */
+        @media (max-width: 767px) {
+          .team-section {
+            padding-bottom: 45px;
+          }
+
+          .team-section .flower-shape {
+            display: none;
+          }
+
+          .team-section .section-title-area h2 {
+            font-size: 26px;
+            line-height: 1.35;
+          }
+          .team-section .section-title-area .sub-title {
+            font-size: 13px;
+            height: 32px;
+            line-height: 32px;
+            padding: 0 16px;
+          }
+          .team-section .section-title-area p {
+            font-size: 15px;
+          }
+
+          .team-card-item {
+            max-width: 300px;
+            margin-top: 30px;
+          }
+          .team-card-item .team-image {
+            height: 230px !important;
+          }
+          .team-card-item .team-content h3 {
+            font-size: 19px;
+          }
+          .team-card-item .team-content p {
+            font-size: 14px;
+          }
+        }
+
+        /* ---------- Mobile (max-width: 575px) ---------- */
+        @media (max-width: 575px) {
+          .team-section {
+            padding-bottom: 35px;
+          }
+
+          .team-section .section-title-area h2 {
+            font-size: 22px;
+          }
+          .team-section .section-title-area p {
+            font-size: 14px;
+          }
+
+          .team-card-item {
+            max-width: 260px;
+          }
+          .team-card-item .team-image {
+            height: 200px !important;
+          }
+        }
+
+        /* ---------- Extra small phones (max-width: 380px) ---------- */
+        @media (max-width: 380px) {
+          .team-section .section-title-area h2 {
+            font-size: 19px;
+          }
+
+          .team-card-item {
+            max-width: 220px;
+          }
+          .team-card-item .team-image {
+            height: 175px !important;
+          }
+          .team-card-item .team-content h3 {
+            font-size: 17px;
+          }
+        }
+      `}</style>
+
       <div className="container">
 
         {/* Decorative Flower */}

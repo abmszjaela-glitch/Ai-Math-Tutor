@@ -5,6 +5,144 @@ const CartSidebar = () => {
 
   return (
     <>
+      {/* Mobile responsive CSS - scoped to this component's markup */}
+      <style>{`
+        /* ---------- Tablet (max-width: 767px) ---------- */
+        @media (max-width: 767px) {
+          .side_bar {
+            width: 340px;
+            padding: 24px;
+            padding-top: 22px;
+          }
+
+          .side_bar .cart-title h4 {
+            font-size: 20px;
+          }
+
+          .side_bar .cartmini__widget-item {
+            gap: 16px;
+            padding: 16px 0;
+            padding-top: 22px;
+            padding-bottom: 20px;
+          }
+
+          .side_bar .cartmini__widget-item .cartmini__thumb {
+            max-width: 70px;
+            height: 70px;
+          }
+
+          .side_bar .cartmini__widget-item .cartmini__content h5 {
+            font-size: 15px;
+          }
+
+          .side_bar .cartmini__checkout {
+            margin-top: 100px;
+            padding-bottom: 70px;
+          }
+        }
+
+        /* ---------- Mobile (max-width: 575px) ---------- */
+        @media (max-width: 575px) {
+          .side_bar {
+            width: 100%;
+            max-width: 100%;
+            padding: 20px;
+            padding-top: 20px;
+          }
+
+          .side_bar .cart-title {
+            margin-bottom: 30px !important;
+          }
+          .side_bar .cart-title h4 {
+            font-size: 18px;
+          }
+
+          .side_bar .x-mark-icon {
+            right: 20px;
+            top: 18px;
+            font-size: 18px;
+          }
+
+          .side_bar .cartmini__widget-item {
+            gap: 12px;
+            padding-top: 20px;
+            padding-bottom: 18px;
+          }
+
+          .side_bar .cartmini__widget-item .cartmini__thumb {
+            max-width: 60px;
+            height: 60px;
+          }
+
+          .side_bar .cartmini__widget-item .cartmini__content h5 {
+            font-size: 14px;
+            line-height: 1.4;
+          }
+
+          .side_bar .cartmini__widget-item .cartmini__price-wrapper {
+            font-size: 13px;
+          }
+
+          .side_bar .cartmini__del {
+            top: 6px;
+            right: 0;
+          }
+
+          .side_bar .cartmini__checkout {
+            margin-top: 80px;
+            padding: 16px 0;
+            padding-bottom: 60px;
+          }
+
+          .side_bar .cartmini__checkout .cartmini__checkout-title h4 {
+            font-size: 16px;
+          }
+          .side_bar .cartmini__checkout .cartmini__checkout-title span {
+            font-size: 16px;
+          }
+
+          .side_bar .cartmini__checkout-btn .theme-btn {
+            font-size: 14px;
+            height: 48px;
+            line-height: 48px;
+          }
+        }
+
+        /* ---------- Extra small phones (max-width: 380px) ---------- */
+        @media (max-width: 380px) {
+          .side_bar {
+            padding: 16px;
+          }
+
+          .side_bar .cartmini__widget-item {
+            flex-wrap: wrap;
+          }
+
+          .side_bar .cartmini__widget-item .cartmini__thumb {
+            max-width: 54px;
+            height: 54px;
+          }
+
+          .side_bar .cartmini__widget-item .cartmini__content h5 {
+            font-size: 13px;
+          }
+
+          .side_bar .cartmini__checkout-btn .theme-btn {
+            font-size: 13px;
+            height: 44px;
+            line-height: 44px;
+          }
+        }
+
+        /* Overlay dims the page behind the cart on all screen sizes */
+        .side_bar_overlay {
+          position: fixed;
+          inset: 0;
+          background: rgba(0, 0, 0, 0.5);
+          z-index: 99998;
+        }
+      `}</style>
+
       {/* Cart Open Button */}
       <button
         className="cart-icon"

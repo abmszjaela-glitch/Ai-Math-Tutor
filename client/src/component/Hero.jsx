@@ -12,6 +12,167 @@ const Hero = () => {
   return (
     <section className="hero-section hero-1 hero-bg fix">
 
+      {/* Mobile responsive CSS - scoped to this component's markup */}
+      <style>{`
+        /* ---------- Tablet (max-width: 1199px) ---------- */
+        @media (max-width: 1199px) {
+          .hero-1 {
+            padding-top: 150px;
+            padding-bottom: 60px;
+            overflow: hidden;
+          }
+
+          .hero-1 .hero-container {
+            max-width: 100%;
+          }
+
+          .hero-1 .car-shape,
+          .hero-1 .crown-shape,
+          .hero-1 .frame-shape {
+            opacity: 0.35;
+          }
+
+          .hero-1 .hero-content {
+            text-align: center;
+            margin-top: 0;
+          }
+
+          .hero-1 .hero-content h1 {
+            font-size: 42px;
+          }
+
+          .hero-1 .hero-content p {
+            font-size: 16px;
+            max-width: 520px;
+            margin: 0 auto;
+          }
+
+          .hero-1 .hero-content .hero-button {
+            justify-content: center;
+            flex-wrap: wrap;
+            gap: 20px;
+            margin-top: 30px;
+          }
+
+          .hero-1 .hero-img {
+            margin-left: 0;
+            margin-top: 40px;
+            text-align: center;
+            max-width: 560px;
+            margin-right: auto;
+            margin-left: auto;
+          }
+          .hero-1 .hero-img img {
+            width: 100%;
+            height: auto;
+          }
+
+          .hero-1 .line-shape {
+            display: none;
+          }
+        }
+
+        /* ---------- Small tablet / large phone (max-width: 767px) ---------- */
+        @media (max-width: 767px) {
+          .hero-1 {
+            padding-top: 130px;
+            padding-bottom: 40px;
+          }
+
+          .hero-1 .hero-content h1 {
+            font-size: 32px;
+          }
+
+          .hero-1 .hero-content p {
+            font-size: 15px;
+          }
+
+          .hero-1 .hero-content .hero-button {
+            gap: 16px;
+          }
+
+          .hero-1 .hero-content .hero-button .theme-btn {
+            font-size: 14px;
+            padding: 0 22px;
+            height: 50px;
+            line-height: 50px;
+          }
+
+          .hero-1 .hero-content .wave-area {
+            gap: 15px;
+          }
+
+          .hero-1 .hero-img {
+            max-width: 400px;
+          }
+
+          /* hide extra decorative clutter on small screens */
+          .hero-1 .car-shape,
+          .hero-1 .crown-shape,
+          .hero-1 .tree-shape {
+            display: none;
+          }
+
+          .hero-1 .perasute-shape img,
+          .hero-1 .frame-shape img {
+            width: 40px;
+            height: auto;
+          }
+        }
+
+        /* ---------- Mobile (max-width: 575px) ---------- */
+        @media (max-width: 575px) {
+          .hero-1 {
+            padding-top: 110px;
+            padding-bottom: 30px;
+          }
+
+          .hero-1 .hero-content h1 {
+            font-size: 26px;
+            line-height: 1.3;
+          }
+
+          .hero-1 .hero-content p {
+            font-size: 14px;
+          }
+
+          .hero-1 .hero-content .hero-button {
+            flex-direction: column;
+            align-items: center;
+            gap: 20px;
+          }
+
+          .hero-1 .hero-content .hero-button .theme-btn {
+            width: 100%;
+            text-align: center;
+          }
+
+          .hero-1 .hero-content .wave-area {
+            flex-direction: column;
+            gap: 10px;
+          }
+
+          .hero-1 .hero-img {
+            max-width: 300px;
+          }
+
+          .hero-1 .frame-shape {
+            display: none;
+          }
+        }
+
+        /* ---------- Extra small phones (max-width: 380px) ---------- */
+        @media (max-width: 380px) {
+          .hero-1 .hero-content h1 {
+            font-size: 22px;
+          }
+
+          .hero-1 .hero-img {
+            max-width: 260px;
+          }
+        }
+      `}</style>
+
       {/* Decorative Shapes */}
       <div className="perasute-shape float-bob-y">
         <img

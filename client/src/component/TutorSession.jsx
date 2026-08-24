@@ -23,6 +23,8 @@ import slideDummy4 from '../assets/img/lessons/k4.jpeg';
 //  - an inline toast instead of a blocking alert() for the unsupported-mic case
 //  - keyboard (← →, Esc) and swipe navigation in the lesson viewer
 //  - prefers-reduced-motion is respected throughout
+//  - mobile breakpoints (≤575px, ≤380px) added via classNames + a media
+//    query block, since most layout here uses inline styles
 
 const easeOut = [0.25, 0.1, 0.25, 1];
 const STORAGE_KEY = 'selectedTutorId';
@@ -748,10 +750,155 @@ const TutorSession = () => {
             transition-duration: 0.01ms !important;
           }
         }
+
+        /* ===================================================
+           Mobile fixes (≤575px) — most layout above is inline
+           styled, so !important is needed to win specificity.
+           =================================================== */
+        @media (max-width: 575px) {
+          .ts-header {
+            padding: 12px 14px !important;
+          }
+          .ts-header-label {
+            font-size: 0.85rem !important;
+          }
+          .ts-header-status {
+            font-size: 0.66rem !important;
+          }
+
+          .ts-hero {
+            padding: 22px 14px 12px !important;
+          }
+          .ts-tutor-hero {
+            transform: scale(0.82);
+          }
+          .ts-status-text {
+            font-size: 0.82rem !important;
+            text-align: center;
+            padding: 0 10px;
+          }
+          .ts-example-btn {
+            padding: 8px 14px !important;
+            font-size: 0.76rem !important;
+          }
+
+          .ts-conversation {
+            padding: 8px 12px 150px !important;
+          }
+          .ts-bubble {
+            max-width: 90% !important;
+            font-size: 0.88rem !important;
+            padding: 11px 14px !important;
+          }
+
+          .ts-notice {
+            bottom: 104px !important;
+            left: 12px !important;
+            right: 12px !important;
+            transform: none !important;
+            max-width: none !important;
+            font-size: 0.78rem !important;
+          }
+
+          .ts-mic-wrap {
+            bottom: 18px !important;
+          }
+          .ts-mic-btn {
+            width: 58px !important;
+            height: 58px !important;
+          }
+
+          .ts-lesson-overlay {
+            padding: 10px !important;
+          }
+          .ts-lesson-card {
+            max-width: 100% !important;
+            border-radius: 18px !important;
+          }
+          .ts-slide-header {
+            padding: 12px 14px !important;
+          }
+          .ts-slide-header-title {
+            font-size: 0.85rem !important;
+          }
+          .ts-step-info {
+            padding: 12px 16px 0 !important;
+          }
+          .ts-slide-image-pad {
+            padding: 12px 14px 0 !important;
+          }
+          .ts-slide-image-wrap {
+            height: 190px !important;
+          }
+          .ts-slide-caption-pad {
+            padding: 14px 14px 4px !important;
+          }
+          .ts-slide-caption {
+            font-size: 1.02rem !important;
+          }
+          .ts-lesson-controls {
+            padding: 12px 14px 18px !important;
+            gap: 8px !important;
+          }
+          .ts-lesson-controls button {
+            padding: 10px !important;
+            font-size: 0.8rem !important;
+          }
+        }
+
+        /* ===================================================
+           Extra small phones (≤380px)
+           =================================================== */
+        @media (max-width: 380px) {
+          .ts-header {
+            padding: 10px 10px !important;
+          }
+          .ts-header-label {
+            font-size: 0.78rem !important;
+          }
+
+          .ts-hero {
+            padding: 16px 10px 10px !important;
+          }
+          .ts-tutor-hero {
+            transform: scale(0.7);
+          }
+          .ts-status-text {
+            font-size: 0.75rem !important;
+          }
+          .ts-example-btn {
+            padding: 7px 12px !important;
+            font-size: 0.7rem !important;
+          }
+
+          .ts-conversation {
+            padding: 6px 8px 140px !important;
+          }
+          .ts-bubble {
+            max-width: 94% !important;
+            font-size: 0.82rem !important;
+          }
+
+          .ts-mic-btn {
+            width: 52px !important;
+            height: 52px !important;
+          }
+
+          .ts-slide-image-wrap {
+            height: 160px !important;
+          }
+          .ts-slide-caption {
+            font-size: 0.92rem !important;
+          }
+          .ts-lesson-controls button {
+            font-size: 0.74rem !important;
+          }
+        }
       `}</style>
 
       {/* Header */}
       <div
+        className="ts-header"
         style={{
           position: 'sticky',
           top: 0,
@@ -793,10 +940,14 @@ const TutorSession = () => {
 
         <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
           <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', lineHeight: 1.15 }}>
-            <span style={{ fontFamily: fontDisplay, fontWeight: 700, color: palette.ink, fontSize: '0.95rem' }}>
+            <span
+              className="ts-header-label"
+              style={{ fontFamily: fontDisplay, fontWeight: 700, color: palette.ink, fontSize: '0.95rem' }}
+            >
               {profile.label}
             </span>
             <span
+              className="ts-header-status"
               style={{
                 display: 'flex',
                 alignItems: 'center',
@@ -823,6 +974,7 @@ const TutorSession = () => {
 
       {/* Hero: tutor mark + live status */}
       <div
+        className="ts-hero"
         style={{
           display: 'flex',
           flexDirection: 'column',
@@ -830,9 +982,12 @@ const TutorSession = () => {
           padding: '36px 20px 16px',
         }}
       >
-        <TutorMark profile={profile} size={116} speaking={isSpeaking} reducedMotion={reducedMotion} />
+        <div className="ts-tutor-hero">
+          <TutorMark profile={profile} size={116} speaking={isSpeaking} reducedMotion={reducedMotion} />
+        </div>
 
         <p
+          className="ts-status-text"
           style={{
             marginTop: '18px',
             fontFamily: fontBody,
@@ -866,7 +1021,7 @@ const TutorSession = () => {
           onClick={requestExample}
           whileHover={{ scale: 1.03, y: -1 }}
           whileTap={{ scale: 0.97 }}
-          className="focus-ring"
+          className="focus-ring ts-example-btn"
           style={{
             marginTop: '14px',
             display: 'flex',
@@ -892,6 +1047,7 @@ const TutorSession = () => {
       <div
         role="log"
         aria-live="polite"
+        className="ts-conversation"
         style={{
           flex: 1,
           overflowY: 'auto',
@@ -914,7 +1070,9 @@ const TutorSession = () => {
                 marginBottom: '10px',
               }}
             >
-              <div style={msg.sender === 'student' ? studentBubbleStyle : tutorBubbleStyle}>{msg.text}</div>
+              <div className="ts-bubble" style={msg.sender === 'student' ? studentBubbleStyle : tutorBubbleStyle}>
+                {msg.text}
+              </div>
             </motion.div>
           ))}
 
@@ -927,7 +1085,7 @@ const TutorSession = () => {
               transition={{ duration: 0.3, ease: easeOut }}
               style={{ display: 'flex', justifyContent: 'flex-start', marginBottom: '10px' }}
             >
-              <div style={tutorBubbleStyle}>
+              <div className="ts-bubble" style={tutorBubbleStyle}>
                 <ThinkingDots color={profile.color} reducedMotion={reducedMotion} />
               </div>
             </motion.div>
@@ -937,6 +1095,7 @@ const TutorSession = () => {
         {interimText && (
           <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '10px' }}>
             <div
+              className="ts-bubble"
               style={{
                 ...studentBubbleStyle,
                 background: 'rgba(18,23,43,0.5)',
@@ -960,6 +1119,7 @@ const TutorSession = () => {
             exit={{ opacity: 0, y: 8, scale: 0.96 }}
             transition={{ duration: 0.25, ease: easeOut }}
             role="alert"
+            className="ts-notice"
             style={{
               position: 'fixed',
               bottom: '114px',
@@ -988,13 +1148,13 @@ const TutorSession = () => {
       </AnimatePresence>
 
       {/* Mic button */}
-      <div style={{ position: 'fixed', bottom: '28px', left: '50%', transform: 'translateX(-50%)' }}>
+      <div className="ts-mic-wrap" style={{ position: 'fixed', bottom: '28px', left: '50%', transform: 'translateX(-50%)' }}>
         <motion.button
           type="button"
           onClick={toggleMic}
           whileHover={{ scale: 1.06 }}
           whileTap={{ scale: 0.94 }}
-          className="focus-ring"
+          className="focus-ring ts-mic-btn"
           aria-label={!micSupported ? 'Voice input not supported' : isListening ? 'Stop listening' : 'Start voice input'}
           style={{
             position: 'relative',
@@ -1042,6 +1202,7 @@ const TutorSession = () => {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
+            className="ts-lesson-overlay"
             style={{
               position: 'fixed',
               inset: 0,
@@ -1060,6 +1221,7 @@ const TutorSession = () => {
               animate={{ opacity: 1, y: 0, scale: 1 }}
               exit={{ opacity: 0, y: 20, scale: 0.96 }}
               transition={{ duration: 0.35, ease: easeOut }}
+              className="ts-lesson-card"
               style={{
                 width: '100%',
                 maxWidth: '480px',
@@ -1073,6 +1235,7 @@ const TutorSession = () => {
 
               {/* Slide header */}
               <div
+                className="ts-slide-header"
                 style={{
                   display: 'flex',
                   alignItems: 'center',
@@ -1083,7 +1246,10 @@ const TutorSession = () => {
               >
                 <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                   <TutorMark profile={profile} size={30} speaking={isSlideNarrating} reducedMotion={reducedMotion} />
-                  <span style={{ fontFamily: fontDisplay, fontWeight: 700, color: palette.ink, fontSize: '0.95rem' }}>
+                  <span
+                    className="ts-slide-header-title"
+                    style={{ fontFamily: fontDisplay, fontWeight: 700, color: palette.ink, fontSize: '0.95rem' }}
+                  >
                     {activeLesson.title}
                   </span>
                 </div>
@@ -1110,7 +1276,7 @@ const TutorSession = () => {
               </div>
 
               {/* Step counter + progress */}
-              <div style={{ padding: '14px 20px 0' }}>
+              <div className="ts-step-info" style={{ padding: '14px 20px 0' }}>
                 <div
                   style={{
                     fontFamily: fontMono,
@@ -1134,10 +1300,11 @@ const TutorSession = () => {
               </div>
 
               {/* Slide image — tap the arrows, use ← →, or swipe */}
-              <div style={{ padding: '16px 20px 0' }}>
+              <div className="ts-slide-image-pad" style={{ padding: '16px 20px 0' }}>
                 <div
                   onTouchStart={handleTouchStart}
                   onTouchEnd={handleTouchEnd}
+                  className="ts-slide-image-wrap"
                   style={{
                     width: '100%',
                     height: '240px',
@@ -1166,7 +1333,7 @@ const TutorSession = () => {
               </div>
 
               {/* Slide caption + narration indicator */}
-              <div style={{ padding: '18px 20px 6px' }}>
+              <div className="ts-slide-caption-pad" style={{ padding: '18px 20px 6px' }}>
                 <AnimatePresence mode="wait">
                   <motion.h3
                     key={slideIndex}
@@ -1175,6 +1342,7 @@ const TutorSession = () => {
                     exit={{ opacity: 0, y: -8 }}
                     transition={{ duration: 0.3, ease: easeOut }}
                     aria-live="polite"
+                    className="ts-slide-caption"
                     style={{
                       fontFamily: fontDisplay,
                       fontSize: '1.2rem',
@@ -1210,7 +1378,7 @@ const TutorSession = () => {
               </div>
 
               {/* Controls */}
-              <div style={{ display: 'flex', gap: '10px', padding: '14px 20px 22px' }}>
+              <div className="ts-lesson-controls" style={{ display: 'flex', gap: '10px', padding: '14px 20px 22px' }}>
                 <motion.button
                   type="button"
                   onClick={() => goToSlide(slideIndex - 1)}
