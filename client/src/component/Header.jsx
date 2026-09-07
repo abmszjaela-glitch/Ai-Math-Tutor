@@ -303,7 +303,7 @@ const Header = ({ onMenuClick }) => {
                 </div>
 
                 <motion.a
-                  href="/signup"
+                  href="/SelectFriend"
                   className="theme-btn"
                   whileHover={{ scale: 1.06, y: -3 }}
                   whileTap={{ scale: 0.96 }}
