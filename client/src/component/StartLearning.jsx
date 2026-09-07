@@ -276,6 +276,7 @@ const StartLearning = () => {
       className="section-padding"
       style={{
         position: "relative",
+        backgroundColor: "#EAEAEA",
       }}
     >
       <div className="container">
