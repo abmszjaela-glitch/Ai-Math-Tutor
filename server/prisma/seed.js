@@ -55,6 +55,46 @@ async function main() {
   }
 
   console.log("Grades seeded successfully");
+
+  const avatars = [
+  {
+    name: "Panda",
+    personality:
+      "Friendly, patient, calm and encouraging. Explains maths step by step.",
+    imageUrl: null,
+    voiceId: null,
+  },
+  {
+    name: "Kangaroo",
+    personality:
+      "Energetic, playful and motivating. Encourages students to keep trying.",
+    imageUrl: null,
+    voiceId: null,
+  },
+  {
+    name: "Koala",
+    personality:
+      "Gentle, thoughtful and reassuring. Helps students learn at a comfortable pace.",
+    imageUrl: null,
+    voiceId: null,
+  },
+];
+
+for (const avatar of avatars) {
+  await prisma.avatar.upsert({
+    where: {
+      name: avatar.name,
+    },
+    update: {
+      personality: avatar.personality,
+      imageUrl: avatar.imageUrl,
+      voiceId: avatar.voiceId,
+    },
+    create: avatar,
+  });
+}
+
+console.log("Avatars seeded successfully");
 }
 
 main()

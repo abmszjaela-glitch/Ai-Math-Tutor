@@ -47,7 +47,7 @@ model Grade {
 
 model Avatar {
   id          String   @id @default(cuid())
-  name        String
+  name        String   @unique
   personality String
   imageUrl    String?
   voiceId     String?
