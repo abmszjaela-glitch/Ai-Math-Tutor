@@ -1,6 +1,11 @@
 const express = require("express");
 const cors = require("cors");
+const cookieParser = require("cookie-parser");
+
 require("dotenv").config();
+
+const prisma = require("./config/prisma");
+const authRoutes = require("./routes/authRoutes");
 
 const app = express();
 
@@ -12,6 +17,7 @@ app.use(
 );
 
 app.use(express.json());
+app.use(cookieParser());
 
 app.get("/api/health", (req, res) => {
   res.json({
@@ -19,5 +25,28 @@ app.get("/api/health", (req, res) => {
     message: "AI Math Tutor backend is running",
   });
 });
+
+app.get("/api/db-test", async (req, res) => {
+  try {
+    const result = await prisma.$queryRaw`
+      SELECT current_database() AS database
+    `;
+
+    res.json({
+      success: true,
+      message: "Database connection successful",
+      database: result[0].database,
+    });
+  } catch (error) {
+    console.error("Database connection failed:", error);
+
+    res.status(500).json({
+      success: false,
+      message: "Database connection failed",
+    });
+  }
+});
+
+app.use("/api/auth", authRoutes);
 
 module.exports = app;
