@@ -8,6 +8,7 @@ const prisma = require("./config/prisma");
 const authRoutes = require("./routes/authRoutes");
 const studentRoutes = require("./routes/studentRoutes");
 const avatarRoutes = require("./routes/avatarRoutes");
+const curriculumRoutes = require("./routes/curriculumRoutes");
 
 const app = express();
 
@@ -52,8 +53,6 @@ app.get("/api/db-test", async (req, res) => {
 app.use("/api/auth", authRoutes);
 app.use("/api/students", studentRoutes);
 app.use("/api/avatars", avatarRoutes);
+app.use("/api/curriculum", curriculumRoutes);
 
 module.exports = app;
-
-
-
