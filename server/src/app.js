@@ -10,6 +10,9 @@ const studentRoutes = require("./routes/studentRoutes");
 const avatarRoutes = require("./routes/avatarRoutes");
 const curriculumRoutes = require("./routes/curriculumRoutes");
 const progressRoutes = require("./routes/progressRoutes");
+const conversationRoutes = require("./routes/conversationRoutes");
+const messageRoutes = require("./routes/messageRoutes");
+const tutorRoutes = require("./routes/tutorRoutes");
 
 const app = express();
 
@@ -56,5 +59,8 @@ app.use("/api/students", studentRoutes);
 app.use("/api/avatars", avatarRoutes);
 app.use("/api/curriculum", curriculumRoutes);
 app.use("/api/progress", progressRoutes);
+app.use("/api/conversations", conversationRoutes);
+app.use("/api", messageRoutes);
+app.use("/api/tutor", tutorRoutes);
 
 module.exports = app;
