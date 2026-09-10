@@ -1,6 +1,72 @@
 const prisma = require("../config/prisma");
 const openai = require("../config/openai");
 
+const tutorResponseSchema = {
+  type: "object",
+  additionalProperties: false,
+  properties: {
+    message: {
+      type: "string",
+    },
+
+    steps: {
+      type: "array",
+      items: {
+        type: "object",
+        additionalProperties: false,
+        properties: {
+          step: {
+            type: "integer",
+          },
+          explanation: {
+            type: "string",
+          },
+          calculation: {
+            type: "string",
+          },
+        },
+        required: [
+          "step",
+          "explanation",
+          "calculation",
+        ],
+      },
+    },
+
+    answer: {
+      type: "string",
+    },
+
+    hint: {
+      type: "string",
+    },
+
+    encouragement: {
+      type: "string",
+    },
+
+    topic: {
+      type: "string",
+    },
+
+    difficulty: {
+      type: "string",
+      enum: ["easy", "medium", "hard"],
+    },
+  },
+
+  required: [
+    "message",
+    "steps",
+    "answer",
+    "hint",
+    "encouragement",
+    "topic",
+    "difficulty",
+  ],
+};
+
+
 const sendTutorMessage = async (req, res) => {
   try {
     const {
@@ -9,37 +75,45 @@ const sendTutorMessage = async (req, res) => {
       message,
     } = req.body;
 
-    // =========================
-    // VALIDATE REQUEST
-    // =========================
+    // =====================================================
+    // 1. VALIDATE REQUEST
+    // =====================================================
 
     if (!conversationId || !message) {
       return res.status(400).json({
         success: false,
-        message: "Conversation ID and message are required",
+        message:
+          "Conversation ID and message are required",
       });
     }
 
-    if (typeof message !== "string" || message.trim().length === 0) {
+    if (
+      typeof message !== "string" ||
+      message.trim().length === 0
+    ) {
       return res.status(400).json({
         success: false,
         message: "Message cannot be empty",
       });
     }
 
-    // =========================
-    // GET STUDENT
-    // =========================
+    const studentMessage = message.trim();
 
-    const student = await prisma.student.findUnique({
-      where: {
-        userId: req.userId,
-      },
-      include: {
-        grade: true,
-        avatar: true,
-      },
-    });
+    // =====================================================
+    // 2. GET STUDENT
+    // =====================================================
+
+    const student =
+      await prisma.student.findUnique({
+        where: {
+          userId: req.userId,
+        },
+
+        include: {
+          grade: true,
+          avatar: true,
+        },
+      });
 
     if (!student) {
       return res.status(404).json({
@@ -48,23 +122,25 @@ const sendTutorMessage = async (req, res) => {
       });
     }
 
-    // =========================
-    // VERIFY CONVERSATION
-    // =========================
+    // =====================================================
+    // 3. VERIFY CONVERSATION
+    // =====================================================
 
-    const conversation = await prisma.conversation.findFirst({
-      where: {
-        id: conversationId,
-        studentId: student.id,
-      },
-      include: {
-        messages: {
-          orderBy: {
-            createdAt: "asc",
+    const conversation =
+      await prisma.conversation.findFirst({
+        where: {
+          id: conversationId,
+          studentId: student.id,
+        },
+
+        include: {
+          messages: {
+            orderBy: {
+              createdAt: "asc",
+            },
           },
         },
-      },
-    });
+      });
 
     if (!conversation) {
       return res.status(404).json({
@@ -73,21 +149,23 @@ const sendTutorMessage = async (req, res) => {
       });
     }
 
-    // =========================
-    // GET LESSON
-    // =========================
+    // =====================================================
+    // 4. GET LESSON
+    // =====================================================
 
     let lesson = null;
 
     if (lessonId) {
-      lesson = await prisma.lesson.findUnique({
-        where: {
-          id: lessonId,
-        },
-        include: {
-          topic: true,
-        },
-      });
+      lesson =
+        await prisma.lesson.findUnique({
+          where: {
+            id: lessonId,
+          },
+
+          include: {
+            topic: true,
+          },
+        });
 
       if (!lesson) {
         return res.status(404).json({
@@ -97,31 +175,35 @@ const sendTutorMessage = async (req, res) => {
       }
     }
 
-    // =========================
-    // SAVE STUDENT MESSAGE
-    // =========================
+    // =====================================================
+    // 5. SAVE STUDENT MESSAGE
+    // =====================================================
 
     await prisma.message.create({
       data: {
         conversationId: conversation.id,
         role: "user",
-        content: message.trim(),
+        content: studentMessage,
       },
     });
 
-    // Update conversation activity time
+    // =====================================================
+    // 6. UPDATE CONVERSATION TIME
+    // =====================================================
+
     await prisma.conversation.update({
       where: {
         id: conversation.id,
       },
+
       data: {
         updatedAt: new Date(),
       },
     });
 
-    // =========================
-    // AVATAR INFORMATION
-    // =========================
+    // =====================================================
+    // 7. AVATAR INFORMATION
+    // =====================================================
 
     const avatarName =
       student.avatar?.name || "Math Tutor";
@@ -130,9 +212,9 @@ const sendTutorMessage = async (req, res) => {
       student.avatar?.personality ||
       "Friendly, patient and encouraging.";
 
-    // =========================
-    // LESSON INFORMATION
-    // =========================
+    // =====================================================
+    // 8. LESSON INFORMATION
+    // =====================================================
 
     const lessonContext = lesson
       ? `
@@ -140,162 +222,299 @@ Current lesson:
 Title: ${lesson.title}
 Topic: ${lesson.topic.name}
 Description: ${
-          lesson.description || "No description available."
+          lesson.description ||
+          "No description available."
         }
 `
       : `
 No specific lesson was selected.
 `;
 
-    // =========================
-    // CONVERSATION HISTORY
-    // =========================
+    // =====================================================
+    // 9. PREVIOUS CONVERSATION
+    // =====================================================
 
-    const previousMessages = conversation.messages
-      .map((item) => {
-        const role =
-          item.role === "assistant"
-            ? "Tutor"
-            : "Student";
+    const previousMessages =
+      conversation.messages
+        .map((item) => {
+          const role =
+            item.role === "assistant"
+              ? "Tutor"
+              : "Student";
 
-        return `${role}: ${item.content}`;
-      })
-      .join("\n");
+          return `${role}: ${item.content}`;
+        })
+        .join("\n");
 
-    // =========================
-    // AI SYSTEM INSTRUCTIONS
-    // =========================
+    // =====================================================
+    // 10. SYSTEM INSTRUCTIONS
+    // =====================================================
 
     const systemPrompt = `
 You are ${avatarName}, an AI mathematics tutor for children.
 
-STUDENT INFORMATION
--------------------
+Your job is to teach mathematics clearly, accurately,
+patiently and safely.
+
+====================================================
+STUDENT
+====================================================
+
 Grade: ${student.grade.number}
 
+====================================================
 AVATAR PERSONALITY
-------------------
+====================================================
+
 ${avatarPersonality}
 
-LESSON INFORMATION
-------------------
+====================================================
+CURRENT LESSON
+====================================================
+
 ${lessonContext}
 
-YOUR MAIN GOAL
---------------
-Teach mathematics.
+====================================================
+MOST IMPORTANT RULE: MATHEMATICAL ACCURACY
+====================================================
 
-Do not behave like a generic chatbot.
-You are a patient mathematics teacher helping a child understand the idea.
+You MUST solve the student's mathematics problem
+correctly.
 
-TEACHING RULES
---------------
-1. Explain mathematics at the student's grade level.
-2. Use simple and friendly language.
-3. Be patient and encouraging.
-4. Break difficult problems into small steps.
-5. Help the student understand WHY an answer is correct.
-6. Do not immediately reveal an answer when the student should reasonably try first.
-7. If the student gives an incorrect answer, gently explain the mistake.
-8. Never shame, insult or discourage the student.
-9. Stay focused on mathematics and learning.
-10. Do not ask the child for unnecessary personal information.
-11. Use mathematical notation when useful.
-12. Do not invent information about the student's progress.
-13. Do not pretend that you know something that is not provided.
-14. If the question is unrelated to mathematics, politely guide the student back to mathematics.
-15. Keep explanations appropriate for a child.
+Before producing your final response:
 
-WHEN SOLVING A MATH PROBLEM
---------------------------
-1. Understand the problem.
-2. Identify the mathematical concept.
-3. Explain the idea simply.
-4. Show clear steps.
-5. Give the correct answer when appropriate.
-6. Provide a useful hint when appropriate.
-7. Encourage the student.
+1. Read the student's exact question carefully.
+2. Identify all numbers and mathematical information.
+3. Solve the problem yourself.
+4. Check the calculation again.
+5. Make sure the final answer agrees with every step.
+6. Never change a number from the student's question.
+7. Never invent numbers.
+8. Never guess a mathematical answer.
 
-STRUCTURED RESPONSE
--------------------
-Your response MUST contain these fields:
+For example:
+
+If the student asks:
+
+"What is 25 + 17?"
+
+You MUST use:
+
+25 + 17
+
+NOT:
+
+25 + 13
+
+The correct answer is:
+
+42
+
+Your explanation, calculations and answer must all
+agree with each other.
+
+====================================================
+TEACHING STYLE
+====================================================
+
+Teach like a kind teacher helping a young child.
+
+Use:
+
+- Simple language
+- Short explanations
+- Clear steps
+- Friendly examples
+- Encouragement
+- Age-appropriate explanations
+
+Do not:
+
+- Shame the student
+- Insult the student
+- Make the student feel bad
+- Use unnecessarily complicated language
+- Give unrelated information
+- Ask for unnecessary personal information
+
+====================================================
+WHEN SOLVING A PROBLEM
+====================================================
+
+Follow this process:
+
+1. Understand the question.
+2. Identify what the student needs to find.
+3. Identify the mathematical concept.
+4. Solve the problem carefully.
+5. Check the calculation.
+6. Explain the solution step by step.
+7. Give the answer when appropriate.
+8. Give a hint when useful.
+9. Encourage the student.
+
+====================================================
+IF THE STUDENT IS WRONG
+====================================================
+
+Never simply say:
+
+"Wrong."
+
+Instead:
+
+- Be kind.
+- Identify the mistake.
+- Explain why it is incorrect.
+- Show the correct method.
+- Encourage another attempt.
+
+====================================================
+IF THE STUDENT ASKS A SIMPLE QUESTION
+====================================================
+
+Do not make the answer unnecessarily complicated.
+
+For example, for:
+
+"What is 5 + 3?"
+
+A short explanation is enough.
+
+====================================================
+IF THE QUESTION IS NOT MATHEMATICS
+====================================================
+
+Politely guide the student back toward mathematics.
+
+====================================================
+CONVERSATION CONTEXT
+====================================================
+
+Here are previous messages from this conversation:
+
+${previousMessages}
+
+Use this context to maintain continuity.
+
+====================================================
+CURRENT STUDENT MESSAGE
+====================================================
+
+${studentMessage}
+
+====================================================
+RESPONSE
+====================================================
+
+Return the response using the required structured format.
 
 message:
 A friendly explanation for the student.
 
 steps:
-A list of clear mathematical steps.
-Each step must contain:
+Clear mathematical steps.
+
+Every step MUST contain:
+
 - step
 - explanation
 - calculation
 
 answer:
-The final mathematical answer.
-If it is not appropriate to reveal the final answer yet, use an empty string.
+The correct final mathematical answer.
+
+If the question does not require a final answer,
+use an empty string.
 
 hint:
-A short hint that helps the student continue thinking.
-If no hint is necessary, use an empty string.
+A short helpful hint.
+
+If no hint is necessary,
+use an empty string.
 
 encouragement:
 A short positive sentence.
 
 topic:
-The mathematical topic being discussed.
+The mathematics topic.
 
 difficulty:
-One of:
-- easy
-- medium
-- hard
+Must be exactly one of:
 
-IMPORTANT
----------
-Return ONLY valid JSON.
-Do not use Markdown code fences.
-Do not add text before or after the JSON.
+easy
+medium
+hard
 
-PREVIOUS CONVERSATION
----------------------
-${previousMessages}
+====================================================
+FINAL ACCURACY CHECK
+====================================================
+
+Before returning the response, silently verify:
+
+- Did I use the exact numbers from the student's question?
+- Are all calculations correct?
+- Does the final answer match the calculations?
+- Are the steps logically correct?
+- Is the explanation appropriate for the student's grade?
+
+Only return the final structured response after
+passing these checks.
 `;
 
-    // =========================
-    // CALL OPENAI
-    // =========================
+    // =====================================================
+    // 11. CALL OPENAI
+    // =====================================================
 
-    const response = await openai.responses.create({
-      model: "gpt-5.6-luna",
-      instructions: systemPrompt,
-      input: message.trim(),
-    });
+    const response =
+      await openai.responses.create({
+        model: "gpt-5.6-luna",
 
-    // =========================
-    // GET AI OUTPUT
-    // =========================
+        instructions: systemPrompt,
 
-    const rawOutput = response.output_text;
+        input: studentMessage,
+
+        text: {
+          format: {
+            type: "json_schema",
+
+            name: "math_tutor_response",
+
+            strict: true,
+
+            schema: tutorResponseSchema,
+          },
+        },
+      });
+
+    // =====================================================
+    // 12. GET AI OUTPUT
+    // =====================================================
+
+    const rawOutput =
+      response.output_text;
 
     if (!rawOutput) {
       return res.status(500).json({
         success: false,
-        message: "AI returned an empty response",
+        message:
+          "AI returned an empty response",
       });
     }
 
-    // =========================
-    // PARSE JSON
-    // =========================
+    // =====================================================
+    // 13. PARSE STRUCTURED OUTPUT
+    // =====================================================
 
     let tutorResponse;
 
     try {
-      tutorResponse = JSON.parse(rawOutput);
-    } catch (parseError) {
+      tutorResponse =
+        JSON.parse(rawOutput);
+    } catch (error) {
       console.error(
         "AI JSON parsing error:",
-        parseError
+        error
       );
 
       console.error(
@@ -305,65 +524,147 @@ ${previousMessages}
 
       return res.status(500).json({
         success: false,
-        message: "AI returned an invalid structured response",
+        message:
+          "AI returned an invalid structured response",
       });
     }
 
-    // =========================
-    // VALIDATE STRUCTURE
-    // =========================
+    // =====================================================
+    // 14. EXTRA SERVER-SIDE VALIDATION
+    // =====================================================
 
     if (
-      typeof tutorResponse.message !== "string" ||
-      !Array.isArray(tutorResponse.steps) ||
-      typeof tutorResponse.answer !== "string" ||
-      typeof tutorResponse.hint !== "string" ||
-      typeof tutorResponse.encouragement !== "string" ||
-      typeof tutorResponse.topic !== "string" ||
-      !["easy", "medium", "hard"].includes(
+      typeof tutorResponse.message !==
+      "string"
+    ) {
+      return res.status(500).json({
+        success: false,
+        message:
+          "Invalid tutor message",
+      });
+    }
+
+    if (
+      !Array.isArray(
+        tutorResponse.steps
+      )
+    ) {
+      return res.status(500).json({
+        success: false,
+        message:
+          "Invalid tutor steps",
+      });
+    }
+
+    if (
+      typeof tutorResponse.answer !==
+      "string"
+    ) {
+      return res.status(500).json({
+        success: false,
+        message:
+          "Invalid tutor answer",
+      });
+    }
+
+    if (
+      typeof tutorResponse.hint !==
+      "string"
+    ) {
+      return res.status(500).json({
+        success: false,
+        message:
+          "Invalid tutor hint",
+      });
+    }
+
+    if (
+      typeof tutorResponse.encouragement !==
+      "string"
+    ) {
+      return res.status(500).json({
+        success: false,
+        message:
+          "Invalid tutor encouragement",
+      });
+    }
+
+    if (
+      typeof tutorResponse.topic !==
+      "string"
+    ) {
+      return res.status(500).json({
+        success: false,
+        message:
+          "Invalid tutor topic",
+      });
+    }
+
+    if (
+      ![
+        "easy",
+        "medium",
+        "hard",
+      ].includes(
         tutorResponse.difficulty
       )
     ) {
       return res.status(500).json({
         success: false,
-        message: "AI returned an invalid tutor response structure",
+        message:
+          "Invalid tutor difficulty",
       });
     }
 
-    // =========================
-    // SAVE AI MESSAGE
-    // =========================
+    // =====================================================
+    // 15. SAVE AI MESSAGE
+    // =====================================================
 
-    const savedMessage = await prisma.message.create({
-      data: {
-        conversationId: conversation.id,
-        role: "assistant",
-        content: JSON.stringify(tutorResponse),
-      },
-    });
+    const savedMessage =
+      await prisma.message.create({
+        data: {
+          conversationId:
+            conversation.id,
 
-    // Update conversation activity time
+          role: "assistant",
+
+          content:
+            JSON.stringify(
+              tutorResponse
+            ),
+        },
+      });
+
+    // =====================================================
+    // 16. UPDATE CONVERSATION TIME
+    // =====================================================
+
     await prisma.conversation.update({
       where: {
         id: conversation.id,
       },
+
       data: {
         updatedAt: new Date(),
       },
     });
 
-    // =========================
-    // RETURN RESPONSE
-    // =========================
+    // =====================================================
+    // 17. RETURN RESPONSE
+    // =====================================================
 
     return res.status(200).json({
       success: true,
 
       response: {
-        messageId: savedMessage.id,
-        conversationId: conversation.id,
+        messageId:
+          savedMessage.id,
 
-        tutor: tutorResponse,
+        conversationId:
+          conversation.id,
+
+        tutor:
+          tutorResponse,
       },
     });
   } catch (error) {
@@ -374,10 +675,12 @@ ${previousMessages}
 
     return res.status(500).json({
       success: false,
-      message: "Unable to process tutor message",
+      message:
+        "Unable to process tutor message",
     });
   }
 };
+
 
 module.exports = {
   sendTutorMessage,
