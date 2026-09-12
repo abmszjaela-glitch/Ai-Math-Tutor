@@ -28,6 +28,7 @@ import slideDummy4 from '../assets/img/lessons/k4.jpeg';
 
 const easeOut = [0.25, 0.1, 0.25, 1];
 const STORAGE_KEY = 'selectedTutorId';
+const API_URL = 'http://localhost:5000/api';
 
 // === DESIGN TOKENS ===
 const palette = {
@@ -429,6 +430,8 @@ const TutorSession = () => {
   const [micSupported, setMicSupported] = useState(true);
   const [interimText, setInterimText] = useState('');
   const [notice, setNotice] = useState(null);
+  const [conversationId, setConversationId] = useState(null);
+const [lessonId, setLessonId] = useState(null);
 
   // Lesson slide state
   const [activeLessonKey, setActiveLessonKey] = useState(null);
@@ -540,6 +543,48 @@ const TutorSession = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeLessonKey, slideIndex]);
 
+
+  useEffect(() => {
+  const createConversation = async () => {
+    try {
+      const response = await fetch(
+        `${API_URL}/conversations`,
+        {
+          method: 'POST',
+          credentials: 'include',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            title: `${profile.label} Math Session`,
+          }),
+        }
+      );
+
+      const data = await response.json();
+
+      if (!response.ok || !data.success) {
+        throw new Error(
+          data.message || 'Failed to create conversation'
+        );
+      }
+
+      setConversationId(data.conversation.id);
+    } catch (error) {
+      console.error(
+        'Conversation creation error:',
+        error
+      );
+
+      showNotice(
+        'I could not start the math session. Please try again.'
+      );
+    }
+  };
+
+  createConversation();
+}, [profile.label]);
+
   const pickVoice = () => {
     if (!('speechSynthesis' in window)) return null;
     const voices = window.speechSynthesis.getVoices();
@@ -600,23 +645,100 @@ const TutorSession = () => {
     noticeTimeoutRef.current = setTimeout(() => setNotice(null), 4000);
   };
 
-  const handleStudentMessage = (text) => {
-    addStudentMessage(text);
-    setInterimText('');
-    setIsThinking(true);
+ const handleStudentMessage = async (text) => {
+  const cleanText = text?.trim();
 
-    setTimeout(() => {
-      setIsThinking(false);
-      const entry = getReplyEntry(text);
-      const reply = entry ? entry.reply : fallbackReplies[Math.floor(Math.random() * fallbackReplies.length)];
-      addTutorMessage(reply);
+  if (!cleanText) return;
 
-      if (entry?.lesson) {
-        // Give the reply a moment to finish, then open the lesson slides.
-        setTimeout(() => startLesson(entry.lesson), 400);
+  if (!conversationId) {
+    showNotice(
+      'Your tutor is still getting ready. Please try again in a moment.'
+    );
+    return;
+  }
+
+  // Stop current speech
+  if ('speechSynthesis' in window) {
+    window.speechSynthesis.cancel();
+  }
+
+  setIsSpeaking(false);
+  setInterimText('');
+
+  // Show student's message immediately
+  addStudentMessage(cleanText);
+
+  // Show thinking animation
+  setIsThinking(true);
+
+  try {
+    const response = await fetch(
+      `${API_URL}/tutor/message`,
+      {
+        method: 'POST',
+        credentials: 'include',
+
+        headers: {
+          'Content-Type': 'application/json',
+        },
+
+        body: JSON.stringify({
+          conversationId,
+          lessonId,
+          message: cleanText,
+        }),
       }
-    }, 700);
-  };
+    );
+
+    const data = await response.json();
+
+    if (!response.ok || !data.success) {
+      throw new Error(
+        data.message || 'Tutor request failed'
+      );
+    }
+
+    const tutor = data.response?.tutor;
+
+    if (!tutor) {
+      throw new Error(
+        'Tutor returned an invalid response'
+      );
+    }
+
+    // Stop thinking
+    setIsThinking(false);
+
+    // Add structured tutor response
+    setMessages((prev) => [
+      ...prev,
+      {
+        sender: 'tutor',
+        text: tutor.message,
+        tutor,
+      },
+    ]);
+
+    // Read tutor's explanation aloud
+    speak(tutor.message);
+
+  } catch (error) {
+    console.error(
+      'Tutor request error:',
+      error
+    );
+
+    setIsThinking(false);
+
+    addTutorMessage(
+      "Sorry! I had a little trouble thinking about that question. Let's try again."
+    );
+
+    showNotice(
+      'Something went wrong while talking to your math tutor.'
+    );
+  }
+};
 
   const toggleMic = () => {
     if (!micSupported) {

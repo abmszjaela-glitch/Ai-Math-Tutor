@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
+import { useNavigate } from "react-router-dom";
 import {
   Search, Bell, Settings, Sparkles, Brain, Play, MessageSquare,
   Trophy, ChevronRight, Plus, Download, FolderOpen, Send, Sun, Moon,
@@ -82,7 +83,13 @@ function TypingDots() {
 }
 
 export default function StudentDashboard() {
+  const navigate = useNavigate();
+  const API_URL = "http://localhost:5000/api";
+
   const [dark, setDark] = useState(false);
+  const [student, setStudent] = useState(null);
+  const [loadingStudent, setLoadingStudent] = useState(true);
+  const [loggingOut, setLoggingOut] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [activeTab, setActiveTab] = useState("dashboard");
@@ -103,6 +110,57 @@ export default function StudentDashboard() {
     const t = setTimeout(() => setMounted(true), 60);
     return () => clearTimeout(t);
   }, []);
+
+  useEffect(() => {
+    const loadStudent = async () => {
+      try {
+        const response = await fetch(`${API_URL}/students/me`, {
+          method: "GET",
+          credentials: "include",
+        });
+
+        const data = await response.json();
+
+        if (!response.ok || !data.success) {
+          if (response.status === 401) {
+            navigate("/login", { replace: true });
+            return;
+          }
+          throw new Error(data.message || "Failed to load student profile");
+        }
+
+        setStudent(data.student);
+      } catch (error) {
+        console.error("Student profile error:", error);
+      } finally {
+        setLoadingStudent(false);
+      }
+    };
+
+    loadStudent();
+  }, [navigate]);
+
+  const goTo = (path) => {
+    setSidebarOpen(false);
+    navigate(path);
+  };
+
+  const handleLogout = async () => {
+    if (loggingOut) return;
+
+    setLoggingOut(true);
+
+    try {
+      await fetch(`${API_URL}/auth/logout`, {
+        method: "POST",
+        credentials: "include",
+      });
+    } catch (error) {
+      console.error("Logout error:", error);
+    } finally {
+      navigate("/login", { replace: true });
+    }
+  };
 
   const recentActivities = [
     { title: "Completed Fractions Quiz", subject: "Mathematics", time: "15 minutes ago", icon: "✅", iconBg: "#d1fae5", iconColor: "#059669", score: "92%" },
@@ -159,25 +217,31 @@ export default function StudentDashboard() {
 
   const sendChat = () => {
     if (!chatInput.trim()) return;
+
     const q = chatInput.trim();
-    setChatMessages((prev) => [...prev, { role: "user", text: q }]);
+
+    setChatMessages((prev) => [
+      ...prev,
+      { role: "user", text: q },
+      {
+        role: "ai",
+        text: "Let's solve that together in the full AI Tutor. Choose your tutor and we'll work through it step by step.",
+      },
+    ]);
+
     setChatInput("");
-    setAiTyping(true);
+
     setTimeout(() => {
-      setAiTyping(false);
-      setChatMessages((prev) => [
-        ...prev,
-        { role: "ai", text: `Great question about "${q}" — let's break it into small steps and work through an example together.` },
-      ]);
-    }, 1400);
+      goTo("/SelectFriend");
+    }, 500);
   };
 
   const t = tokens(dark);
 
   const navItems = [
-    { icon: TrendingUp, label: "Dashboard", id: "dashboard" },
-    { icon: BookOpen, label: "My Courses", id: "courses" },
-    { icon: Brain, label: "AI Tutor", id: "tutor", badge: "AI" },
+    { icon: TrendingUp, label: "Dashboard", id: "dashboard", route: "/dashboard" },
+    { icon: BookOpen, label: "My Courses", id: "courses", route: "/start-learning" },
+    { icon: Brain, label: "AI Tutor", id: "tutor", route: "/SelectFriend", badge: "AI" },
     { icon: Calendar, label: "Schedule", id: "schedule" },
     { icon: Trophy, label: "Achievements", id: "achievements" },
     { icon: Users, label: "Study Groups", id: "groups" },
@@ -241,7 +305,15 @@ export default function StudentDashboard() {
                     color: active ? "#7c3aed" : t.muted,
                     background: active ? (dark ? "rgba(124,58,237,0.18)" : "linear-gradient(to right, #f5f3ff, #eff6ff)") : "transparent",
                   }}
-                  onClick={(e) => { e.preventDefault(); setActiveTab(item.id); setSidebarOpen(false); }}
+                  onClick={(e) => {
+                    e.preventDefault();
+                    if (item.route) {
+                      goTo(item.route);
+                    } else {
+                      setActiveTab(item.id);
+                      setSidebarOpen(false);
+                    }
+                  }}
                 >
                   <Icon size={17} />
                   {item.label}
@@ -259,7 +331,7 @@ export default function StudentDashboard() {
             <p style={{ marginTop: "8px", fontSize: "14px", lineHeight: "20px", color: "#c7d2fe" }}>
               Ask your AI Tutor anything about mathematics.
             </p>
-            <button className="btn-press" style={s.bottomCardButton} onClick={() => setActiveTab("tutor")}>
+            <button className="btn-press" style={s.bottomCardButton} onClick={() => goTo("/SelectFriend")}>
               Ask AI Tutor <ChevronRight size={16} />
             </button>
           </div>
@@ -273,7 +345,12 @@ export default function StudentDashboard() {
             <Menu size={22} className="mobile-only" style={{ cursor: "pointer", color: t.muted }} onClick={() => setSidebarOpen(true)} />
             <div>
               <p style={{ ...s.headerDate, color: t.muted }}>
-                <Calendar size={14} /> Thursday, August 6, 2026
+                <Calendar size={14} /> {new Date().toLocaleDateString("en-US", {
+                  weekday: "long",
+                  month: "long",
+                  day: "numeric",
+                  year: "numeric",
+                })}
               </p>
               <h2 className={mounted ? "fade-in-up" : ""} style={{ ...s.headerTitle, color: t.ink }}>Good morning, Alex 👋</h2>
               <p style={{ ...s.headerSub, color: t.muted }}>Ready to continue your learning journey?</p>
@@ -315,13 +392,40 @@ export default function StudentDashboard() {
 
             <div style={s.profile}>
               <div style={{ textAlign: "right" }}>
-                <p style={{ fontSize: "14px", fontWeight: "600", color: t.ink, margin: 0 }}>Alex Johnson</p>
-                <p style={{ fontSize: "12px", color: t.muted, margin: 0 }}>Grade 6 Student</p>
+                <p style={{ fontSize: "14px", fontWeight: "600", color: t.ink, margin: 0 }}>
+                  {student?.name || "Student"}
+                </p>
+                <p style={{ fontSize: "12px", color: t.muted, margin: 0 }}>
+                  {student?.grade?.name || "Math Student"}
+                </p>
               </div>
-              <div className="avatar-ring" style={s.profileAvatar}>AJ</div>
+              <div className="avatar-ring" style={s.profileAvatar}>
+                {(student?.name || "Student")
+                  .split(" ")
+                  .map((part) => part[0])
+                  .join("")
+                  .slice(0, 2)
+                  .toUpperCase()}
+              </div>
             </div>
 
-            <button className="icon-btn spin-hover" style={{ ...s.iconBtn, background: t.pillBg, color: t.ink }}><Settings size={18} /></button>
+            <button
+              className="icon-btn spin-hover"
+              style={{ ...s.iconBtn, background: t.pillBg, color: t.ink }}
+              onClick={() => setActiveTab("settings")}
+              title="Settings"
+            >
+              <Settings size={18} />
+            </button>
+
+            <button
+              className="logout-btn"
+              onClick={handleLogout}
+              disabled={loggingOut}
+              title="Logout"
+            >
+              {loggingOut ? "..." : "Logout"}
+            </button>
           </div>
         </header>
 
@@ -473,7 +577,11 @@ export default function StudentDashboard() {
                 <p style={{ ...s.sectionSub, color: t.muted }}>{searchQuery ? `Results for "${searchQuery}"` : "Pick up where you left off"}</p>
               </div>
               <div style={s.sectionActions}>
-                <button className="dash-btn-hover" style={{ ...s.actionBtn, border: `1px solid ${t.border}`, background: t.cardBg, color: t.ink }}>
+                <button
+                  className="dash-btn-hover"
+                  style={{ ...s.actionBtn, border: `1px solid ${t.border}`, background: t.cardBg, color: t.ink }}
+                  onClick={() => goTo("/start-learning")}
+                >
                   <FolderOpen size={14} /> Browse All
                 </button>
               </div>
@@ -498,7 +606,13 @@ export default function StudentDashboard() {
                   </div>
                   <div style={s.courseFooter}>
                     <span style={s.courseDue}>Due: {course.dueDate}</span>
-                    <button className="btn-press" style={s.courseContinue}>Continue <ChevronRight size={14} /></button>
+                    <button
+                      className="btn-press"
+                      style={s.courseContinue}
+                      onClick={() => goTo("/start-learning")}
+                    >
+                      Continue <ChevronRight size={14} />
+                    </button>
                   </div>
                 </div>
               ))}
@@ -553,7 +667,9 @@ export default function StudentDashboard() {
                 </div>
               </div>
               <div style={{ display: "flex", gap: "12px" }}>
-                <button className="btn-press" style={s.primaryBtn}><Play size={16} /> Start Learning</button>
+                <button className="btn-press" style={s.primaryBtn} onClick={() => goTo("/start-learning")}>
+                  <Play size={16} /> Start Learning
+                </button>
                 <button className="btn-press" style={{ ...s.secondaryBtn, background: t.cardBg, color: t.ink, border: `1px solid ${t.border}` }}><Share2 size={16} /> Share</button>
               </div>
             </div>
@@ -661,6 +777,25 @@ const css = `
     .courses-grid-responsive { grid-template-columns: 1fr !important; }
   }
   .focus-ring:focus { outline: none; box-shadow: 0 0 0 3px rgba(124,58,237,0.25); border-color: #a78bfa !important; }
+  .logout-btn {
+    border: none;
+    border-radius: 12px;
+    padding: 10px 13px;
+    background: #fee2e2;
+    color: #dc2626;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+  }
+  .logout-btn:hover {
+    background: #fecaca;
+    transform: translateY(-1px);
+  }
+  .logout-btn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
   @media (prefers-reduced-motion: reduce) {
     * { animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; transition-duration: 0.01ms !important; }
   }
