@@ -136,8 +136,7 @@ const Login = () => {
 
 
       // Go to student dashboard
-      navigate('/dashboard');
-
+navigate('/');
     } catch (error) {
 
       console.error(

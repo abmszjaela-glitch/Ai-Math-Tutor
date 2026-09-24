@@ -14,6 +14,8 @@ import {
   FaArrowRight as ArrowRight,
 } from 'react-icons/fa';
 
+const API_URL = 'http://localhost:5000/api';
+
 const easeOut = [0.25, 0.1, 0.25, 1];
 
 const Header = ({ onMenuClick }) => {
@@ -33,6 +35,49 @@ const Header = ({ onMenuClick }) => {
     visible: { opacity: 1, y: 0, scale: 1, transition: { duration: 0.25, ease: easeOut } },
     exit: { opacity: 0, y: -10, scale: 0.97, transition: { duration: 0.18, ease: easeOut } },
   };
+const [user, setUser] = useState(null);
+const [isLoadingUser, setIsLoadingUser] = useState(true);
+
+useEffect(() => {
+  const getCurrentUser = async () => {
+    try {
+      const response = await fetch(`${API_URL}/auth/me`, {
+        method: 'GET',
+        credentials: 'include',
+      });
+
+      const data = await response.json();
+
+      if (response.ok && data.success) {
+        setUser(data.user);
+      } else {
+        setUser(null);
+      }
+    } catch (error) {
+      console.error('Get current user error:', error);
+      setUser(null);
+    } finally {
+      setIsLoadingUser(false);
+    }
+  };
+
+  getCurrentUser();
+}, []);
+
+const handleLogout = async () => {
+  try {
+    await fetch(`${API_URL}/auth/logout`, {
+      method: 'POST',
+      credentials: 'include',
+    });
+
+    setUser(null);
+    window.location.href = '/';
+  } catch (error) {
+    console.error('Logout error:', error);
+  }
+};
+
 
   return (
     <header className="header-section">
@@ -292,15 +337,23 @@ const Header = ({ onMenuClick }) => {
               {/* Right Side */}
               <div className="header-right d-flex justify-content-end align-items-center">
                 <div className="header-right-icon">
-                  <motion.a
-                    href="/login"
-                    className="main-header__signin"
-                    whileHover={{ scale: 1.05 }}
-                    transition={{ duration: 0.25, ease: easeOut }}
-                  >
-                    Sign In
-                  </motion.a>
-                </div>
+  {!isLoadingUser && (
+    user ? (
+      <span className="main-header__signin">
+        Hi, {user.name}
+      </span>
+    ) : (
+      <motion.a
+        href="/login"
+        className="main-header__signin"
+        whileHover={{ scale: 1.05 }}
+        transition={{ duration: 0.25, ease: easeOut }}
+      >
+        Sign In
+      </motion.a>
+    )
+  )}
+</div>
 
                 <motion.a
                   href="/SelectFriend"
@@ -322,6 +375,14 @@ const Header = ({ onMenuClick }) => {
                     <Menu size={22} />
                   </motion.div>
                 </div>
+                
+<button
+  type="button"
+  className="main-header__signin"
+  onClick={handleLogout}
+>
+  Logout
+</button>
               </div>
 
             </div>
