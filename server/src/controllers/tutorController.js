@@ -4,6 +4,7 @@ const openai = require("../config/openai");
 const tutorResponseSchema = {
   type: "object",
   additionalProperties: false,
+
   properties: {
     message: {
       type: "string",
@@ -14,17 +15,21 @@ const tutorResponseSchema = {
       items: {
         type: "object",
         additionalProperties: false,
+
         properties: {
           step: {
             type: "integer",
           },
+
           explanation: {
             type: "string",
           },
+
           calculation: {
             type: "string",
           },
         },
+
         required: [
           "step",
           "explanation",
@@ -75,6 +80,7 @@ const sendTutorMessage = async (req, res) => {
       message,
     } = req.body;
 
+
     // =====================================================
     // 1. VALIDATE REQUEST
     // =====================================================
@@ -99,6 +105,7 @@ const sendTutorMessage = async (req, res) => {
 
     const studentMessage = message.trim();
 
+
     // =====================================================
     // 2. GET STUDENT
     // =====================================================
@@ -121,6 +128,7 @@ const sendTutorMessage = async (req, res) => {
         message: "Student not found",
       });
     }
+
 
     // =====================================================
     // 3. VERIFY CONVERSATION
@@ -149,6 +157,7 @@ const sendTutorMessage = async (req, res) => {
       });
     }
 
+
     // =====================================================
     // 4. GET LESSON
     // =====================================================
@@ -175,6 +184,7 @@ const sendTutorMessage = async (req, res) => {
       }
     }
 
+
     // =====================================================
     // 5. SAVE STUDENT MESSAGE
     // =====================================================
@@ -186,6 +196,7 @@ const sendTutorMessage = async (req, res) => {
         content: studentMessage,
       },
     });
+
 
     // =====================================================
     // 6. UPDATE CONVERSATION TIME
@@ -201,6 +212,7 @@ const sendTutorMessage = async (req, res) => {
       },
     });
 
+
     // =====================================================
     // 7. AVATAR INFORMATION
     // =====================================================
@@ -211,6 +223,7 @@ const sendTutorMessage = async (req, res) => {
     const avatarPersonality =
       student.avatar?.personality ||
       "Friendly, patient and encouraging.";
+
 
     // =====================================================
     // 8. LESSON INFORMATION
@@ -230,6 +243,7 @@ Description: ${
 No specific lesson was selected.
 `;
 
+
     // =====================================================
     // 9. PREVIOUS CONVERSATION
     // =====================================================
@@ -246,6 +260,7 @@ No specific lesson was selected.
         })
         .join("\n");
 
+
     // =====================================================
     // 10. SYSTEM INSTRUCTIONS
     // =====================================================
@@ -256,11 +271,13 @@ You are ${avatarName}, an AI mathematics tutor for children.
 Your job is to teach mathematics clearly, accurately,
 patiently and safely.
 
+
 ====================================================
 STUDENT
 ====================================================
 
 Grade: ${student.grade.number}
+
 
 ====================================================
 AVATAR PERSONALITY
@@ -268,11 +285,13 @@ AVATAR PERSONALITY
 
 ${avatarPersonality}
 
+
 ====================================================
 CURRENT LESSON
 ====================================================
 
 ${lessonContext}
+
 
 ====================================================
 MOST IMPORTANT RULE: MATHEMATICAL ACCURACY
@@ -313,6 +332,7 @@ The correct answer is:
 Your explanation, calculations and answer must all
 agree with each other.
 
+
 ====================================================
 TEACHING STYLE
 ====================================================
@@ -337,6 +357,7 @@ Do not:
 - Give unrelated information
 - Ask for unnecessary personal information
 
+
 ====================================================
 WHEN SOLVING A PROBLEM
 ====================================================
@@ -352,6 +373,7 @@ Follow this process:
 7. Give the answer when appropriate.
 8. Give a hint when useful.
 9. Encourage the student.
+
 
 ====================================================
 IF THE STUDENT IS WRONG
@@ -369,6 +391,7 @@ Instead:
 - Show the correct method.
 - Encourage another attempt.
 
+
 ====================================================
 IF THE STUDENT ASKS A SIMPLE QUESTION
 ====================================================
@@ -381,11 +404,13 @@ For example, for:
 
 A short explanation is enough.
 
+
 ====================================================
 IF THE QUESTION IS NOT MATHEMATICS
 ====================================================
 
 Politely guide the student back toward mathematics.
+
 
 ====================================================
 CONVERSATION CONTEXT
@@ -397,29 +422,43 @@ ${previousMessages}
 
 Use this context to maintain continuity.
 
+
 ====================================================
 CURRENT STUDENT MESSAGE
 ====================================================
 
 ${studentMessage}
 
+
 ====================================================
 RESPONSE
 ====================================================
 
-Return the response using the required structured format.
+Return ONLY valid JSON.
+
+Do NOT return YAML.
+
+Do NOT return Markdown.
+
+Do NOT use code fences.
+
+Do NOT add any text before or after the JSON.
+
+The JSON must contain exactly these fields:
 
 message:
 A friendly explanation for the student.
 
 steps:
-Clear mathematical steps.
+An array of clear mathematical steps.
 
 Every step MUST contain:
 
 - step
 - explanation
 - calculation
+
+The "step" field MUST be an integer such as 1, 2, or 3.
 
 answer:
 The correct final mathematical answer.
@@ -446,6 +485,7 @@ easy
 medium
 hard
 
+
 ====================================================
 FINAL ACCURACY CHECK
 ====================================================
@@ -458,49 +498,75 @@ Before returning the response, silently verify:
 - Are the steps logically correct?
 - Is the explanation appropriate for the student's grade?
 
-Only return the final structured response after
+Only return the final JSON response after
 passing these checks.
 `;
 
+
     // =====================================================
-    // 11. CALL OPENAI
+    // 11. CALL OPENROUTER
     // =====================================================
 
     const response =
-      await openai.responses.create({
-        model: "gpt-5.6-luna",
+      await openai.chat.completions.create({
+        // "openrouter/free" is OpenRouter's Free Models Router.
+        // It randomly picks a currently-available free model,
+        // filtering for ones that support the features this
+        // request needs (structured outputs / json_schema here),
+        // so it won't break the moment one specific free slug
+        // (like openai/gpt-oss-120b:free) gets pulled or rate-limited.
+        model: "openrouter/free",
 
-        instructions: systemPrompt,
+        messages: [
+          {
+            role: "system",
+            content: systemPrompt,
+          },
 
-        input: studentMessage,
+          {
+            role: "user",
+            content: studentMessage,
+          },
+        ],
 
-        text: {
-          format: {
-            type: "json_schema",
+        response_format: {
+          type: "json_schema",
 
+          json_schema: {
             name: "math_tutor_response",
-
             strict: true,
-
             schema: tutorResponseSchema,
           },
         },
       });
 
+
     // =====================================================
     // 12. GET AI OUTPUT
     // =====================================================
 
+    const aiMessage = response.choices?.[0]?.message;
+
     const rawOutput =
-      response.output_text;
+      typeof aiMessage?.content === "string"
+        ? aiMessage.content.trim()
+        : "";
 
     if (!rawOutput) {
+      console.error(
+        "OpenRouter returned an empty response:",
+        JSON.stringify(response, null, 2)
+      );
+
       return res.status(500).json({
         success: false,
-        message:
-          "AI returned an empty response",
+        message: "AI returned an empty response",
       });
     }
+
+    console.log("OpenRouter model:", response.model);
+    console.log("Raw AI response:", rawOutput);
+
 
     // =====================================================
     // 13. PARSE STRUCTURED OUTPUT
@@ -509,8 +575,16 @@ passing these checks.
     let tutorResponse;
 
     try {
-      tutorResponse =
-        JSON.parse(rawOutput);
+      let jsonText = rawOutput.trim();
+
+      if (jsonText.startsWith("```")) {
+        jsonText = jsonText
+          .replace(/^```(?:json)?\s*/i, "")
+          .replace(/\s*```$/i, "")
+          .trim();
+      }
+
+      tutorResponse = JSON.parse(jsonText);
     } catch (error) {
       console.error(
         "AI JSON parsing error:",
@@ -544,6 +618,7 @@ passing these checks.
       });
     }
 
+
     if (
       !Array.isArray(
         tutorResponse.steps
@@ -556,6 +631,7 @@ passing these checks.
       });
     }
 
+
     if (
       typeof tutorResponse.answer !==
       "string"
@@ -566,6 +642,7 @@ passing these checks.
           "Invalid tutor answer",
       });
     }
+
 
     if (
       typeof tutorResponse.hint !==
@@ -578,6 +655,7 @@ passing these checks.
       });
     }
 
+
     if (
       typeof tutorResponse.encouragement !==
       "string"
@@ -589,6 +667,7 @@ passing these checks.
       });
     }
 
+
     if (
       typeof tutorResponse.topic !==
       "string"
@@ -599,6 +678,7 @@ passing these checks.
           "Invalid tutor topic",
       });
     }
+
 
     if (
       ![
@@ -615,6 +695,27 @@ passing these checks.
           "Invalid tutor difficulty",
       });
     }
+
+
+    // Validate individual steps
+
+    for (
+      const step of tutorResponse.steps
+    ) {
+      if (
+        typeof step.step !== "number" ||
+        !Number.isInteger(step.step) ||
+        typeof step.explanation !== "string" ||
+        typeof step.calculation !== "string"
+      ) {
+        return res.status(500).json({
+          success: false,
+          message:
+            "Invalid tutor step format",
+        });
+      }
+    }
+
 
     // =====================================================
     // 15. SAVE AI MESSAGE
@@ -635,6 +736,7 @@ passing these checks.
         },
       });
 
+
     // =====================================================
     // 16. UPDATE CONVERSATION TIME
     // =====================================================
@@ -648,6 +750,7 @@ passing these checks.
         updatedAt: new Date(),
       },
     });
+
 
     // =====================================================
     // 17. RETURN RESPONSE
@@ -667,11 +770,38 @@ passing these checks.
           tutorResponse,
       },
     });
+
+
   } catch (error) {
+
+    // =====================================================
+    // 18. ERROR HANDLING
+    // =====================================================
+
     console.error(
       "Tutor message error:",
       error
     );
+
+    // OpenRouter / API rate limit
+    if (error?.status === 429) {
+      return res.status(429).json({
+        success: false,
+        message:
+          "The AI tutor is temporarily unavailable because the free AI usage limit has been reached. Please try again later.",
+      });
+    }
+
+
+    // Authentication / API key problem
+    if (error?.status === 401) {
+      return res.status(500).json({
+        success: false,
+        message:
+          "AI service authentication failed. Please check the OpenRouter API key.",
+      });
+    }
+
 
     return res.status(500).json({
       success: false,

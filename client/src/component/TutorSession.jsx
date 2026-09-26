@@ -1,30 +1,25 @@
 import { useEffect, useRef, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { AlertCircle, ArrowLeft, ArrowRight, Mic, MicOff, Sparkles, Volume2, X } from 'lucide-react';
+import { AlertCircle, ArrowLeft, Mic, MicOff, Send, Sparkles } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
-// === DUMMY PLACEHOLDER IMAGES ===
-// Replace these with your own images inside src/assets/img/lessons/.
-// Keep the same import names below so nothing else needs to change.
-import slideDummy1 from '../assets/img/lessons/87116574037358326.jpeg';
-import slideDummy2 from '../assets/img/lessons/k2.jpeg';
-import slideDummy3 from '../assets/img/lessons/k3.jpeg';
-import slideDummy4 from '../assets/img/lessons/k4.jpeg';
-
 // === REDESIGN NOTES ===
-// Same voice-tutor logic as before (speech recognition + synthesis, lesson
-// data, the reply engine) — nothing about how it *works* has changed.
+// Voice tutor logic: speech recognition, speech synthesis, real AI tutor API,
+// structured tutor responses, and a lightweight responsive chat interface.
 // What changed is the visual layer:
 //  - a small, deliberate color/type token system instead of scattered hexes
-//  - a signature "tutor mark" (a mascot silhouette — kangaroo ears for Kanga,
-//    panda ears for Pandy) built from CSS, replacing the letter-in-a-circle
+//  - a signature "tutor mark": an actual SVG mascot face (kangaroo for Kanga,
+//    panda for Pandy) with ears, eyes and a nose — replacing the earlier
+//    plain gradient circle with two CSS-div "ear" nubs, which read as an
+//    abstract blob rather than a recognizable animal
 //  - glass surfaces on the header and tutor bubbles
 //  - a "thinking…" indicator while a reply is on its way
 //  - an inline toast instead of a blocking alert() for the unsupported-mic case
-//  - keyboard (← →, Esc) and swipe navigation in the lesson viewer
 //  - prefers-reduced-motion is respected throughout
 //  - mobile breakpoints (≤575px, ≤380px) added via classNames + a media
 //    query block, since most layout here uses inline styles
+//  - a text input bar next to the mic button so students can type
+//    a message instead of (or in addition to) speaking it
 
 const easeOut = [0.25, 0.1, 0.25, 1];
 const STORAGE_KEY = 'selectedTutorId';
@@ -32,195 +27,78 @@ const API_URL = 'http://localhost:5000/api';
 
 // === DESIGN TOKENS ===
 const palette = {
-  ink: '#161A2E',
-  paper: '#F5F6FA',
+  ink: '#241E42',
+  paper: '#FFF7E8',
   surface: '#FFFFFF',
-  mist: '#E3E6EF',
-  slate: '#6B7288',
-  faint: '#9AA1B4',
-  listening: '#E2483F',
+  mist: '#FFE3B0',
+  slate: '#7A6FA0',
+  faint: '#B9AFD9',
+  listening: '#FF5A5F',
 };
 
-const fontDisplay = "'Outfit', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif";
-const fontBody = "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif";
-const fontMono = "'IBM Plex Mono', 'SFMono-Regular', Consolas, monospace";
+const fontDisplay = "'Baloo 2', 'Fredoka', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif";
+const fontBody = "'Nunito', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif";
+const fontMono = "'Baloo 2', 'Nunito', sans-serif";
 
 const shadow = {
-  sm: '0 2px 10px rgba(22,26,46,0.06)',
-  md: '0 10px 28px rgba(22,26,46,0.10)',
-  lg: '0 24px 56px rgba(22,26,46,0.16)',
+  sm: '0 3px 0 rgba(36,30,66,0.10)',
+  md: '0 6px 0 rgba(36,30,66,0.12)',
+  lg: '0 10px 0 rgba(36,30,66,0.14)',
 };
 
 // Voice personalities — tuned for a warm, clear, kid-friendly Australian accent.
 // lang 'en-AU' asks the browser for an Australian voice first; namePreferHints
 // are common Australian voice names shipped on Chrome/Edge/Safari/Windows.
-// color/deep/gradient/buttonGradient/glow/earStyle drive the tutor's visual
-// mark (see TutorMark below) — everything else here is unchanged.
+// color/deep/gradient/buttonGradient/glow/earStyle drive the tutor's visual mark.
 const tutorProfiles = {
   kanga: {
     label: 'Kanga',
     lang: 'en-AU',
+    voiceGender: 'female',
     pitch: 1.18,
     rate: 0.96,
-    namePreferHints: ['Australia', 'Karen', 'Catherine', 'female'],
-    greeting: "G'day, I'm Kanga! I'm so excited to help you learn maths today. Tap the microphone and ask me anything, or ask me to show you a step-by-step example.",
+    namePreferHints: [
+      'Google UK English Female',
+      'Google US English Female',
+      'Microsoft Aria',
+      'Microsoft Jenny',
+      'Microsoft Michelle',
+      'Karen',       // macOS/iOS Australian female
+      'Catherine',   // Windows Australian female
+      'Samantha',
+      'Zira',
+      'Ava',
+      'Susan',
+      'Moira',
+      'Tessa',
+      'female',
+    ],
+    greeting: "G'day, I'm Kanga! I'm so excited to help you learn maths today. Tap the microphone and ask me anything, or type your question below.",
     color: '#F0A23D',
     deep: '#C4611A',
     gradient: 'linear-gradient(135deg, #FFCB82 0%, #F0A23D 55%, #E1791F 100%)',
     buttonGradient: 'linear-gradient(135deg, #F0A23D 0%, #C4611A 100%)',
     glow: 'rgba(240,162,61,0.38)',
-    earStyle: 'kangaroo',
+    
   },
   pandy: {
     label: 'Pandy',
     lang: 'en-AU',
+    voiceGender: 'male',
     pitch: 0.88,
     rate: 0.94,
     namePreferHints: ['Australia', 'male', 'Lee', 'William'],
-    greeting: "G'day, I'm Pandy! Ready to work through some maths together? Tap the microphone and ask me a question, or ask for a step-by-step example.",
+    greeting: "G'day, I'm Pandy! Ready to work through some maths together? Tap the microphone or type your question below.",
     color: '#4A5FE0',
     deep: '#1E1A4A',
     gradient: 'linear-gradient(135deg, #93A4FF 0%, #4A5FE0 55%, #3626B8 100%)',
     buttonGradient: 'linear-gradient(135deg, #4A5FE0 0%, #1E1A4A 100%)',
     glow: 'rgba(74,95,224,0.38)',
-    earStyle: 'panda',
+    
   },
 };
 
 const DEFAULT_TUTOR_ID = 'kanga';
-
-// Rule-based reply engine — client-side only, no backend required.
-const knowledgeBase = [
-  {
-    keywords: ['fraction'],
-    reply: "Great question about fractions! A fraction shows a part of a whole, like a slice of pizza out of the whole pizza. Want me to show you a step-by-step example?",
-    lesson: 'fractions',
-  },
-  {
-    keywords: ['algebra', 'equation', 'x ='],
-    reply: "Algebra is like solving a puzzle to find a missing number, usually called x. Want me to show you a step-by-step example?",
-    lesson: 'algebra',
-  },
-  {
-    keywords: ['angle', 'geometry', 'shape'],
-    reply: "Geometry is all about shapes, angles, and space. Want me to show you a step-by-step example?",
-    lesson: 'geometry',
-  },
-  {
-    keywords: ['decimal'],
-    reply: "Decimals are just another way to write fractions, using a dot to separate whole numbers from parts. Want me to show you a step-by-step example?",
-    lesson: 'fractions',
-  },
-  {
-    keywords: ['percentage', 'percent'],
-    reply: "Percentages tell us how much out of 100. Want me to show you a step-by-step example?",
-    lesson: 'fractions',
-  },
-  {
-    keywords: ['example', 'show me', 'slide'],
-    reply: "Sure thing! Let's walk through it together, step by step.",
-    lesson: 'algebra',
-  },
-  {
-    keywords: ['hello', 'hi', 'hey'],
-    reply: "Hello! I'm really glad you're here. What would you like to learn about today — numbers, geometry, or maybe a bit of algebra?",
-  },
-  {
-    keywords: ['thank'],
-    reply: "You're very welcome! Keep asking questions — that's exactly how great mathematicians learn.",
-  },
-];
-
-const fallbackReplies = [
-  "That's an interesting question! Could you ask about a specific topic, like fractions, algebra, or geometry?",
-  "Let's break that down together. Which topic is this about — numbers, measurement, or problem solving?",
-];
-
-const getReplyEntry = (text) => {
-  const lower = text.toLowerCase();
-  return knowledgeBase.find((entry) => entry.keywords.some((k) => lower.includes(k)));
-};
-
-// === LESSON SLIDES ===
-// Each lesson is a short, narrated, step-by-step walkthrough. Swap the
-// `image` for your own artwork — these are just placeholders.
-const lessons = {
-  fractions: {
-    title: 'Understanding Fractions',
-    slides: [
-      {
-        image: slideDummy1,
-        caption: '1 whole pizza',
-        narration: "Let's start with one whole pizza. It's all in one piece — that's our whole.",
-      },
-      {
-        image: slideDummy2,
-        caption: 'Cut into 4 equal slices',
-        narration: "Now let's cut it into four equal slices. Each slice is one out of four pieces.",
-      },
-      {
-        image: slideDummy3,
-        caption: '1 slice = 1/4',
-        narration: "If we take just one slice, we write that as one over four — one quarter of the pizza.",
-      },
-      {
-        image: slideDummy4,
-        caption: 'Great work!',
-        narration: "And that's a fraction! The top number is how many slices you have, the bottom number is how many slices make the whole. Well done!",
-      },
-    ],
-  },
-  algebra: {
-    title: 'Solving a Simple Equation',
-    slides: [
-      {
-        image: slideDummy1,
-        caption: '2x + 5 = 17',
-        narration: "Here's our equation: two x plus five equals seventeen. We want to find out what x is.",
-      },
-      {
-        image: slideDummy2,
-        caption: 'Subtract 5 from both sides',
-        narration: "First, let's subtract five from both sides. That leaves us with two x equals twelve.",
-      },
-      {
-        image: slideDummy3,
-        caption: 'Divide both sides by 2',
-        narration: "Now divide both sides by two. Twelve divided by two is six.",
-      },
-      {
-        image: slideDummy4,
-        caption: 'x = 6',
-        narration: "So x equals six! Great job solving your first equation.",
-      },
-    ],
-  },
-  geometry: {
-    title: 'Finding the Area of a Rectangle',
-    slides: [
-      {
-        image: slideDummy1,
-        caption: 'A rectangle',
-        narration: "Here's a rectangle. It has a length and a width.",
-      },
-      {
-        image: slideDummy2,
-        caption: 'Length = 6, Width = 3',
-        narration: "Let's say the length is six centimetres, and the width is three centimetres.",
-      },
-      {
-        image: slideDummy3,
-        caption: 'Area = length × width',
-        narration: "To find the area, we multiply the length by the width. Six times three.",
-      },
-      {
-        image: slideDummy4,
-        caption: 'Area = 18 cm²',
-        narration: "Six times three is eighteen. So the area is eighteen square centimetres. Nicely done!",
-      },
-    ],
-  },
-};
 
 // Respects the OS-level "reduce motion" setting so looping/ambient
 // animation can stand down for anyone who's asked for that.
@@ -300,106 +178,56 @@ const ThinkingDots = ({ color, reducedMotion }) => (
   </div>
 );
 
-// The signature mark: a mascot silhouette built from a gradient core plus
-// a pair of ear shapes unique to each tutor — Kanga's angled kangaroo ears,
-// Pandy's round panda ears — instead of a generic orb or a letter-in-a-circle.
-// Ears only render above a legible size; small chip-sized uses fall back to
-// a clean glowing dot so nothing turns to mush at 30px.
+// The signature mark: a real SVG mascot face, not a generic gradient orb.
+// Kanga gets tall upright kangaroo ears, a muzzle and dot eyes; Pandy gets
+// round black ears, panda eye-patches and a white face. Both share the
+// same head circle sizing/position so the "speaking" pulse animation and
+// the layout math around them stay identical between the two.
 const TutorMark = ({ profile, size = 112, speaking = false, reducedMotion = false }) => {
-  const earSize = size * 0.34;
-  const wrapHeight = size + earSize * 0.62;
-  const showEars = size >= 80;
-
   return (
-    <div style={{ position: 'relative', width: size, height: wrapHeight, flexShrink: 0 }}>
-      {/* static ambient glow — gives presence at rest without any motion */}
+    <div
+      style={{
+        position: 'relative',
+        width: size,
+        height: size,
+        flexShrink: 0,
+      }}
+    >
+      {/* Soft tutor glow */}
       <div
         style={{
           position: 'absolute',
-          left: '50%',
-          bottom: 0,
-          transform: 'translateX(-50%)',
-          width: size * 1.3,
-          height: size * 1.3,
+          inset: '-15%',
           borderRadius: '50%',
           background: profile.gradient,
-          opacity: 0.24,
+          opacity: 0.22,
           filter: `blur(${Math.round(size * 0.22)}px)`,
         }}
       />
 
-      {showEars && profile.earStyle === 'kangaroo' && (
-        <>
-          <div
-            style={{
-              position: 'absolute',
-              top: 0,
-              left: size * 0.06,
-              width: earSize * 0.6,
-              height: earSize,
-              borderRadius: '60% 60% 55% 55% / 70% 70% 35% 35%',
-              background: profile.deep,
-              transform: 'rotate(-26deg)',
-              transformOrigin: 'bottom center',
-            }}
-          />
-          <div
-            style={{
-              position: 'absolute',
-              top: 0,
-              right: size * 0.06,
-              width: earSize * 0.6,
-              height: earSize,
-              borderRadius: '60% 60% 55% 55% / 70% 70% 35% 35%',
-              background: profile.deep,
-              transform: 'rotate(26deg)',
-              transformOrigin: 'bottom center',
-            }}
-          />
-        </>
-      )}
-
-      {showEars && profile.earStyle === 'panda' && (
-        <>
-          <div
-            style={{
-              position: 'absolute',
-              top: earSize * 0.05,
-              left: -earSize * 0.1,
-              width: earSize,
-              height: earSize,
-              borderRadius: '50%',
-              background: profile.deep,
-            }}
-          />
-          <div
-            style={{
-              position: 'absolute',
-              top: earSize * 0.05,
-              right: -earSize * 0.1,
-              width: earSize,
-              height: earSize,
-              borderRadius: '50%',
-              background: profile.deep,
-            }}
-          />
-        </>
-      )}
-
+      {/* Simple tutor circle */}
       <motion.div
-        animate={speaking && !reducedMotion ? { scale: [1, 1.045, 1] } : { scale: 1 }}
-        transition={{ duration: 1.1, repeat: speaking && !reducedMotion ? Infinity : 0, ease: 'easeInOut' }}
+        animate={
+          speaking && !reducedMotion
+            ? { scale: [1, 1.045, 1] }
+            : { scale: 1 }
+        }
+        transition={{
+          duration: 1.1,
+          repeat: speaking && !reducedMotion ? Infinity : 0,
+          ease: 'easeInOut',
+        }}
         style={{
           position: 'absolute',
-          bottom: 0,
-          left: 0,
-          width: size,
-          height: size,
+          inset: 0,
           borderRadius: '50%',
           background: profile.gradient,
-          boxShadow: `0 ${Math.round(size * 0.12)}px ${Math.round(size * 0.3)}px ${profile.glow}`,
+          boxShadow: `0 ${Math.round(size * 0.12)}px ${Math.round(
+            size * 0.3
+          )}px ${profile.glow}`,
         }}
       >
+        {/* Soft highlight */}
         <div
           style={{
             position: 'absolute',
@@ -431,21 +259,17 @@ const TutorSession = () => {
   const [interimText, setInterimText] = useState('');
   const [notice, setNotice] = useState(null);
   const [conversationId, setConversationId] = useState(null);
-const [lessonId, setLessonId] = useState(null);
+  const [lessonId, setLessonId] = useState(null);
 
-  // Lesson slide state
-  const [activeLessonKey, setActiveLessonKey] = useState(null);
-  const [slideIndex, setSlideIndex] = useState(0);
-  const [isSlideNarrating, setIsSlideNarrating] = useState(false);
+  // NEW: typed-message state
+  const [textInput, setTextInput] = useState('');
 
   const recognitionRef = useRef(null);
   const messagesEndRef = useRef(null);
   const hasGreetedRef = useRef(false);
   const noticeTimeoutRef = useRef(null);
-  const touchStartXRef = useRef(null);
 
   const profile = tutorProfiles[tutorId] || tutorProfiles[DEFAULT_TUTOR_ID];
-  const activeLesson = activeLessonKey ? lessons[activeLessonKey] : null;
 
   useEffect(() => {
     const saved = localStorage.getItem(STORAGE_KEY);
@@ -528,22 +352,6 @@ const [lessonId, setLessonId] = useState(null);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [voicesReady, tutorId]);
 
-  // Keyboard navigation for the lesson viewer — arrow keys move between
-  // slides, Escape closes it. Purely additive; the on-screen buttons and
-  // swipe gesture below still work exactly the same.
-  useEffect(() => {
-    if (!activeLessonKey) return;
-    const handleKeyDown = (e) => {
-      if (e.key === 'ArrowRight') goToSlide(slideIndex + 1);
-      else if (e.key === 'ArrowLeft') goToSlide(slideIndex - 1);
-      else if (e.key === 'Escape') closeLesson();
-    };
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [activeLessonKey, slideIndex]);
-
-
   useEffect(() => {
   const createConversation = async () => {
     try {
@@ -590,15 +398,26 @@ const [lessonId, setLessonId] = useState(null);
     const voices = window.speechSynthesis.getVoices();
     if (!voices.length) return null;
 
-    // Prefer an explicit Australian English voice first.
-    const auVoice = voices.find((v) => v.lang?.toLowerCase() === 'en-au');
-    if (auVoice) return auVoice;
+    // Prefer an explicit Australian English voice first, then narrow by gender.
+    const auVoices = voices.filter((v) => v.lang?.toLowerCase() === 'en-au');
+    const pool = auVoices.length ? auVoices : voices.filter((v) => v.lang?.startsWith('en'));
+
+    if (profile.voiceGender === 'female') {
+      const femaleByLabel = pool.find((v) => /female/i.test(v.name));
+      if (femaleByLabel) return femaleByLabel;
+    }
+    if (profile.voiceGender === 'male') {
+      const maleByLabel = pool.find((v) => /male/i.test(v.name) && !/female/i.test(v.name));
+      if (maleByLabel) return maleByLabel;
+    }
 
     for (const hint of profile.namePreferHints) {
-      const match = voices.find((v) => v.name.toLowerCase().includes(hint.toLowerCase()));
+      const match = pool.find((v) => v.name.toLowerCase().includes(hint.toLowerCase()))
+        || voices.find((v) => v.name.toLowerCase().includes(hint.toLowerCase()));
       if (match) return match;
     }
-    return voices.find((v) => v.lang?.startsWith('en')) || voices[0];
+
+    return pool[0] || voices.find((v) => v.lang?.startsWith('en')) || voices[0];
   };
 
   const speak = (text, onEnd) => {
@@ -644,6 +463,38 @@ const [lessonId, setLessonId] = useState(null);
     if (noticeTimeoutRef.current) clearTimeout(noticeTimeoutRef.current);
     noticeTimeoutRef.current = setTimeout(() => setNotice(null), 4000);
   };
+
+  const buildTutorSpeech = (tutor) => {
+  const parts = [];
+
+  if (tutor.message) {
+    parts.push(tutor.message);
+  }
+
+  if (tutor.steps?.length) {
+    parts.push("Let's solve it step by step.");
+
+    tutor.steps.forEach((step) => {
+      parts.push(
+        `Step ${step.step}. ${step.explanation}. ${step.calculation}.`
+      );
+    });
+  }
+
+  if (tutor.answer) {
+    parts.push(`So, the answer is ${tutor.answer}.`);
+  }
+
+  if (tutor.hint) {
+    parts.push(`Remember this: ${tutor.hint}.`);
+  }
+
+  if (tutor.encouragement) {
+    parts.push(tutor.encouragement);
+  }
+
+  return parts.join(" ");
+};
 
  const handleStudentMessage = async (text) => {
   const cleanText = text?.trim();
@@ -719,8 +570,9 @@ const [lessonId, setLessonId] = useState(null);
       },
     ]);
 
-    // Read tutor's explanation aloud
-    speak(tutor.message);
+    // Read the complete tutor explanation aloud
+    const speech = buildTutorSpeech(tutor);
+    speak(speech);
 
   } catch (error) {
     console.error(
@@ -756,89 +608,50 @@ const [lessonId, setLessonId] = useState(null);
     }
   };
 
-  // === Lesson slide controls ===
-
-  const startLesson = (lessonKey) => {
-    if (!lessons[lessonKey]) return;
-    setActiveLessonKey(lessonKey);
-    setSlideIndex(0);
-    narrateSlide(lessonKey, 0);
-  };
-
-  const narrateSlide = (lessonKey, index) => {
-    const lesson = lessons[lessonKey];
-    if (!lesson || !lesson.slides[index]) return;
-
-    setIsSlideNarrating(true);
-    speak(lesson.slides[index].narration, () => {
-      setIsSlideNarrating(false);
-    });
-  };
-
-  const goToSlide = (index) => {
-    if (!activeLessonKey) return;
-    const lesson = lessons[activeLessonKey];
-    if (index < 0 || index >= lesson.slides.length) return;
-
-    if ('speechSynthesis' in window) window.speechSynthesis.cancel();
-    setSlideIndex(index);
-    narrateSlide(activeLessonKey, index);
-  };
-
-  const closeLesson = () => {
-    if ('speechSynthesis' in window) window.speechSynthesis.cancel();
-    setIsSlideNarrating(false);
-    setActiveLessonKey(null);
-    setSlideIndex(0);
+  // NEW: typed-message submit handler — mirrors what the mic path does
+  // (stop speech, send through the same handleStudentMessage pipeline)
+  const handleTextSubmit = (e) => {
+    e.preventDefault();
+    const value = textInput.trim();
+    if (!value) return;
+    if (isListening) {
+      recognitionRef.current?.stop();
+      setIsListening(false);
+    }
+    setTextInput('');
+    handleStudentMessage(value);
   };
 
   const requestExample = () => {
     handleStudentMessage('Can you show me a step-by-step example?');
   };
 
-  // Swipe left/right on the slide image — an alternate path to the same
-  // Back/Next functions, handy on phones and tablets.
-  const handleTouchStart = (e) => {
-    touchStartXRef.current = e.touches[0].clientX;
-  };
-
-  const handleTouchEnd = (e) => {
-    if (touchStartXRef.current === null) return;
-    const deltaX = e.changedTouches[0].clientX - touchStartXRef.current;
-    touchStartXRef.current = null;
-    if (Math.abs(deltaX) < 40) return;
-    if (deltaX < 0) goToSlide(slideIndex + 1);
-    else goToSlide(slideIndex - 1);
-  };
-
-  const isLastSlide = activeLesson && slideIndex === activeLesson.slides.length - 1;
-
   const tutorBubbleStyle = {
-    maxWidth: '78%',
-    padding: '13px 17px',
-    borderRadius: '18px',
+    maxWidth: '80%',
+    padding: '15px 19px',
+    borderRadius: '22px',
     borderBottomLeftRadius: '6px',
     fontFamily: fontBody,
-    fontSize: '0.93rem',
+    fontSize: '1rem',
+    fontWeight: 600,
     lineHeight: 1.55,
-    background: 'rgba(255,255,255,0.82)',
-    backdropFilter: 'blur(10px)',
-    WebkitBackdropFilter: 'blur(10px)',
+    background: palette.surface,
     color: palette.ink,
-    border: `1px solid ${palette.mist}`,
-    borderLeft: `3px solid ${profile.color}`,
+    border: `2.5px solid ${palette.mist}`,
+    borderLeft: `5px solid ${profile.color}`,
     boxShadow: shadow.sm,
   };
 
   const studentBubbleStyle = {
-    maxWidth: '78%',
-    padding: '13px 17px',
-    borderRadius: '18px',
+    maxWidth: '80%',
+    padding: '15px 19px',
+    borderRadius: '22px',
     borderBottomRightRadius: '6px',
     fontFamily: fontBody,
-    fontSize: '0.93rem',
+    fontSize: '1rem',
+    fontWeight: 700,
     lineHeight: 1.55,
-    background: 'linear-gradient(135deg, #1E2440 0%, #12172B 100%)',
+    background: profile.buttonGradient,
     color: '#fff',
     boxShadow: shadow.sm,
   };
@@ -855,7 +668,7 @@ const [lessonId, setLessonId] = useState(null);
       }}
     >
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@500;600&family=Inter:wght@400;500;600;700&family=Outfit:wght@600;700;800&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;600;700;800&family=Nunito:wght@400;600;700;800;900&display=swap');
 
         .focus-ring:focus-visible {
           outline: 2px solid var(--accent, #4A5FE0);
@@ -905,7 +718,7 @@ const [lessonId, setLessonId] = useState(null);
           }
 
           .ts-conversation {
-            padding: 8px 12px 150px !important;
+            padding: 8px 12px 172px !important;
           }
           .ts-bubble {
             max-width: 90% !important;
@@ -914,7 +727,7 @@ const [lessonId, setLessonId] = useState(null);
           }
 
           .ts-notice {
-            bottom: 104px !important;
+            bottom: 126px !important;
             left: 12px !important;
             right: 12px !important;
             transform: none !important;
@@ -922,50 +735,23 @@ const [lessonId, setLessonId] = useState(null);
             font-size: 0.78rem !important;
           }
 
-          .ts-mic-wrap {
-            bottom: 18px !important;
+          .ts-input-bar-wrap {
+            bottom: 16px !important;
+            padding: 0 12px !important;
+          }
+          .ts-text-input {
+            font-size: 0.85rem !important;
+            padding: 10px 14px !important;
+          }
+          .ts-send-btn {
+            width: 40px !important;
+            height: 40px !important;
           }
           .ts-mic-btn {
-            width: 58px !important;
-            height: 58px !important;
+            width: 46px !important;
+            height: 46px !important;
           }
 
-          .ts-lesson-overlay {
-            padding: 10px !important;
-          }
-          .ts-lesson-card {
-            max-width: 100% !important;
-            border-radius: 18px !important;
-          }
-          .ts-slide-header {
-            padding: 12px 14px !important;
-          }
-          .ts-slide-header-title {
-            font-size: 0.85rem !important;
-          }
-          .ts-step-info {
-            padding: 12px 16px 0 !important;
-          }
-          .ts-slide-image-pad {
-            padding: 12px 14px 0 !important;
-          }
-          .ts-slide-image-wrap {
-            height: 190px !important;
-          }
-          .ts-slide-caption-pad {
-            padding: 14px 14px 4px !important;
-          }
-          .ts-slide-caption {
-            font-size: 1.02rem !important;
-          }
-          .ts-lesson-controls {
-            padding: 12px 14px 18px !important;
-            gap: 8px !important;
-          }
-          .ts-lesson-controls button {
-            padding: 10px !important;
-            font-size: 0.8rem !important;
-          }
         }
 
         /* ===================================================
@@ -994,26 +780,24 @@ const [lessonId, setLessonId] = useState(null);
           }
 
           .ts-conversation {
-            padding: 6px 8px 140px !important;
+            padding: 6px 8px 164px !important;
           }
           .ts-bubble {
             max-width: 94% !important;
             font-size: 0.82rem !important;
           }
 
+          .ts-text-input {
+            font-size: 0.8rem !important;
+            padding: 9px 12px !important;
+          }
+          .ts-send-btn {
+            width: 38px !important;
+            height: 38px !important;
+          }
           .ts-mic-btn {
-            width: 52px !important;
-            height: 52px !important;
-          }
-
-          .ts-slide-image-wrap {
-            height: 160px !important;
-          }
-          .ts-slide-caption {
-            font-size: 0.92rem !important;
-          }
-          .ts-lesson-controls button {
-            font-size: 0.74rem !important;
+            width: 42px !important;
+            height: 42px !important;
           }
         }
       `}</style>
@@ -1028,69 +812,74 @@ const [lessonId, setLessonId] = useState(null);
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
-          padding: '16px 24px',
-          borderBottom: `1px solid ${palette.mist}`,
-          background: 'rgba(255,255,255,0.78)',
-          backdropFilter: 'blur(14px)',
-          WebkitBackdropFilter: 'blur(14px)',
+          padding: '14px 20px',
+          borderBottom: `4px solid ${profile.color}`,
+          background: palette.surface,
         }}
       >
         <motion.button
           type="button"
           onClick={() => navigate(-1)}
-          whileHover={{ x: -3 }}
-          whileTap={{ scale: 0.95 }}
+          whileHover={{ x: -2, scale: 1.04 }}
+          whileTap={{ scale: 0.92 }}
           className="focus-ring"
           style={{
             display: 'flex',
             alignItems: 'center',
-            gap: '8px',
-            background: 'none',
-            border: 'none',
+            gap: '6px',
+            background: palette.paper,
+            border: `2px solid ${palette.mist}`,
             color: palette.ink,
-            fontFamily: fontBody,
-            fontWeight: 600,
+            fontFamily: fontDisplay,
+            fontWeight: 700,
             fontSize: '0.95rem',
             cursor: 'pointer',
-            padding: '6px 8px',
-            borderRadius: '10px',
+            padding: '8px 16px 8px 10px',
+            borderRadius: '999px',
           }}
         >
           <ArrowLeft size={18} />
           Back
         </motion.button>
 
-        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', lineHeight: 1.15 }}>
+        <div
+          className="ts-header-label"
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '8px',
+            fontFamily: fontDisplay,
+            fontWeight: 800,
+            color: palette.ink,
+            fontSize: '1.15rem',
+          }}
+        >
+          {profile.label}
+          <span
+            className="ts-header-status"
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px',
+              fontSize: '0.72rem',
+              fontFamily: fontBody,
+              color: '#fff',
+              fontWeight: 800,
+              background: isSpeaking ? profile.color : isListening ? palette.listening : palette.slate,
+              padding: '4px 10px',
+              borderRadius: '999px',
+            }}
+          >
             <span
-              className="ts-header-label"
-              style={{ fontFamily: fontDisplay, fontWeight: 700, color: palette.ink, fontSize: '0.95rem' }}
-            >
-              {profile.label}
-            </span>
-            <span
-              className="ts-header-status"
               style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '5px',
-                fontSize: '0.72rem',
-                color: palette.slate,
-                fontWeight: 500,
+                width: 7,
+                height: 7,
+                borderRadius: '50%',
+                background: '#fff',
               }}
-            >
-              <span
-                style={{
-                  width: 6,
-                  height: 6,
-                  borderRadius: '50%',
-                  background: isSpeaking ? profile.color : isListening ? palette.listening : palette.faint,
-                }}
-              />
-              {isSpeaking ? 'Speaking' : isListening ? 'Listening' : 'Ready'}
-            </span>
-          </div>
-          <TutorMark profile={profile} size={38} speaking={isSpeaking} reducedMotion={reducedMotion} />
+            />
+            {isSpeaking ? 'Speaking' : isListening ? 'Listening' : 'Ready'}
+          </span>
         </div>
       </div>
 
@@ -1108,14 +897,14 @@ const [lessonId, setLessonId] = useState(null);
           <TutorMark profile={profile} size={116} speaking={isSpeaking} reducedMotion={reducedMotion} />
         </div>
 
-        <p
+        <div
           className="ts-status-text"
           style={{
             marginTop: '18px',
-            fontFamily: fontBody,
-            fontSize: '0.92rem',
-            fontWeight: 600,
-            color: palette.slate,
+            fontFamily: fontDisplay,
+            fontSize: '1.05rem',
+            fontWeight: 700,
+            color: palette.ink,
             display: 'flex',
             alignItems: 'center',
             gap: '8px',
@@ -1133,9 +922,9 @@ const [lessonId, setLessonId] = useState(null);
               Listening…
             </>
           ) : (
-            `Tap the microphone to talk with ${profile.label}`
+            `Talk or type to chat with ${profile.label}`
           )}
-        </p>
+        </div>
 
         {/* Quick action: ask for a visual example */}
         <motion.button
@@ -1145,23 +934,24 @@ const [lessonId, setLessonId] = useState(null);
           whileTap={{ scale: 0.97 }}
           className="focus-ring ts-example-btn"
           style={{
-            marginTop: '14px',
+            marginTop: '16px',
             display: 'flex',
             alignItems: 'center',
-            gap: '7px',
-            padding: '9px 18px',
+            gap: '8px',
+            padding: '12px 22px',
             borderRadius: '999px',
-            border: `1.5px solid ${profile.color}`,
-            background: `${profile.color}14`,
-            color: palette.ink,
-            fontFamily: fontBody,
-            fontWeight: 600,
-            fontSize: '0.82rem',
+            border: 'none',
+            background: profile.buttonGradient,
+            color: '#fff',
+            fontFamily: fontDisplay,
+            fontWeight: 700,
+            fontSize: '0.95rem',
             cursor: 'pointer',
+            boxShadow: `0 5px 0 ${profile.deep}`,
           }}
         >
-          <Sparkles size={14} color={profile.color} />
-          Show me a step-by-step example
+          <Sparkles size={16} color="#fff" />
+          Show me an example!
         </motion.button>
       </div>
 
@@ -1173,7 +963,7 @@ const [lessonId, setLessonId] = useState(null);
         style={{
           flex: 1,
           overflowY: 'auto',
-          padding: '10px 20px 150px',
+          padding: '10px 20px 172px',
           maxWidth: '640px',
           width: '100%',
           margin: '0 auto',
@@ -1181,22 +971,136 @@ const [lessonId, setLessonId] = useState(null);
       >
         <AnimatePresence initial={false}>
           {messages.map((msg, i) => (
-            <motion.div
-              key={i}
-              initial={{ opacity: 0, y: 12 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.35, ease: easeOut }}
+  <motion.div
+    key={i}
+    className={`ts-message ${
+      msg.sender === 'student'
+        ? 'ts-message-student'
+        : 'ts-message-tutor'
+    }`}
+    initial={{ opacity: 0, y: 10 }}
+    animate={{ opacity: 1, y: 0 }}
+  >
+    <div
+      className="ts-bubble"
+      style={
+        msg.sender === 'student' ? studentBubbleStyle : tutorBubbleStyle
+      }
+    >
+
+      {/* Main tutor message */}
+      <div>
+        {msg.text}
+      </div>
+
+
+      {/* Structured AI tutor response */}
+      {msg.sender === 'tutor' && msg.tutor && (
+        <div style={{ marginTop: '18px' }}>
+
+          {/* Steps */}
+          {msg.tutor.steps?.length > 0 && (
+            <div>
+
+              <div
+                style={{
+                  fontWeight: 700,
+                  marginBottom: '10px',
+                }}
+              >
+                Let's solve it step by step:
+              </div>
+
+              {msg.tutor.steps.map((step) => (
+                <div
+                  key={step.step}
+                  style={{
+                    marginBottom: '14px',
+                  }}
+                >
+                  <div
+                    style={{
+                      fontWeight: 700,
+                      marginBottom: '4px',
+                    }}
+                  >
+                    Step {step.step}
+                  </div>
+
+                  <div
+                    style={{
+                      marginBottom: '5px',
+                    }}
+                  >
+                    {step.explanation}
+                  </div>
+
+                  <div
+                    style={{
+                      background: '#f5f7fb',
+                      borderRadius: '8px',
+                      padding: '8px 12px',
+                      fontWeight: 600,
+                    }}
+                  >
+                    {step.calculation}
+                  </div>
+                </div>
+              ))}
+
+            </div>
+          )}
+
+
+          {/* Answer */}
+          {msg.tutor.answer && (
+            <div
               style={{
-                display: 'flex',
-                justifyContent: msg.sender === 'student' ? 'flex-end' : 'flex-start',
-                marginBottom: '10px',
+                marginTop: '16px',
+                padding: '12px 14px',
+                borderRadius: '10px',
+                background: '#fff7e8',
+                border: '1px solid #f5a623',
               }}
             >
-              <div className="ts-bubble" style={msg.sender === 'student' ? studentBubbleStyle : tutorBubbleStyle}>
-                {msg.text}
-              </div>
-            </motion.div>
-          ))}
+              <strong>Answer: </strong>
+              {msg.tutor.answer}
+            </div>
+          )}
+
+
+          {/* Hint */}
+          {msg.tutor.hint && (
+            <div
+              style={{
+                marginTop: '12px',
+                fontSize: '14px',
+              }}
+            >
+              <strong>💡 Hint:</strong>{' '}
+              {msg.tutor.hint}
+            </div>
+          )}
+
+
+          {/* Encouragement */}
+          {msg.tutor.encouragement && (
+            <div
+              style={{
+                marginTop: '10px',
+                fontWeight: 600,
+              }}
+            >
+              {msg.tutor.encouragement}
+            </div>
+          )}
+
+        </div>
+      )}
+
+    </div>
+  </motion.div>
+))}
 
           {isThinking && (
             <motion.div
@@ -1244,7 +1148,7 @@ const [lessonId, setLessonId] = useState(null);
             className="ts-notice"
             style={{
               position: 'fixed',
-              bottom: '114px',
+              bottom: '136px',
               left: '50%',
               transform: 'translateX(-50%)',
               display: 'flex',
@@ -1269,317 +1173,137 @@ const [lessonId, setLessonId] = useState(null);
         )}
       </AnimatePresence>
 
-      {/* Mic button */}
-      <div className="ts-mic-wrap" style={{ position: 'fixed', bottom: '28px', left: '50%', transform: 'translateX(-50%)' }}>
-        <motion.button
-          type="button"
-          onClick={toggleMic}
-          whileHover={{ scale: 1.06 }}
-          whileTap={{ scale: 0.94 }}
-          className="focus-ring ts-mic-btn"
-          aria-label={!micSupported ? 'Voice input not supported' : isListening ? 'Stop listening' : 'Start voice input'}
+      {/* NEW: Input bar — text field + send button, plus the mic button.
+          Both paths funnel into handleStudentMessage, so typing and
+          speaking behave identically from the tutor's point of view. */}
+      <div
+        className="ts-input-bar-wrap"
+        style={{
+          position: 'fixed',
+          bottom: '24px',
+          left: 0,
+          right: 0,
+          display: 'flex',
+          justifyContent: 'center',
+          padding: '0 20px',
+          zIndex: 40,
+        }}
+      >
+        <form
+          onSubmit={handleTextSubmit}
           style={{
-            position: 'relative',
-            width: '68px',
-            height: '68px',
-            borderRadius: '50%',
-            border: 'none',
-            background: !micSupported
-              ? palette.slate
-              : isListening
-              ? 'linear-gradient(135deg, #FF8A80, #E2483F)'
-              : profile.buttonGradient,
-            color: '#fff',
             display: 'flex',
             alignItems: 'center',
-            justifyContent: 'center',
-            cursor: micSupported ? 'pointer' : 'not-allowed',
-            opacity: micSupported ? 1 : 0.85,
-            boxShadow: isListening ? '0 16px 36px rgba(226,72,63,0.42)' : `0 16px 36px ${profile.glow}`,
+            gap: '10px',
+            width: '100%',
+            maxWidth: '640px',
           }}
         >
-          {isListening ? <MicOff size={26} color="#fff" /> : <Mic size={26} color="#fff" />}
-
-          {isListening && !reducedMotion && (
-            <>
-              <motion.span
-                animate={{ opacity: [0.5, 0], scale: [1, 1.8] }}
-                transition={{ duration: 1.2, repeat: Infinity, ease: 'easeOut' }}
-                style={{ position: 'absolute', inset: 0, borderRadius: '50%', border: '3px solid #E2483F' }}
-              />
-              <motion.span
-                animate={{ opacity: [0.5, 0], scale: [1, 1.8] }}
-                transition={{ duration: 1.2, repeat: Infinity, ease: 'easeOut', delay: 0.4 }}
-                style={{ position: 'absolute', inset: 0, borderRadius: '50%', border: '3px solid #E2483F' }}
-              />
-            </>
-          )}
-        </motion.button>
-      </div>
-
-      {/* === Lesson slide overlay === */}
-      <AnimatePresence>
-        {activeLesson && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="ts-lesson-overlay"
+          <div
             style={{
-              position: 'fixed',
-              inset: 0,
-              background: 'rgba(15,20,40,0.58)',
-              backdropFilter: 'blur(4px)',
-              WebkitBackdropFilter: 'blur(4px)',
-              zIndex: 50,
+              flex: 1,
+              display: 'flex',
+              alignItems: 'center',
+              background: palette.surface,
+              border: `2.5px solid ${palette.mist}`,
+              borderRadius: '999px',
+              boxShadow: shadow.md,
+              paddingRight: '6px',
+            }}
+          >
+            <input
+              type="text"
+              value={textInput}
+              onChange={(e) => setTextInput(e.target.value)}
+              placeholder={`Ask ${profile.label} something…`}
+              aria-label="Type a message"
+              className="focus-ring ts-text-input"
+              style={{
+                flex: 1,
+                border: 'none',
+                outline: 'none',
+                background: 'transparent',
+                padding: '14px 20px',
+                fontFamily: fontBody,
+                fontWeight: 700,
+                fontSize: '1rem',
+                color: palette.ink,
+              }}
+            />
+            <motion.button
+              type="submit"
+              disabled={!textInput.trim()}
+              whileHover={textInput.trim() ? { scale: 1.06 } : {}}
+              whileTap={textInput.trim() ? { scale: 0.94 } : {}}
+              aria-label="Send message"
+              className="focus-ring ts-send-btn"
+              style={{
+                width: '46px',
+                height: '46px',
+                borderRadius: '50%',
+                border: 'none',
+                flexShrink: 0,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                background: textInput.trim() ? profile.buttonGradient : palette.mist,
+                color: '#fff',
+                cursor: textInput.trim() ? 'pointer' : 'not-allowed',
+                boxShadow: textInput.trim() ? `0 4px 0 ${profile.deep}` : 'none',
+              }}
+            >
+              <Send size={18} color={textInput.trim() ? '#fff' : palette.faint} />
+            </motion.button>
+          </div>
+
+          <motion.button
+            type="button"
+            onClick={toggleMic}
+            whileHover={{ scale: 1.06 }}
+            whileTap={{ scale: 0.94 }}
+            className="focus-ring ts-mic-btn"
+            aria-label={!micSupported ? 'Voice input not supported' : isListening ? 'Stop listening' : 'Start voice input'}
+            style={{
+              position: 'relative',
+              width: '58px',
+              height: '58px',
+              borderRadius: '50%',
+              border: 'none',
+              flexShrink: 0,
+              background: !micSupported
+                ? palette.slate
+                : isListening
+                ? 'linear-gradient(135deg, #FF8A80, #E2483F)'
+                : profile.buttonGradient,
+              color: '#fff',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              padding: '20px',
+              cursor: micSupported ? 'pointer' : 'not-allowed',
+              opacity: micSupported ? 1 : 0.85,
+              boxShadow: isListening ? `0 5px 0 #B8332F` : `0 5px 0 ${profile.deep}`,
             }}
           >
-            <motion.div
-              initial={{ opacity: 0, y: 30, scale: 0.96 }}
-              animate={{ opacity: 1, y: 0, scale: 1 }}
-              exit={{ opacity: 0, y: 20, scale: 0.96 }}
-              transition={{ duration: 0.35, ease: easeOut }}
-              className="ts-lesson-card"
-              style={{
-                width: '100%',
-                maxWidth: '480px',
-                background: palette.surface,
-                borderRadius: '22px',
-                overflow: 'hidden',
-                boxShadow: shadow.lg,
-              }}
-            >
-              <div style={{ height: '5px', background: profile.gradient }} />
+            {isListening ? <MicOff size={22} color="#fff" /> : <Mic size={22} color="#fff" />}
 
-              {/* Slide header */}
-              <div
-                className="ts-slide-header"
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'space-between',
-                  padding: '15px 18px',
-                  borderBottom: `1px solid ${palette.mist}`,
-                }}
-              >
-                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                  <TutorMark profile={profile} size={30} speaking={isSlideNarrating} reducedMotion={reducedMotion} />
-                  <span
-                    className="ts-slide-header-title"
-                    style={{ fontFamily: fontDisplay, fontWeight: 700, color: palette.ink, fontSize: '0.95rem' }}
-                  >
-                    {activeLesson.title}
-                  </span>
-                </div>
-                <button
-                  type="button"
-                  onClick={closeLesson}
-                  aria-label="Close example"
-                  className="focus-ring"
-                  style={{
-                    width: '30px',
-                    height: '30px',
-                    borderRadius: '50%',
-                    border: 'none',
-                    background: palette.paper,
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    cursor: 'pointer',
-                    flexShrink: 0,
-                  }}
-                >
-                  <X size={16} color={palette.slate} />
-                </button>
-              </div>
+            {isListening && !reducedMotion && (
+              <>
+                <motion.span
+                  animate={{ opacity: [0.5, 0], scale: [1, 1.8] }}
+                  transition={{ duration: 1.2, repeat: Infinity, ease: 'easeOut' }}
+                  style={{ position: 'absolute', inset: 0, borderRadius: '50%', border: '3px solid #E2483F' }}
+                />
+                <motion.span
+                  animate={{ opacity: [0.5, 0], scale: [1, 1.8] }}
+                  transition={{ duration: 1.2, repeat: Infinity, ease: 'easeOut', delay: 0.4 }}
+                  style={{ position: 'absolute', inset: 0, borderRadius: '50%', border: '3px solid #E2483F' }}
+                />
+              </>
+            )}
+          </motion.button>
+        </form>
+      </div>
 
-              {/* Step counter + progress */}
-              <div className="ts-step-info" style={{ padding: '14px 20px 0' }}>
-                <div
-                  style={{
-                    fontFamily: fontMono,
-                    fontSize: '0.7rem',
-                    fontWeight: 600,
-                    color: palette.faint,
-                    textTransform: 'uppercase',
-                    letterSpacing: '0.06em',
-                    marginBottom: '6px',
-                  }}
-                >
-                  Step {slideIndex + 1} of {activeLesson.slides.length}
-                </div>
-                <div style={{ height: '5px', borderRadius: '999px', background: palette.mist, overflow: 'hidden' }}>
-                  <motion.div
-                    animate={{ width: `${((slideIndex + 1) / activeLesson.slides.length) * 100}%` }}
-                    transition={{ duration: 0.4, ease: easeOut }}
-                    style={{ height: '100%', borderRadius: '999px', background: profile.gradient }}
-                  />
-                </div>
-              </div>
-
-              {/* Slide image — tap the arrows, use ← →, or swipe */}
-              <div className="ts-slide-image-pad" style={{ padding: '16px 20px 0' }}>
-                <div
-                  onTouchStart={handleTouchStart}
-                  onTouchEnd={handleTouchEnd}
-                  className="ts-slide-image-wrap"
-                  style={{
-                    width: '100%',
-                    height: '240px',
-                    borderRadius: '16px',
-                    background: palette.paper,
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    overflow: 'hidden',
-                    boxShadow: `inset 0 0 0 1px ${palette.mist}`,
-                  }}
-                >
-                  <AnimatePresence mode="wait">
-                    <motion.img
-                      key={slideIndex}
-                      src={activeLesson.slides[slideIndex].image}
-                      alt={activeLesson.slides[slideIndex].caption}
-                      initial={{ opacity: 0, scale: 0.94 }}
-                      animate={{ opacity: 1, scale: 1 }}
-                      exit={{ opacity: 0, scale: 1.02 }}
-                      transition={{ duration: 0.35, ease: easeOut }}
-                      style={{ maxWidth: '80%', maxHeight: '80%', objectFit: 'contain' }}
-                    />
-                  </AnimatePresence>
-                </div>
-              </div>
-
-              {/* Slide caption + narration indicator */}
-              <div className="ts-slide-caption-pad" style={{ padding: '18px 20px 6px' }}>
-                <AnimatePresence mode="wait">
-                  <motion.h3
-                    key={slideIndex}
-                    initial={{ opacity: 0, y: 8 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: -8 }}
-                    transition={{ duration: 0.3, ease: easeOut }}
-                    aria-live="polite"
-                    className="ts-slide-caption"
-                    style={{
-                      fontFamily: fontDisplay,
-                      fontSize: '1.2rem',
-                      fontWeight: 700,
-                      color: palette.ink,
-                      textAlign: 'center',
-                      margin: 0,
-                    }}
-                  >
-                    {activeLesson.slides[slideIndex].caption}
-                  </motion.h3>
-                </AnimatePresence>
-
-                {isSlideNarrating && (
-                  <p
-                    style={{
-                      textAlign: 'center',
-                      fontFamily: fontBody,
-                      fontSize: '0.8rem',
-                      color: profile.color,
-                      fontWeight: 600,
-                      marginTop: '10px',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      gap: '7px',
-                    }}
-                  >
-                    <Volume2 size={14} />
-                    {profile.label} is explaining…
-                  </p>
-                )}
-              </div>
-
-              {/* Controls */}
-              <div className="ts-lesson-controls" style={{ display: 'flex', gap: '10px', padding: '14px 20px 22px' }}>
-                <motion.button
-                  type="button"
-                  onClick={() => goToSlide(slideIndex - 1)}
-                  disabled={slideIndex === 0}
-                  whileHover={slideIndex !== 0 ? { scale: 1.02 } : {}}
-                  whileTap={slideIndex !== 0 ? { scale: 0.97 } : {}}
-                  className="focus-ring"
-                  style={{
-                    flex: 1,
-                    padding: '11px',
-                    borderRadius: '12px',
-                    border: `1.5px solid ${palette.mist}`,
-                    background: palette.surface,
-                    color: palette.ink,
-                    fontFamily: fontBody,
-                    fontWeight: 600,
-                    fontSize: '0.85rem',
-                    cursor: slideIndex === 0 ? 'not-allowed' : 'pointer',
-                    opacity: slideIndex === 0 ? 0.4 : 1,
-                  }}
-                >
-                  Back
-                </motion.button>
-
-                {isLastSlide ? (
-                  <motion.button
-                    type="button"
-                    onClick={closeLesson}
-                    whileHover={{ scale: 1.02 }}
-                    whileTap={{ scale: 0.97 }}
-                    className="focus-ring"
-                    style={{
-                      flex: 2,
-                      padding: '11px',
-                      borderRadius: '12px',
-                      border: 'none',
-                      background: profile.buttonGradient,
-                      color: '#fff',
-                      fontFamily: fontBody,
-                      fontWeight: 700,
-                      fontSize: '0.85rem',
-                      cursor: 'pointer',
-                    }}
-                  >
-                    Got it!
-                  </motion.button>
-                ) : (
-                  <motion.button
-                    type="button"
-                    onClick={() => goToSlide(slideIndex + 1)}
-                    whileHover={{ scale: 1.02 }}
-                    whileTap={{ scale: 0.97 }}
-                    className="focus-ring"
-                    style={{
-                      flex: 2,
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      gap: '6px',
-                      padding: '11px',
-                      borderRadius: '12px',
-                      border: 'none',
-                      background: profile.buttonGradient,
-                      color: '#fff',
-                      fontFamily: fontBody,
-                      fontWeight: 700,
-                      fontSize: '0.85rem',
-                      cursor: 'pointer',
-                    }}
-                  >
-                    Next
-                    <ArrowRight size={15} />
-                  </motion.button>
-                )}
-              </div>
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
     </section>
   );
 };

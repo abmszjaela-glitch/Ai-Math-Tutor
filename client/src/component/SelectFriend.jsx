@@ -211,9 +211,9 @@ const SelectFriend = ({
     onContinue(selectedId);
 
     /*
-     * Navigate to Start Learning
+     * Navigate to Tutor Session
      */
-    navigate('/start-learning');
+    navigate('/tutor-session');
   };
 
   /*
