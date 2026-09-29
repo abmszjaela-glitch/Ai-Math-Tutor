@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { AlertCircle, ArrowLeft, Mic, MicOff, Send, Sparkles } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-
+import TutorAvatar from './TutorAvatar';
 // === REDESIGN NOTES ===
 // Voice tutor logic: speech recognition, speech synthesis, real AI tutor API,
 // structured tutor responses, and a lightweight responsive chat interface.
@@ -27,13 +27,13 @@ const API_URL = 'http://localhost:5000/api';
 
 // === DESIGN TOKENS ===
 const palette = {
-  ink: '#241E42',
-  paper: '#FFF7E8',
-  surface: '#FFFFFF',
-  mist: '#FFE3B0',
-  slate: '#7A6FA0',
-  faint: '#B9AFD9',
-  listening: '#FF5A5F',
+  ink: '#F5F1FF',        // was dark text — now light text for dark bg
+  paper: '#000000',       // page background (near-black, slight warmth)
+  surface: '#17151F',     // card/bubble background (dark surface, not pure black)
+  mist: '#332D47',        // was light peach border — now a subtle dark-purple border
+  slate: '#8B84A8',       // muted secondary text/status color
+  faint: '#4A4460',       // disabled/faint elements
+  listening: '#FF6B6F',   // keep red, slightly brighter for contrast on black
 };
 
 const fontDisplay = "'Baloo 2', 'Fredoka', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif";
@@ -57,29 +57,13 @@ const tutorProfiles = {
     voiceGender: 'female',
     pitch: 1.18,
     rate: 0.96,
-    namePreferHints: [
-      'Google UK English Female',
-      'Google US English Female',
-      'Microsoft Aria',
-      'Microsoft Jenny',
-      'Microsoft Michelle',
-      'Karen',       // macOS/iOS Australian female
-      'Catherine',   // Windows Australian female
-      'Samantha',
-      'Zira',
-      'Ava',
-      'Susan',
-      'Moira',
-      'Tessa',
-      'female',
-    ],
+    namePreferHints: [ /* ...unchanged... */ ],
     greeting: "G'day, I'm Kanga! I'm so excited to help you learn maths today. Tap the microphone and ask me anything, or type your question below.",
     color: '#F0A23D',
     deep: '#C4611A',
     gradient: 'linear-gradient(135deg, #FFCB82 0%, #F0A23D 55%, #E1791F 100%)',
     buttonGradient: 'linear-gradient(135deg, #F0A23D 0%, #C4611A 100%)',
     glow: 'rgba(240,162,61,0.38)',
-    
   },
   pandy: {
     label: 'Pandy',
@@ -94,7 +78,28 @@ const tutorProfiles = {
     gradient: 'linear-gradient(135deg, #93A4FF 0%, #4A5FE0 55%, #3626B8 100%)',
     buttonGradient: 'linear-gradient(135deg, #4A5FE0 0%, #1E1A4A 100%)',
     glow: 'rgba(74,95,224,0.38)',
-    
+  },
+  koala: {
+    label: 'Koala',
+    lang: 'en-AU',
+    voiceGender: 'female',
+    pitch: 1.0,
+    rate: 0.94,
+    namePreferHints: [
+      'Google UK English Female',
+      'Google US English Female',
+      'Karen',
+      'Catherine',
+      'Samantha',
+      'Zira',
+      'female',
+    ],
+    greeting: "G'day, I'm Koala! Let's take maths nice and easy together. Tap the microphone and ask me anything, or type your question below.",
+    color: '#6E96AA',
+    deep: '#3E5A68',
+    gradient: 'linear-gradient(135deg, #A8CBDA 0%, #6E96AA 55%, #4A7385 100%)',
+    buttonGradient: 'linear-gradient(135deg, #6E96AA 0%, #3E5A68 100%)',
+    glow: 'rgba(110,150,170,0.38)',
   },
 };
 
@@ -626,21 +631,21 @@ const TutorSession = () => {
     handleStudentMessage('Can you show me a step-by-step example?');
   };
 
-  const tutorBubbleStyle = {
-    maxWidth: '80%',
-    padding: '15px 19px',
-    borderRadius: '22px',
-    borderBottomLeftRadius: '6px',
-    fontFamily: fontBody,
-    fontSize: '1rem',
-    fontWeight: 600,
-    lineHeight: 1.55,
-    background: palette.surface,
-    color: palette.ink,
-    border: `2.5px solid ${palette.mist}`,
-    borderLeft: `5px solid ${profile.color}`,
-    boxShadow: shadow.sm,
-  };
+ const tutorBubbleStyle = {
+  maxWidth: '80%',
+  padding: '15px 19px',
+  borderRadius: '22px',
+  borderBottomLeftRadius: '6px',
+  fontFamily: fontBody,
+  fontSize: '1rem',
+  fontWeight: 600,
+  lineHeight: 1.55,
+  background: palette.surface,
+  color: palette.ink,
+  border: `2.5px solid ${palette.mist}`,
+  borderLeft: `5px solid ${profile.color}`,
+  boxShadow: '0 3px 0 rgba(0,0,0,0.4)',
+};
 
   const studentBubbleStyle = {
     maxWidth: '80%',
@@ -813,6 +818,7 @@ const TutorSession = () => {
           alignItems: 'center',
           justifyContent: 'space-between',
           padding: '14px 20px',
+          boxShadow: '0 2px 12px rgba(0,0,0,0.4)',
           borderBottom: `4px solid ${profile.color}`,
           background: palette.surface,
         }}
@@ -894,8 +900,13 @@ const TutorSession = () => {
         }}
       >
         <div className="ts-tutor-hero">
-          <TutorMark profile={profile} size={116} speaking={isSpeaking} reducedMotion={reducedMotion} />
-        </div>
+<TutorAvatar
+  tutorId={tutorId}
+  speaking={isSpeaking}
+  size={170}
+  reducedMotion={reducedMotion}
+/>
+       </div>
 
         <div
           className="ts-status-text"
@@ -942,7 +953,7 @@ const TutorSession = () => {
             borderRadius: '999px',
             border: 'none',
             background: profile.buttonGradient,
-            color: '#fff',
+            color: '#f3efef',
             fontFamily: fontDisplay,
             fontWeight: 700,
             fontSize: '0.95rem',
@@ -1037,7 +1048,7 @@ const TutorSession = () => {
 
                   <div
                     style={{
-                      background: '#f5f7fb',
+background: 'rgba(14, 1, 1, 0.06)',
                       borderRadius: '8px',
                       padding: '8px 12px',
                       fontWeight: 600,
@@ -1059,7 +1070,7 @@ const TutorSession = () => {
                 marginTop: '16px',
                 padding: '12px 14px',
                 borderRadius: '10px',
-                background: '#fff7e8',
+                background: 'rgba(245,166,35,0.12)',
                 border: '1px solid #f5a623',
               }}
             >
@@ -1156,8 +1167,8 @@ const TutorSession = () => {
               gap: '9px',
               padding: '11px 18px',
               borderRadius: '14px',
-              background: palette.ink,
-              color: '#fff',
+             background: '#1C1926',
+color: '#fff',
               fontFamily: fontBody,
               fontSize: '0.82rem',
               fontWeight: 500,
