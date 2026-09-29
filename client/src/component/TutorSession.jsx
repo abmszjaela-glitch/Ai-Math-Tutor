@@ -265,6 +265,7 @@ const TutorSession = () => {
   const [notice, setNotice] = useState(null);
   const [conversationId, setConversationId] = useState(null);
   const [lessonId, setLessonId] = useState(null);
+  const [isSessionReady, setIsSessionReady] = useState(false);
 
   // NEW: typed-message state
   const [textInput, setTextInput] = useState('');
@@ -383,11 +384,14 @@ const TutorSession = () => {
       }
 
       setConversationId(data.conversation.id);
+      setIsSessionReady(true);
     } catch (error) {
       console.error(
         'Conversation creation error:',
         error
       );
+      setIsSessionReady(false);
+      
 
       showNotice(
         'I could not start the math session. Please try again.'
@@ -597,35 +601,42 @@ const TutorSession = () => {
   }
 };
 
-  const toggleMic = () => {
-    if (!micSupported) {
-      showNotice("Voice input isn't available in this browser. Try Chrome on desktop or Android.");
-      return;
-    }
-    if (isListening) {
-      recognitionRef.current?.stop();
-      setIsListening(false);
-    } else {
-      if ('speechSynthesis' in window) window.speechSynthesis.cancel();
-      setIsSpeaking(false);
-      recognitionRef.current?.start();
-      setIsListening(true);
-    }
-  };
-
+ const toggleMic = () => {
+  if (!isSessionReady) { // NEW
+    showNotice("Your tutor is still getting ready. Please wait a moment.");
+    return;
+  }
+  if (!micSupported) {
+    showNotice("Voice input isn't available in this browser. Try Chrome on desktop or Android.");
+    return;
+  }
+  if (isListening) {
+    recognitionRef.current?.stop();
+    setIsListening(false);
+  } else {
+    if ('speechSynthesis' in window) window.speechSynthesis.cancel();
+    setIsSpeaking(false);
+    recognitionRef.current?.start();
+    setIsListening(true);
+  }
+};
   // NEW: typed-message submit handler — mirrors what the mic path does
   // (stop speech, send through the same handleStudentMessage pipeline)
-  const handleTextSubmit = (e) => {
-    e.preventDefault();
-    const value = textInput.trim();
-    if (!value) return;
-    if (isListening) {
-      recognitionRef.current?.stop();
-      setIsListening(false);
-    }
-    setTextInput('');
-    handleStudentMessage(value);
-  };
+ const handleTextSubmit = (e) => {
+  e.preventDefault();
+  const value = textInput.trim();
+  if (!value) return;
+  if (!isSessionReady) { // NEW
+    showNotice("Your tutor is still getting ready. Please wait a moment.");
+    return;
+  }
+  if (isListening) {
+    recognitionRef.current?.stop();
+    setIsListening(false);
+  }
+  setTextInput('');
+  handleStudentMessage(value);
+};
 
   const requestExample = () => {
     handleStudentMessage('Can you show me a step-by-step example?');
@@ -1268,33 +1279,43 @@ color: '#fff',
           </div>
 
           <motion.button
-            type="button"
-            onClick={toggleMic}
-            whileHover={{ scale: 1.06 }}
-            whileTap={{ scale: 0.94 }}
-            className="focus-ring ts-mic-btn"
-            aria-label={!micSupported ? 'Voice input not supported' : isListening ? 'Stop listening' : 'Start voice input'}
-            style={{
-              position: 'relative',
-              width: '58px',
-              height: '58px',
-              borderRadius: '50%',
-              border: 'none',
-              flexShrink: 0,
-              background: !micSupported
-                ? palette.slate
-                : isListening
-                ? 'linear-gradient(135deg, #FF8A80, #E2483F)'
-                : profile.buttonGradient,
-              color: '#fff',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              cursor: micSupported ? 'pointer' : 'not-allowed',
-              opacity: micSupported ? 1 : 0.85,
-              boxShadow: isListening ? `0 5px 0 #B8332F` : `0 5px 0 ${profile.deep}`,
-            }}
-          >
+  type="button"
+  onClick={toggleMic}
+  whileHover={{ scale: 1.06 }}
+  whileTap={{ scale: 0.94 }}
+  className="focus-ring ts-mic-btn"
+  aria-label={
+    !isSessionReady
+      ? 'Tutor is still connecting'
+      : !micSupported
+      ? 'Voice input not supported'
+      : isListening
+      ? 'Stop listening'
+      : 'Start voice input'
+  }
+  style={{
+    position: 'relative',
+    width: '58px',
+    height: '58px',
+    borderRadius: '50%',
+    border: 'none',
+    flexShrink: 0,
+    background: !isSessionReady
+      ? palette.faint // NEW
+      : !micSupported
+      ? palette.slate
+      : isListening
+      ? 'linear-gradient(135deg, #FF8A80, #E2483F)'
+      : profile.buttonGradient,
+    color: '#fff',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    cursor: isSessionReady && micSupported ? 'pointer' : 'not-allowed', // UPDATED
+    opacity: isSessionReady ? 1 : 0.6, // UPDATED
+    boxShadow: isListening ? `0 5px 0 #B8332F` : `0 5px 0 ${profile.deep}`,
+  }}
+>
             {isListening ? <MicOff size={22} color="#fff" /> : <Mic size={22} color="#fff" />}
 
             {isListening && !reducedMotion && (
