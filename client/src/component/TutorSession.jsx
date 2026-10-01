@@ -3,23 +3,6 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { AlertCircle, ArrowLeft, Mic, MicOff, Send, Sparkles } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import TutorAvatar from './TutorAvatar';
-// === REDESIGN NOTES ===
-// Voice tutor logic: speech recognition, speech synthesis, real AI tutor API,
-// structured tutor responses, and a lightweight responsive chat interface.
-// What changed is the visual layer:
-//  - a small, deliberate color/type token system instead of scattered hexes
-//  - a signature "tutor mark": an actual SVG mascot face (kangaroo for Kanga,
-//    panda for Pandy) with ears, eyes and a nose — replacing the earlier
-//    plain gradient circle with two CSS-div "ear" nubs, which read as an
-//    abstract blob rather than a recognizable animal
-//  - glass surfaces on the header and tutor bubbles
-//  - a "thinking…" indicator while a reply is on its way
-//  - an inline toast instead of a blocking alert() for the unsupported-mic case
-//  - prefers-reduced-motion is respected throughout
-//  - mobile breakpoints (≤575px, ≤380px) added via classNames + a media
-//    query block, since most layout here uses inline styles
-//  - a text input bar next to the mic button so students can type
-//    a message instead of (or in addition to) speaking it
 
 const easeOut = [0.25, 0.1, 0.25, 1];
 const STORAGE_KEY = 'selectedTutorId';
@@ -27,18 +10,17 @@ const API_URL = 'http://localhost:5000/api';
 
 // === DESIGN TOKENS ===
 const palette = {
-  ink: '#F5F1FF',        // was dark text — now light text for dark bg
-  paper: '#000000',       // page background (near-black, slight warmth)
-  surface: '#17151F',     // card/bubble background (dark surface, not pure black)
-  mist: '#332D47',        // was light peach border — now a subtle dark-purple border
-  slate: '#8B84A8',       // muted secondary text/status color
-  faint: '#4A4460',       // disabled/faint elements
-  listening: '#FF6B6F',   // keep red, slightly brighter for contrast on black
+  ink: '#F5F1FF',
+  paper: '#000000',
+  surface: '#17151F',
+  mist: '#332D47',
+  slate: '#8B84A8',
+  faint: '#4A4460',
+  listening: '#FF6B6F',
 };
 
 const fontDisplay = "'Baloo 2', 'Fredoka', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif";
 const fontBody = "'Nunito', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif";
-const fontMono = "'Baloo 2', 'Nunito', sans-serif";
 
 const shadow = {
   sm: '0 3px 0 rgba(36,30,66,0.10)',
@@ -46,10 +28,6 @@ const shadow = {
   lg: '0 10px 0 rgba(36,30,66,0.14)',
 };
 
-// Voice personalities — tuned for a warm, clear, kid-friendly Australian accent.
-// lang 'en-AU' asks the browser for an Australian voice first; namePreferHints
-// are common Australian voice names shipped on Chrome/Edge/Safari/Windows.
-// color/deep/gradient/buttonGradient/glow/earStyle drive the tutor's visual mark.
 const tutorProfiles = {
   kanga: {
     label: 'Kanga',
@@ -57,7 +35,8 @@ const tutorProfiles = {
     voiceGender: 'female',
     pitch: 1.18,
     rate: 0.96,
-    namePreferHints: [ /* ...unchanged... */ ],
+    // NOTE: the original list was elided ("...unchanged..."). Paste your own list back here if it differs.
+    namePreferHints: ['Australia', 'Karen', 'Catherine', 'female'],
     greeting: "G'day, I'm Kanga! I'm so excited to help you learn maths today. Tap the microphone and ask me anything, or type your question below.",
     color: '#F0A23D',
     deep: '#C4611A',
@@ -105,8 +84,6 @@ const tutorProfiles = {
 
 const DEFAULT_TUTOR_ID = 'kanga';
 
-// Respects the OS-level "reduce motion" setting so looping/ambient
-// animation can stand down for anyone who's asked for that.
 const usePrefersReducedMotion = () => {
   const [reduced, setReduced] = useState(false);
 
@@ -126,8 +103,6 @@ const usePrefersReducedMotion = () => {
   return reduced;
 };
 
-// A small voice-reactive equalizer — shows "audio is actively happening"
-// (speaking or listening) without relying on words alone.
 const SoundBars = ({ active, reducedMotion, color = '#fff', count = 4, height = 15 }) => (
   <div style={{ display: 'flex', alignItems: 'flex-end', gap: '3px', height }}>
     {Array.from({ length: count }).map((_, i) =>
@@ -161,8 +136,6 @@ const SoundBars = ({ active, reducedMotion, color = '#fff', count = 4, height = 
   </div>
 );
 
-// Shown in place of a reply while the tutor "thinks" — a standard chat
-// affordance so a short pause never reads as the app having stalled.
 const ThinkingDots = ({ color, reducedMotion }) => (
   <div style={{ display: 'flex', gap: '5px', padding: '3px 2px' }}>
     {[0, 1, 2].map((i) =>
@@ -183,73 +156,6 @@ const ThinkingDots = ({ color, reducedMotion }) => (
   </div>
 );
 
-// The signature mark: a real SVG mascot face, not a generic gradient orb.
-// Kanga gets tall upright kangaroo ears, a muzzle and dot eyes; Pandy gets
-// round black ears, panda eye-patches and a white face. Both share the
-// same head circle sizing/position so the "speaking" pulse animation and
-// the layout math around them stay identical between the two.
-const TutorMark = ({ profile, size = 112, speaking = false, reducedMotion = false }) => {
-  return (
-    <div
-      style={{
-        position: 'relative',
-        width: size,
-        height: size,
-        flexShrink: 0,
-      }}
-    >
-      {/* Soft tutor glow */}
-      <div
-        style={{
-          position: 'absolute',
-          inset: '-15%',
-          borderRadius: '50%',
-          background: profile.gradient,
-          opacity: 0.22,
-          filter: `blur(${Math.round(size * 0.22)}px)`,
-        }}
-      />
-
-      {/* Simple tutor circle */}
-      <motion.div
-        animate={
-          speaking && !reducedMotion
-            ? { scale: [1, 1.045, 1] }
-            : { scale: 1 }
-        }
-        transition={{
-          duration: 1.1,
-          repeat: speaking && !reducedMotion ? Infinity : 0,
-          ease: 'easeInOut',
-        }}
-        style={{
-          position: 'absolute',
-          inset: 0,
-          borderRadius: '50%',
-          background: profile.gradient,
-          boxShadow: `0 ${Math.round(size * 0.12)}px ${Math.round(
-            size * 0.3
-          )}px ${profile.glow}`,
-        }}
-      >
-        {/* Soft highlight */}
-        <div
-          style={{
-            position: 'absolute',
-            top: '15%',
-            left: '19%',
-            width: '34%',
-            height: '26%',
-            borderRadius: '50%',
-            background: 'rgba(255,255,255,0.32)',
-            filter: 'blur(4px)',
-          }}
-        />
-      </motion.div>
-    </div>
-  );
-};
-
 const TutorSession = () => {
   const navigate = useNavigate();
   const reducedMotion = usePrefersReducedMotion();
@@ -266,14 +172,15 @@ const TutorSession = () => {
   const [conversationId, setConversationId] = useState(null);
   const [lessonId, setLessonId] = useState(null);
   const [isSessionReady, setIsSessionReady] = useState(false);
-
-  // NEW: typed-message state
   const [textInput, setTextInput] = useState('');
 
   const recognitionRef = useRef(null);
   const messagesEndRef = useRef(null);
   const hasGreetedRef = useRef(false);
   const noticeTimeoutRef = useRef(null);
+  // FIX: always holds the newest handleStudentMessage (so the speech
+  // recognition callback never uses a stale conversationId = null)
+  const handleStudentMessageRef = useRef(null);
 
   const profile = tutorProfiles[tutorId] || tutorProfiles[DEFAULT_TUTOR_ID];
 
@@ -315,7 +222,9 @@ const TutorSession = () => {
         else interim += transcript;
       }
       setInterimText(interim);
-      if (finalTranscript.trim()) handleStudentMessage(finalTranscript.trim());
+      if (finalTranscript.trim()) {
+        handleStudentMessageRef.current?.(finalTranscript.trim()); // CHANGED
+      }
     };
 
     recognition.onend = () => {
@@ -335,7 +244,6 @@ const TutorSession = () => {
       recognition.onerror = null;
       recognition.abort();
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [tutorId]);
 
   useEffect(() => {
@@ -359,11 +267,9 @@ const TutorSession = () => {
   }, [voicesReady, tutorId]);
 
   useEffect(() => {
-  const createConversation = async () => {
-    try {
-      const response = await fetch(
-        `${API_URL}/conversations`,
-        {
+    const createConversation = async () => {
+      try {
+        const response = await fetch(`${API_URL}/conversations`, {
           method: 'POST',
           credentials: 'include',
           headers: {
@@ -372,42 +278,32 @@ const TutorSession = () => {
           body: JSON.stringify({
             title: `${profile.label} Math Session`,
           }),
+        });
+
+        const data = await response.json();
+
+        if (!response.ok || !data.success) {
+          throw new Error(data.message || 'Failed to create conversation');
         }
-      );
 
-      const data = await response.json();
-
-      if (!response.ok || !data.success) {
-        throw new Error(
-          data.message || 'Failed to create conversation'
-        );
+        setConversationId(data.conversation.id);
+        setIsSessionReady(true);
+      } catch (error) {
+        console.error('Conversation creation error:', error);
+        setIsSessionReady(false);
+        showNotice('I could not start the math session. Please try again.');
       }
+    };
 
-      setConversationId(data.conversation.id);
-      setIsSessionReady(true);
-    } catch (error) {
-      console.error(
-        'Conversation creation error:',
-        error
-      );
-      setIsSessionReady(false);
-      
-
-      showNotice(
-        'I could not start the math session. Please try again.'
-      );
-    }
-  };
-
-  createConversation();
-}, [profile.label]);
+    createConversation();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [profile.label]);
 
   const pickVoice = () => {
     if (!('speechSynthesis' in window)) return null;
     const voices = window.speechSynthesis.getVoices();
     if (!voices.length) return null;
 
-    // Prefer an explicit Australian English voice first, then narrow by gender.
     const auVoices = voices.filter((v) => v.lang?.toLowerCase() === 'en-au');
     const pool = auVoices.length ? auVoices : voices.filter((v) => v.lang?.startsWith('en'));
 
@@ -421,8 +317,9 @@ const TutorSession = () => {
     }
 
     for (const hint of profile.namePreferHints) {
-      const match = pool.find((v) => v.name.toLowerCase().includes(hint.toLowerCase()))
-        || voices.find((v) => v.name.toLowerCase().includes(hint.toLowerCase()));
+      const match =
+        pool.find((v) => v.name.toLowerCase().includes(hint.toLowerCase())) ||
+        voices.find((v) => v.name.toLowerCase().includes(hint.toLowerCase()));
       if (match) return match;
     }
 
@@ -474,189 +371,163 @@ const TutorSession = () => {
   };
 
   const buildTutorSpeech = (tutor) => {
-  const parts = [];
+    const parts = [];
 
-  if (tutor.message) {
-    parts.push(tutor.message);
-  }
+    if (tutor.message) {
+      parts.push(tutor.message);
+    }
 
-  if (tutor.steps?.length) {
-    parts.push("Let's solve it step by step.");
+    if (tutor.steps?.length) {
+      parts.push("Let's solve it step by step.");
 
-    tutor.steps.forEach((step) => {
-      parts.push(
-        `Step ${step.step}. ${step.explanation}. ${step.calculation}.`
-      );
-    });
-  }
+      tutor.steps.forEach((step) => {
+        parts.push(`Step ${step.step}. ${step.explanation}. ${step.calculation}.`);
+      });
+    }
 
-  if (tutor.answer) {
-    parts.push(`So, the answer is ${tutor.answer}.`);
-  }
+    if (tutor.answer) {
+      parts.push(`So, the answer is ${tutor.answer}.`);
+    }
 
-  if (tutor.hint) {
-    parts.push(`Remember this: ${tutor.hint}.`);
-  }
+    if (tutor.hint) {
+      parts.push(`Remember this: ${tutor.hint}.`);
+    }
 
-  if (tutor.encouragement) {
-    parts.push(tutor.encouragement);
-  }
+    if (tutor.encouragement) {
+      parts.push(tutor.encouragement);
+    }
 
-  return parts.join(" ");
-};
+    return parts.join(' ');
+  };
 
- const handleStudentMessage = async (text) => {
-  const cleanText = text?.trim();
+  const handleStudentMessage = async (text) => {
+    const cleanText = text?.trim();
 
-  if (!cleanText) return;
+    if (!cleanText) return;
 
-  if (!conversationId) {
-    showNotice(
-      'Your tutor is still getting ready. Please try again in a moment.'
-    );
-    return;
-  }
+    if (!conversationId || !isSessionReady) {
+      showNotice('Your tutor is still getting ready. Please try again in a moment.');
+      return;
+    }
 
-  // Stop current speech
-  if ('speechSynthesis' in window) {
-    window.speechSynthesis.cancel();
-  }
+    if ('speechSynthesis' in window) {
+      window.speechSynthesis.cancel();
+    }
 
-  setIsSpeaking(false);
-  setInterimText('');
+    setIsSpeaking(false);
+    setInterimText('');
 
-  // Show student's message immediately
-  addStudentMessage(cleanText);
+    addStudentMessage(cleanText);
+    setIsThinking(true);
 
-  // Show thinking animation
-  setIsThinking(true);
-
-  try {
-    const response = await fetch(
-      `${API_URL}/tutor/message`,
-      {
+    try {
+      const response = await fetch(`${API_URL}/tutor/message`, {
         method: 'POST',
         credentials: 'include',
-
         headers: {
           'Content-Type': 'application/json',
         },
-
         body: JSON.stringify({
           conversationId,
           lessonId,
           message: cleanText,
         }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok || !data.success) {
+        throw new Error(data.message || 'Tutor request failed');
       }
-    );
 
-    const data = await response.json();
+      const tutor = data.response?.tutor;
 
-    if (!response.ok || !data.success) {
-      throw new Error(
-        data.message || 'Tutor request failed'
-      );
+      if (!tutor) {
+        throw new Error('Tutor returned an invalid response');
+      }
+
+      setIsThinking(false);
+
+      setMessages((prev) => [
+        ...prev,
+        {
+          sender: 'tutor',
+          text: tutor.message,
+          tutor,
+        },
+      ]);
+
+      const speech = buildTutorSpeech(tutor);
+      speak(speech);
+    } catch (error) {
+      console.error('Tutor request error:', error);
+
+      setIsThinking(false);
+
+      addTutorMessage("Sorry! I had a little trouble thinking about that question. Let's try again.");
+
+      showNotice('Something went wrong while talking to your math tutor.');
     }
+  };
 
-    const tutor = data.response?.tutor;
+  // FIX: keep the ref pointing at the newest handler on every render
+  handleStudentMessageRef.current = handleStudentMessage;
 
-    if (!tutor) {
-      throw new Error(
-        'Tutor returned an invalid response'
-      );
+  const toggleMic = () => {
+    if (!isSessionReady) {
+      showNotice('Your tutor is still getting ready. Please wait a moment.');
+      return;
     }
+    if (!micSupported) {
+      showNotice("Voice input isn't available in this browser. Try Chrome on desktop or Android.");
+      return;
+    }
+    if (isListening) {
+      recognitionRef.current?.stop();
+      setIsListening(false);
+    } else {
+      if ('speechSynthesis' in window) window.speechSynthesis.cancel();
+      setIsSpeaking(false);
+      recognitionRef.current?.start();
+      setIsListening(true);
+    }
+  };
 
-    // Stop thinking
-    setIsThinking(false);
-
-    // Add structured tutor response
-    setMessages((prev) => [
-      ...prev,
-      {
-        sender: 'tutor',
-        text: tutor.message,
-        tutor,
-      },
-    ]);
-
-    // Read the complete tutor explanation aloud
-    const speech = buildTutorSpeech(tutor);
-    speak(speech);
-
-  } catch (error) {
-    console.error(
-      'Tutor request error:',
-      error
-    );
-
-    setIsThinking(false);
-
-    addTutorMessage(
-      "Sorry! I had a little trouble thinking about that question. Let's try again."
-    );
-
-    showNotice(
-      'Something went wrong while talking to your math tutor.'
-    );
-  }
-};
-
- const toggleMic = () => {
-  if (!isSessionReady) { // NEW
-    showNotice("Your tutor is still getting ready. Please wait a moment.");
-    return;
-  }
-  if (!micSupported) {
-    showNotice("Voice input isn't available in this browser. Try Chrome on desktop or Android.");
-    return;
-  }
-  if (isListening) {
-    recognitionRef.current?.stop();
-    setIsListening(false);
-  } else {
-    if ('speechSynthesis' in window) window.speechSynthesis.cancel();
-    setIsSpeaking(false);
-    recognitionRef.current?.start();
-    setIsListening(true);
-  }
-};
-  // NEW: typed-message submit handler — mirrors what the mic path does
-  // (stop speech, send through the same handleStudentMessage pipeline)
- const handleTextSubmit = (e) => {
-  e.preventDefault();
-  const value = textInput.trim();
-  if (!value) return;
-  if (!isSessionReady) { // NEW
-    showNotice("Your tutor is still getting ready. Please wait a moment.");
-    return;
-  }
-  if (isListening) {
-    recognitionRef.current?.stop();
-    setIsListening(false);
-  }
-  setTextInput('');
-  handleStudentMessage(value);
-};
+  const handleTextSubmit = (e) => {
+    e.preventDefault();
+    const value = textInput.trim();
+    if (!value) return;
+    if (!isSessionReady) {
+      showNotice('Your tutor is still getting ready. Please wait a moment.');
+      return;
+    }
+    if (isListening) {
+      recognitionRef.current?.stop();
+      setIsListening(false);
+    }
+    setTextInput('');
+    handleStudentMessage(value);
+  };
 
   const requestExample = () => {
     handleStudentMessage('Can you show me a step-by-step example?');
   };
 
- const tutorBubbleStyle = {
-  maxWidth: '80%',
-  padding: '15px 19px',
-  borderRadius: '22px',
-  borderBottomLeftRadius: '6px',
-  fontFamily: fontBody,
-  fontSize: '1rem',
-  fontWeight: 600,
-  lineHeight: 1.55,
-  background: palette.surface,
-  color: palette.ink,
-  border: `2.5px solid ${palette.mist}`,
-  borderLeft: `5px solid ${profile.color}`,
-  boxShadow: '0 3px 0 rgba(0,0,0,0.4)',
-};
+  const tutorBubbleStyle = {
+    maxWidth: '80%',
+    padding: '15px 19px',
+    borderRadius: '22px',
+    borderBottomLeftRadius: '6px',
+    fontFamily: fontBody,
+    fontSize: '1rem',
+    fontWeight: 600,
+    lineHeight: 1.55,
+    background: palette.surface,
+    color: palette.ink,
+    border: `2.5px solid ${palette.mist}`,
+    borderLeft: `5px solid ${profile.color}`,
+    boxShadow: '0 3px 0 rgba(0,0,0,0.4)',
+  };
 
   const studentBubbleStyle = {
     maxWidth: '80%',
@@ -702,27 +573,13 @@ const TutorSession = () => {
           }
         }
 
-        /* ===================================================
-           Mobile fixes (≤575px) — most layout above is inline
-           styled, so !important is needed to win specificity.
-           =================================================== */
         @media (max-width: 575px) {
-          .ts-header {
-            padding: 12px 14px !important;
-          }
-          .ts-header-label {
-            font-size: 0.85rem !important;
-          }
-          .ts-header-status {
-            font-size: 0.66rem !important;
-          }
+          .ts-header { padding: 12px 14px !important; }
+          .ts-header-label { font-size: 0.85rem !important; }
+          .ts-header-status { font-size: 0.66rem !important; }
 
-          .ts-hero {
-            padding: 22px 14px 12px !important;
-          }
-          .ts-tutor-hero {
-            transform: scale(0.82);
-          }
+          .ts-hero { padding: 22px 14px 12px !important; }
+          .ts-tutor-hero { transform: scale(0.82); }
           .ts-status-text {
             font-size: 0.82rem !important;
             text-align: center;
@@ -733,9 +590,7 @@ const TutorSession = () => {
             font-size: 0.76rem !important;
           }
 
-          .ts-conversation {
-            padding: 8px 12px 172px !important;
-          }
+          .ts-conversation { padding: 8px 12px 172px !important; }
           .ts-bubble {
             max-width: 90% !important;
             font-size: 0.88rem !important;
@@ -759,45 +614,23 @@ const TutorSession = () => {
             font-size: 0.85rem !important;
             padding: 10px 14px !important;
           }
-          .ts-send-btn {
-            width: 40px !important;
-            height: 40px !important;
-          }
-          .ts-mic-btn {
-            width: 46px !important;
-            height: 46px !important;
-          }
-
+          .ts-send-btn { width: 40px !important; height: 40px !important; }
+          .ts-mic-btn { width: 46px !important; height: 46px !important; }
         }
 
-        /* ===================================================
-           Extra small phones (≤380px)
-           =================================================== */
         @media (max-width: 380px) {
-          .ts-header {
-            padding: 10px 10px !important;
-          }
-          .ts-header-label {
-            font-size: 0.78rem !important;
-          }
+          .ts-header { padding: 10px 10px !important; }
+          .ts-header-label { font-size: 0.78rem !important; }
 
-          .ts-hero {
-            padding: 16px 10px 10px !important;
-          }
-          .ts-tutor-hero {
-            transform: scale(0.7);
-          }
-          .ts-status-text {
-            font-size: 0.75rem !important;
-          }
+          .ts-hero { padding: 16px 10px 10px !important; }
+          .ts-tutor-hero { transform: scale(0.7); }
+          .ts-status-text { font-size: 0.75rem !important; }
           .ts-example-btn {
             padding: 7px 12px !important;
             font-size: 0.7rem !important;
           }
 
-          .ts-conversation {
-            padding: 6px 8px 164px !important;
-          }
+          .ts-conversation { padding: 6px 8px 164px !important; }
           .ts-bubble {
             max-width: 94% !important;
             font-size: 0.82rem !important;
@@ -807,14 +640,8 @@ const TutorSession = () => {
             font-size: 0.8rem !important;
             padding: 9px 12px !important;
           }
-          .ts-send-btn {
-            width: 38px !important;
-            height: 38px !important;
-          }
-          .ts-mic-btn {
-            width: 42px !important;
-            height: 42px !important;
-          }
+          .ts-send-btn { width: 38px !important; height: 38px !important; }
+          .ts-mic-btn { width: 42px !important; height: 42px !important; }
         }
       `}</style>
 
@@ -900,7 +727,7 @@ const TutorSession = () => {
         </div>
       </div>
 
-      {/* Hero: tutor mark + live status */}
+      {/* Hero */}
       <div
         className="ts-hero"
         style={{
@@ -911,13 +738,13 @@ const TutorSession = () => {
         }}
       >
         <div className="ts-tutor-hero">
-<TutorAvatar
-  tutorId={tutorId}
-  speaking={isSpeaking}
-  size={170}
-  reducedMotion={reducedMotion}
-/>
-       </div>
+          <TutorAvatar
+            tutorId={tutorId}
+            speaking={isSpeaking}
+            size={170}
+            reducedMotion={reducedMotion}
+          />
+        </div>
 
         <div
           className="ts-status-text"
@@ -948,7 +775,6 @@ const TutorSession = () => {
           )}
         </div>
 
-        {/* Quick action: ask for a visual example */}
         <motion.button
           type="button"
           onClick={requestExample}
@@ -993,136 +819,87 @@ const TutorSession = () => {
       >
         <AnimatePresence initial={false}>
           {messages.map((msg, i) => (
-  <motion.div
-    key={i}
-    className={`ts-message ${
-      msg.sender === 'student'
-        ? 'ts-message-student'
-        : 'ts-message-tutor'
-    }`}
-    initial={{ opacity: 0, y: 10 }}
-    animate={{ opacity: 1, y: 0 }}
-  >
-    <div
-      className="ts-bubble"
-      style={
-        msg.sender === 'student' ? studentBubbleStyle : tutorBubbleStyle
-      }
-    >
-
-      {/* Main tutor message */}
-      <div>
-        {msg.text}
-      </div>
-
-
-      {/* Structured AI tutor response */}
-      {msg.sender === 'tutor' && msg.tutor && (
-        <div style={{ marginTop: '18px' }}>
-
-          {/* Steps */}
-          {msg.tutor.steps?.length > 0 && (
-            <div>
-
+            <motion.div
+              key={i}
+              className={`ts-message ${
+                msg.sender === 'student' ? 'ts-message-student' : 'ts-message-tutor'
+              }`}
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              style={{
+                display: 'flex',
+                justifyContent: msg.sender === 'student' ? 'flex-end' : 'flex-start',
+                marginBottom: '10px',
+              }}
+            >
               <div
-                style={{
-                  fontWeight: 700,
-                  marginBottom: '10px',
-                }}
+                className="ts-bubble"
+                style={msg.sender === 'student' ? studentBubbleStyle : tutorBubbleStyle}
               >
-                Let's solve it step by step:
+                <div>{msg.text}</div>
+
+                {msg.sender === 'tutor' && msg.tutor && (
+                  <div style={{ marginTop: '18px' }}>
+                    {msg.tutor.steps?.length > 0 && (
+                      <div>
+                        <div style={{ fontWeight: 700, marginBottom: '10px' }}>
+                          Let's solve it step by step:
+                        </div>
+
+                        {msg.tutor.steps.map((step) => (
+                          <div key={step.step} style={{ marginBottom: '14px' }}>
+                            <div style={{ fontWeight: 700, marginBottom: '4px' }}>
+                              Step {step.step}
+                            </div>
+
+                            <div style={{ marginBottom: '5px' }}>{step.explanation}</div>
+
+                            <div
+                              style={{
+                                background: 'rgba(14, 1, 1, 0.06)',
+                                borderRadius: '8px',
+                                padding: '8px 12px',
+                                fontWeight: 600,
+                              }}
+                            >
+                              {step.calculation}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+
+                    {msg.tutor.answer && (
+                      <div
+                        style={{
+                          marginTop: '16px',
+                          padding: '12px 14px',
+                          borderRadius: '10px',
+                          background: 'rgba(245,166,35,0.12)',
+                          border: '1px solid #f5a623',
+                        }}
+                      >
+                        <strong>Answer: </strong>
+                        {msg.tutor.answer}
+                      </div>
+                    )}
+
+                    {msg.tutor.hint && (
+                      <div style={{ marginTop: '12px', fontSize: '14px' }}>
+                        <strong>💡 Hint:</strong> {msg.tutor.hint}
+                      </div>
+                    )}
+
+                    {msg.tutor.encouragement && (
+                      <div style={{ marginTop: '10px', fontWeight: 600 }}>
+                        {msg.tutor.encouragement}
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
-
-              {msg.tutor.steps.map((step) => (
-                <div
-                  key={step.step}
-                  style={{
-                    marginBottom: '14px',
-                  }}
-                >
-                  <div
-                    style={{
-                      fontWeight: 700,
-                      marginBottom: '4px',
-                    }}
-                  >
-                    Step {step.step}
-                  </div>
-
-                  <div
-                    style={{
-                      marginBottom: '5px',
-                    }}
-                  >
-                    {step.explanation}
-                  </div>
-
-                  <div
-                    style={{
-background: 'rgba(14, 1, 1, 0.06)',
-                      borderRadius: '8px',
-                      padding: '8px 12px',
-                      fontWeight: 600,
-                    }}
-                  >
-                    {step.calculation}
-                  </div>
-                </div>
-              ))}
-
-            </div>
-          )}
-
-
-          {/* Answer */}
-          {msg.tutor.answer && (
-            <div
-              style={{
-                marginTop: '16px',
-                padding: '12px 14px',
-                borderRadius: '10px',
-                background: 'rgba(245,166,35,0.12)',
-                border: '1px solid #f5a623',
-              }}
-            >
-              <strong>Answer: </strong>
-              {msg.tutor.answer}
-            </div>
-          )}
-
-
-          {/* Hint */}
-          {msg.tutor.hint && (
-            <div
-              style={{
-                marginTop: '12px',
-                fontSize: '14px',
-              }}
-            >
-              <strong>💡 Hint:</strong>{' '}
-              {msg.tutor.hint}
-            </div>
-          )}
-
-
-          {/* Encouragement */}
-          {msg.tutor.encouragement && (
-            <div
-              style={{
-                marginTop: '10px',
-                fontWeight: 600,
-              }}
-            >
-              {msg.tutor.encouragement}
-            </div>
-          )}
-
-        </div>
-      )}
-
-    </div>
-  </motion.div>
-))}
+            </motion.div>
+          ))}
 
           {isThinking && (
             <motion.div
@@ -1158,7 +935,7 @@ background: 'rgba(14, 1, 1, 0.06)',
         <div ref={messagesEndRef} />
       </div>
 
-      {/* Inline notice — replaces a jarring browser alert() */}
+      {/* Inline notice */}
       <AnimatePresence>
         {notice && (
           <motion.div
@@ -1178,8 +955,8 @@ background: 'rgba(14, 1, 1, 0.06)',
               gap: '9px',
               padding: '11px 18px',
               borderRadius: '14px',
-             background: '#1C1926',
-color: '#fff',
+              background: '#1C1926',
+              color: '#fff',
               fontFamily: fontBody,
               fontSize: '0.82rem',
               fontWeight: 500,
@@ -1195,9 +972,7 @@ color: '#fff',
         )}
       </AnimatePresence>
 
-      {/* NEW: Input bar — text field + send button, plus the mic button.
-          Both paths funnel into handleStudentMessage, so typing and
-          speaking behave identically from the tutor's point of view. */}
+      {/* Input bar */}
       <div
         className="ts-input-bar-wrap"
         style={{
@@ -1279,43 +1054,43 @@ color: '#fff',
           </div>
 
           <motion.button
-  type="button"
-  onClick={toggleMic}
-  whileHover={{ scale: 1.06 }}
-  whileTap={{ scale: 0.94 }}
-  className="focus-ring ts-mic-btn"
-  aria-label={
-    !isSessionReady
-      ? 'Tutor is still connecting'
-      : !micSupported
-      ? 'Voice input not supported'
-      : isListening
-      ? 'Stop listening'
-      : 'Start voice input'
-  }
-  style={{
-    position: 'relative',
-    width: '58px',
-    height: '58px',
-    borderRadius: '50%',
-    border: 'none',
-    flexShrink: 0,
-    background: !isSessionReady
-      ? palette.faint // NEW
-      : !micSupported
-      ? palette.slate
-      : isListening
-      ? 'linear-gradient(135deg, #FF8A80, #E2483F)'
-      : profile.buttonGradient,
-    color: '#fff',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    cursor: isSessionReady && micSupported ? 'pointer' : 'not-allowed', // UPDATED
-    opacity: isSessionReady ? 1 : 0.6, // UPDATED
-    boxShadow: isListening ? `0 5px 0 #B8332F` : `0 5px 0 ${profile.deep}`,
-  }}
->
+            type="button"
+            onClick={toggleMic}
+            whileHover={{ scale: 1.06 }}
+            whileTap={{ scale: 0.94 }}
+            className="focus-ring ts-mic-btn"
+            aria-label={
+              !isSessionReady
+                ? 'Tutor is still connecting'
+                : !micSupported
+                ? 'Voice input not supported'
+                : isListening
+                ? 'Stop listening'
+                : 'Start voice input'
+            }
+            style={{
+              position: 'relative',
+              width: '58px',
+              height: '58px',
+              borderRadius: '50%',
+              border: 'none',
+              flexShrink: 0,
+              background: !isSessionReady
+                ? palette.faint
+                : !micSupported
+                ? palette.slate
+                : isListening
+                ? 'linear-gradient(135deg, #FF8A80, #E2483F)'
+                : profile.buttonGradient,
+              color: '#fff',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              cursor: isSessionReady && micSupported ? 'pointer' : 'not-allowed',
+              opacity: isSessionReady ? 1 : 0.6,
+              boxShadow: isListening ? `0 5px 0 #B8332F` : `0 5px 0 ${profile.deep}`,
+            }}
+          >
             {isListening ? <MicOff size={22} color="#fff" /> : <Mic size={22} color="#fff" />}
 
             {isListening && !reducedMotion && (
@@ -1335,7 +1110,6 @@ color: '#fff',
           </motion.button>
         </form>
       </div>
-
     </section>
   );
 };
