@@ -8,6 +8,70 @@ const easeOut = [0.25, 0.1, 0.25, 1];
 const STORAGE_KEY = 'selectedTutorId';
 const API_URL = 'http://localhost:5000/api';
 
+// === KOKORO (free, runs in a Web Worker so the UI stays smooth) ===
+let worker = null;
+let loadPromise = null;
+let reqId = 0;
+const pending = new Map();
+
+const getWorker = () => {
+  if (!worker) {
+    worker = new Worker(new URL('./tts.worker.js', import.meta.url), { type: 'module' });
+    worker.onmessage = (e) => {
+      const m = e.data;
+      if (m.type === 'ready') {
+        pending.get('load')?.resolve();
+        pending.delete('load');
+      } else if (m.type === 'audio') {
+        pending.get(m.id)?.resolve(m.blob);
+        pending.delete(m.id);
+      } else if (m.type === 'progress') {
+        if (m.progress?.status === 'progress') {
+          console.log(`Voice model: ${m.progress.file} ${Math.round(m.progress.progress)}%`);
+        }
+      } else if (m.type === 'error') {
+        console.error('Kokoro worker error:', m.message);
+        pending.get(m.id)?.reject(new Error(m.message));
+        pending.delete(m.id);
+      }
+    };
+    // Worker file failed to load / crashed: reject everything instead of hanging forever
+    worker.onerror = (e) => {
+      console.error('Kokoro worker failed to start:', e.message || e);
+      pending.forEach((p) => p.reject(new Error('Worker failed')));
+      pending.clear();
+      worker = null;
+    };
+  }
+  return worker;
+};
+
+const loadTTS = () => {
+  if (!loadPromise) {
+    loadPromise = new Promise((resolve, reject) => {
+      pending.set('load', { resolve, reject });
+      getWorker().postMessage({ type: 'load' });
+      // Give up after 90s so the app falls back to the browser voice
+      setTimeout(() => reject(new Error('Voice model load timed out')), 90000);
+    }).catch((err) => {
+      loadPromise = null; // allow retry
+      throw err;
+    });
+  }
+  return loadPromise;
+};
+
+const generateSpeech = (text, voice) =>
+  new Promise((resolve, reject) => {
+    const id = ++reqId;
+    pending.set(id, { resolve, reject });
+    getWorker().postMessage({ type: 'generate', id, text, voice });
+  });
+
+// Split on sentence ends (keeps decimals like 3.5 together)
+const splitSentences = (text) =>
+  text.split(/(?<=[.!?])\s+/).map((t) => t.trim()).filter(Boolean);
+
 // === DESIGN TOKENS ===
 const palette = {
   ink: '#F5F1FF',
@@ -31,6 +95,7 @@ const shadow = {
 const tutorProfiles = {
   kanga: {
     label: 'Kanga',
+    kokoroVoice: 'bf_emma',
     lang: 'en-AU',
     voiceGender: 'female',
     pitch: 1.18,
@@ -46,6 +111,7 @@ const tutorProfiles = {
   },
   pandy: {
     label: 'Pandy',
+    kokoroVoice: 'bm_george',
     lang: 'en-AU',
     voiceGender: 'male',
     pitch: 0.88,
@@ -60,6 +126,7 @@ const tutorProfiles = {
   },
   koala: {
     label: 'Koala',
+    kokoroVoice: 'bf_isabella',
     lang: 'en-AU',
     voiceGender: 'female',
     pitch: 1.0,
@@ -181,6 +248,9 @@ const TutorSession = () => {
   // FIX: always holds the newest handleStudentMessage (so the speech
   // recognition callback never uses a stale conversationId = null)
   const handleStudentMessageRef = useRef(null);
+  const audioRef = useRef(null);
+  const speakTokenRef = useRef(0);
+  const [voiceLoading, setVoiceLoading] = useState(true);
 
   const profile = tutorProfiles[tutorId] || tutorProfiles[DEFAULT_TUTOR_ID];
 
@@ -248,7 +318,7 @@ const TutorSession = () => {
 
   useEffect(() => {
     return () => {
-      if ('speechSynthesis' in window) window.speechSynthesis.cancel();
+      stopSpeaking();
       if (recognitionRef.current) recognitionRef.current.abort();
       if (noticeTimeoutRef.current) clearTimeout(noticeTimeoutRef.current);
     };
@@ -258,13 +328,23 @@ const TutorSession = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages, interimText, isThinking]);
 
+  // Preload the Kokoro voice model as soon as the page opens
   useEffect(() => {
-    if (voicesReady && !hasGreetedRef.current) {
+    loadTTS()
+      .then(() => setVoiceLoading(false))
+      .catch((err) => {
+        console.error('Kokoro load error:', err);
+        setVoiceLoading(false); // fall back to the browser voice
+      });
+  }, []);
+
+  useEffect(() => {
+    if (!voiceLoading && !hasGreetedRef.current) {
       hasGreetedRef.current = true;
       addTutorMessage(profile.greeting);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [voicesReady, tutorId]);
+  }, [voiceLoading, tutorId]);
 
   useEffect(() => {
     const createConversation = async () => {
@@ -326,7 +406,8 @@ const TutorSession = () => {
     return pool[0] || voices.find((v) => v.lang?.startsWith('en')) || voices[0];
   };
 
-  const speak = (text, onEnd) => {
+  // Fallback: the old browser voice
+  const speakWithBrowser = (text, onEnd) => {
     if (!('speechSynthesis' in window)) {
       if (onEnd) onEnd();
       return;
@@ -353,6 +434,69 @@ const TutorSession = () => {
     };
 
     window.speechSynthesis.speak(utterance);
+  };
+
+  const stopSpeaking = () => {
+    speakTokenRef.current += 1; // cancels any speak() that is in progress
+    if (audioRef.current) {
+      audioRef.current.pause();
+      audioRef.current = null;
+    }
+    if ('speechSynthesis' in window) window.speechSynthesis.cancel();
+    setIsSpeaking(false);
+  };
+
+  const playBlob = (blob) =>
+    new Promise((resolve) => {
+      const url = URL.createObjectURL(blob);
+      const el = new Audio(url);
+      audioRef.current = el;
+      const done = () => {
+        URL.revokeObjectURL(url);
+        resolve();
+      };
+      el.onended = done;
+      el.onerror = done;
+      el.play().catch((err) => {
+        console.warn('Audio play blocked:', err);
+        done();
+      });
+    });
+
+  // Main speak(): Kokoro, sentence by sentence (next one is generated
+  // while the current one plays). Falls back to the browser voice on error.
+  const speak = async (text, onEnd) => {
+    stopSpeaking();
+    const token = speakTokenRef.current;
+
+    try {
+      await loadTTS();
+      if (token !== speakTokenRef.current) return;
+
+      const sentences = splitSentences(text);
+      if (!sentences.length) return;
+      setIsSpeaking(true);
+
+      let next = generateSpeech(sentences[0], profile.kokoroVoice);
+
+      for (let i = 0; i < sentences.length; i++) {
+        const blob = await next;
+        if (token !== speakTokenRef.current) return;
+
+        if (i + 1 < sentences.length) {
+          next = generateSpeech(sentences[i + 1], profile.kokoroVoice);
+        }
+
+        await playBlob(blob);
+        if (token !== speakTokenRef.current) return;
+      }
+
+      setIsSpeaking(false);
+      onEnd?.();
+    } catch (err) {
+      console.error('Kokoro speak error:', err);
+      if (token === speakTokenRef.current) speakWithBrowser(text, onEnd);
+    }
   };
 
   const addTutorMessage = (text) => {
@@ -410,11 +554,7 @@ const TutorSession = () => {
       return;
     }
 
-    if ('speechSynthesis' in window) {
-      window.speechSynthesis.cancel();
-    }
-
-    setIsSpeaking(false);
+    stopSpeaking();
     setInterimText('');
 
     addStudentMessage(cleanText);
@@ -486,8 +626,7 @@ const TutorSession = () => {
       recognitionRef.current?.stop();
       setIsListening(false);
     } else {
-      if ('speechSynthesis' in window) window.speechSynthesis.cancel();
-      setIsSpeaking(false);
+      stopSpeaking();
       recognitionRef.current?.start();
       setIsListening(true);
     }
@@ -770,6 +909,8 @@ const TutorSession = () => {
               <SoundBars active reducedMotion={reducedMotion} color={palette.listening} height={14} />
               Listening…
             </>
+          ) : voiceLoading ? (
+            `${profile.label} is getting ready…`
           ) : (
             `Talk or type to chat with ${profile.label}`
           )}
