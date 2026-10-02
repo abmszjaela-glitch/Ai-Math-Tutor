@@ -1,23 +1,19 @@
 import { useEffect, useRef } from 'react';
-import { motion } from 'framer-motion';
 
 const AVATARS = {
   kanga: {
     name: 'Kanga',
-    src: '/avatar/kanga-talking.webm',
-    glow: 'rgba(240, 162, 61, 0.30)',
+    src: '/avatar/kanga-talking .mp4',
   },
 
   koala: {
     name: 'Koala',
-    src: '/avatar/koala-talking.webm',
-    glow: 'rgba(110, 150, 170, 0.30)',
+    src: '/avatar/koala-talking .mp4',
   },
 
   pandy: {
     name: 'Pandy',
-    src: '/avatar/panda-talking.webm',
-    glow: 'rgba(74, 95, 224, 0.30)',
+    src: '/avatar/panda-talking .mp4',
   },
 };
 
@@ -31,72 +27,102 @@ const TutorAvatar = ({
 
   const avatar = AVATARS[tutorId] || AVATARS.kanga;
 
+  /*
+   * One effect controls playback. The MP4 already contains the full
+   * talking animation. When the tutor changes, the <video> remounts
+   * (key={avatar.src}) and this effect runs again via tutorId.
+   */
   useEffect(() => {
     const video = videoRef.current;
 
     if (!video) return;
 
     if (speaking && !reducedMotion) {
-      video.currentTime = 0;
+      const playPromise = video.play();
 
-      video.play().catch((error) => {
-        console.warn('Avatar animation could not play:', error);
-      });
+      if (playPromise) {
+        playPromise.catch((error) => {
+          console.warn('Avatar animation could not play:', error);
+        });
+      }
     } else {
       video.pause();
-      video.currentTime = 0;
+
+      try {
+        video.currentTime = 0;
+      } catch (error) {
+        console.warn('Could not reset avatar video:', error);
+      }
     }
-  }, [speaking, reducedMotion, tutorId]);
+
+    return () => {
+      video.pause();
+    };
+  }, [tutorId, speaking, reducedMotion]);
 
   return (
-    <motion.div
+    <div
       style={{
         position: 'relative',
         width: size,
         height: size,
+
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
-      }}
-      animate={
-        speaking && !reducedMotion
-          ? { scale: [1, 1.02, 1] }
-          : { scale: 1 }
-      }
-      transition={{
-        duration: 1.1,
-        repeat: speaking && !reducedMotion ? Infinity : 0,
-        ease: 'easeInOut',
-      }}
-    >
- 
 
-      {/* Transparent animated tutor */}
+        // Do not clip the ears or head.
+        overflow: 'visible',
+
+        // White backdrop inside this element, so the video's
+        // multiply blend below always has white to blend with.
+        background: '#FFFFFF',
+        transform: 'translateZ(0)',
+      }}
+      aria-label={`${avatar.name} animated tutor`}
+    >
       <video
         ref={videoRef}
+        key={avatar.src}
         src={avatar.src}
         muted
         playsInline
         loop
         preload="auto"
+        controls={false}
+        disablePictureInPicture
+        tabIndex={-1}
         aria-label={`${avatar.name} animated tutor`}
         style={{
           position: 'relative',
           zIndex: 2,
+
           width: '100%',
           height: '100%',
+
+          mixBlendMode: 'multiply',
+          filter: 'brightness(1.08)',
+
+          // contain prevents the ears/head from being cropped.
           objectFit: 'contain',
 
-          /* Important */
+          // The clip has an off-white square background. Multiply
+          // turns that near-white into pure white on the white page,
+          // so the square edge disappears.
+          mixBlendMode: 'multiply',
+
           background: 'transparent',
 
           border: 'none',
           outline: 'none',
+
           display: 'block',
+
+          // The avatar should never block UI buttons.
           pointerEvents: 'none',
         }}
       />
-    </motion.div>
+    </div>
   );
 };
 

@@ -8,79 +8,19 @@ const easeOut = [0.25, 0.1, 0.25, 1];
 const STORAGE_KEY = 'selectedTutorId';
 const API_URL = 'http://localhost:5000/api';
 
-// === KOKORO (free, runs in a Web Worker so the UI stays smooth) ===
-let worker = null;
-let loadPromise = null;
-let reqId = 0;
-const pending = new Map();
+// ============================================================
+// DESIGN TOKENS (light theme)
+// ============================================================
 
-const getWorker = () => {
-  if (!worker) {
-    worker = new Worker(new URL('./tts.worker.js', import.meta.url), { type: 'module' });
-    worker.onmessage = (e) => {
-      const m = e.data;
-      if (m.type === 'ready') {
-        pending.get('load')?.resolve();
-        pending.delete('load');
-      } else if (m.type === 'audio') {
-        pending.get(m.id)?.resolve(m.blob);
-        pending.delete(m.id);
-      } else if (m.type === 'progress') {
-        if (m.progress?.status === 'progress') {
-          console.log(`Voice model: ${m.progress.file} ${Math.round(m.progress.progress)}%`);
-        }
-      } else if (m.type === 'error') {
-        console.error('Kokoro worker error:', m.message);
-        pending.get(m.id)?.reject(new Error(m.message));
-        pending.delete(m.id);
-      }
-    };
-    // Worker file failed to load / crashed: reject everything instead of hanging forever
-    worker.onerror = (e) => {
-      console.error('Kokoro worker failed to start:', e.message || e);
-      pending.forEach((p) => p.reject(new Error('Worker failed')));
-      pending.clear();
-      worker = null;
-    };
-  }
-  return worker;
-};
-
-const loadTTS = () => {
-  if (!loadPromise) {
-    loadPromise = new Promise((resolve, reject) => {
-      pending.set('load', { resolve, reject });
-      getWorker().postMessage({ type: 'load' });
-      // Give up after 90s so the app falls back to the browser voice
-      setTimeout(() => reject(new Error('Voice model load timed out')), 90000);
-    }).catch((err) => {
-      loadPromise = null; // allow retry
-      throw err;
-    });
-  }
-  return loadPromise;
-};
-
-const generateSpeech = (text, voice) =>
-  new Promise((resolve, reject) => {
-    const id = ++reqId;
-    pending.set(id, { resolve, reject });
-    getWorker().postMessage({ type: 'generate', id, text, voice });
-  });
-
-// Split on sentence ends (keeps decimals like 3.5 together)
-const splitSentences = (text) =>
-  text.split(/(?<=[.!?])\s+/).map((t) => t.trim()).filter(Boolean);
-
-// === DESIGN TOKENS ===
 const palette = {
-  ink: '#F5F1FF',
-  paper: '#000000',
-  surface: '#17151F',
-  mist: '#332D47',
-  slate: '#8B84A8',
-  faint: '#4A4460',
-  listening: '#FF6B6F',
+  ink: '#1F1B2E', // main text
+  paper: '#F4F4F6', // page background
+  card: '#FFFFFF', // input bar
+  surface: '#F6F3FB', // tutor bubble background
+  mist: '#E6E1F0', // borders
+  slate: '#7A7394', // secondary text / idle status
+  faint: '#B9B3CC', // disabled
+  listening: '#E2483F',
 };
 
 const fontDisplay = "'Baloo 2', 'Fredoka', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif";
@@ -88,76 +28,62 @@ const fontBody = "'Nunito', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-
 
 const shadow = {
   sm: '0 3px 0 rgba(36,30,66,0.10)',
-  md: '0 6px 0 rgba(36,30,66,0.12)',
-  lg: '0 10px 0 rgba(36,30,66,0.14)',
+  md: '0 4px 0 rgba(36,30,66,0.08)',
+  lg: '0 10px 24px rgba(36,30,66,0.18)',
 };
+
+// ============================================================
+// TUTOR PROFILES
+// Speech uses the plain browser default voice at normal speed.
+// ============================================================
 
 const tutorProfiles = {
   kanga: {
     label: 'Kanga',
-    kokoroVoice: 'bf_emma',
-    lang: 'en-AU',
-    voiceGender: 'female',
-    pitch: 1.18,
-    rate: 0.96,
-    // NOTE: the original list was elided ("...unchanged..."). Paste your own list back here if it differs.
-    namePreferHints: ['Australia', 'Karen', 'Catherine', 'female'],
-    greeting: "G'day, I'm Kanga! I'm so excited to help you learn maths today. Tap the microphone and ask me anything, or type your question below.",
+    greeting:
+      "G'day, I'm Kanga! I'm so excited to help you learn maths today. Tap the microphone and ask me anything, or type your question below.",
     color: '#F0A23D',
     deep: '#C4611A',
+    soft: '#FFF3E0',
     gradient: 'linear-gradient(135deg, #FFCB82 0%, #F0A23D 55%, #E1791F 100%)',
     buttonGradient: 'linear-gradient(135deg, #F0A23D 0%, #C4611A 100%)',
-    glow: 'rgba(240,162,61,0.38)',
   },
   pandy: {
     label: 'Pandy',
-    kokoroVoice: 'bm_george',
-    lang: 'en-AU',
-    voiceGender: 'male',
-    pitch: 0.88,
-    rate: 0.94,
-    namePreferHints: ['Australia', 'male', 'Lee', 'William'],
-    greeting: "G'day, I'm Pandy! Ready to work through some maths together? Tap the microphone or type your question below.",
+    greeting:
+      "G'day, I'm Pandy! Ready to work through some maths together? Tap the microphone or type your question below.",
     color: '#4A5FE0',
     deep: '#1E1A4A',
+    soft: '#ECEFFF',
     gradient: 'linear-gradient(135deg, #93A4FF 0%, #4A5FE0 55%, #3626B8 100%)',
     buttonGradient: 'linear-gradient(135deg, #4A5FE0 0%, #1E1A4A 100%)',
-    glow: 'rgba(74,95,224,0.38)',
   },
   koala: {
     label: 'Koala',
-    kokoroVoice: 'bf_isabella',
-    lang: 'en-AU',
-    voiceGender: 'female',
-    pitch: 1.0,
-    rate: 0.94,
-    namePreferHints: [
-      'Google UK English Female',
-      'Google US English Female',
-      'Karen',
-      'Catherine',
-      'Samantha',
-      'Zira',
-      'female',
-    ],
-    greeting: "G'day, I'm Koala! Let's take maths nice and easy together. Tap the microphone and ask me anything, or type your question below.",
+    greeting:
+      "G'day, I'm Koala! Let's take maths nice and easy together. Tap the microphone and ask me anything, or type your question below.",
     color: '#6E96AA',
     deep: '#3E5A68',
+    soft: '#E8F2F6',
     gradient: 'linear-gradient(135deg, #A8CBDA 0%, #6E96AA 55%, #4A7385 100%)',
     buttonGradient: 'linear-gradient(135deg, #6E96AA 0%, #3E5A68 100%)',
-    glow: 'rgba(110,150,170,0.38)',
   },
 };
 
 const DEFAULT_TUTOR_ID = 'kanga';
 
+// ============================================================
+// HOOKS
+// ============================================================
+
 const usePrefersReducedMotion = () => {
-  const [reduced, setReduced] = useState(false);
+  const [reduced, setReduced] = useState(() =>
+    Boolean(window.matchMedia?.('(prefers-reduced-motion: reduce)').matches)
+  );
 
   useEffect(() => {
     if (!window.matchMedia) return;
     const query = window.matchMedia('(prefers-reduced-motion: reduce)');
-    setReduced(query.matches);
     const handleChange = (e) => setReduced(e.matches);
     if (query.addEventListener) query.addEventListener('change', handleChange);
     else query.addListener(handleChange);
@@ -169,6 +95,26 @@ const usePrefersReducedMotion = () => {
 
   return reduced;
 };
+
+// Smaller avatar on short or narrow screens so the chat keeps its space.
+const useAvatarSize = () => {
+  const compute = () =>
+    window.innerWidth < 576 || window.innerHeight < 700 ? 104 : 140;
+
+  const [size, setSize] = useState(compute);
+
+  useEffect(() => {
+    const onResize = () => setSize(compute());
+    window.addEventListener('resize', onResize);
+    return () => window.removeEventListener('resize', onResize);
+  }, []);
+
+  return size;
+};
+
+// ============================================================
+// SOUND BARS
+// ============================================================
 
 const SoundBars = ({ active, reducedMotion, color = '#fff', count = 4, height = 15 }) => (
   <div style={{ display: 'flex', alignItems: 'flex-end', gap: '3px', height }}>
@@ -188,7 +134,12 @@ const SoundBars = ({ active, reducedMotion, color = '#fff', count = 4, height = 
         <motion.span
           key={i}
           animate={active ? { scaleY: [0.3, 1, 0.45, 0.85, 0.3] } : { scaleY: 0.3 }}
-          transition={{ duration: 0.9, repeat: active ? Infinity : 0, ease: 'easeInOut', delay: i * 0.12 }}
+          transition={{
+            duration: 0.9,
+            repeat: active ? Infinity : 0,
+            ease: 'easeInOut',
+            delay: i * 0.12,
+          }}
           style={{
             display: 'block',
             width: '3px',
@@ -203,41 +154,69 @@ const SoundBars = ({ active, reducedMotion, color = '#fff', count = 4, height = 
   </div>
 );
 
+// ============================================================
+// THINKING DOTS
+// ============================================================
+
 const ThinkingDots = ({ color, reducedMotion }) => (
   <div style={{ display: 'flex', gap: '5px', padding: '3px 2px' }}>
     {[0, 1, 2].map((i) =>
       reducedMotion ? (
         <span
           key={i}
-          style={{ width: 6, height: 6, borderRadius: '50%', background: color, opacity: 0.5 + i * 0.15 }}
+          style={{
+            width: 6,
+            height: 6,
+            borderRadius: '50%',
+            background: color,
+            opacity: 0.5 + i * 0.15,
+          }}
         />
       ) : (
         <motion.span
           key={i}
           animate={{ y: [0, -5, 0] }}
           transition={{ duration: 0.9, repeat: Infinity, ease: 'easeInOut', delay: i * 0.15 }}
-          style={{ width: 6, height: 6, borderRadius: '50%', background: color, display: 'inline-block' }}
+          style={{
+            width: 6,
+            height: 6,
+            borderRadius: '50%',
+            background: color,
+            display: 'inline-block',
+          }}
         />
       )
     )}
   </div>
 );
 
+// ============================================================
+// MAIN COMPONENT
+// ============================================================
+
 const TutorSession = () => {
   const navigate = useNavigate();
   const reducedMotion = usePrefersReducedMotion();
+  const avatarSize = useAvatarSize();
 
-  const [tutorId, setTutorId] = useState(DEFAULT_TUTOR_ID);
+  const [tutorId] = useState(() => {
+    const saved = localStorage.getItem(STORAGE_KEY);
+    return saved && tutorProfiles[saved] ? saved : DEFAULT_TUTOR_ID;
+  });
+
+  const profile = tutorProfiles[tutorId] || tutorProfiles[DEFAULT_TUTOR_ID];
+
   const [messages, setMessages] = useState([]);
   const [isListening, setIsListening] = useState(false);
   const [isSpeaking, setIsSpeaking] = useState(false);
   const [isThinking, setIsThinking] = useState(false);
-  const [voicesReady, setVoicesReady] = useState(false);
-  const [micSupported, setMicSupported] = useState(true);
+  const [micSupported] = useState(() =>
+    Boolean(window.SpeechRecognition || window.webkitSpeechRecognition)
+  );
   const [interimText, setInterimText] = useState('');
   const [notice, setNotice] = useState(null);
   const [conversationId, setConversationId] = useState(null);
-  const [lessonId, setLessonId] = useState(null);
+  const [lessonId] = useState(null);
   const [isSessionReady, setIsSessionReady] = useState(false);
   const [textInput, setTextInput] = useState('');
 
@@ -245,38 +224,22 @@ const TutorSession = () => {
   const messagesEndRef = useRef(null);
   const hasGreetedRef = useRef(false);
   const noticeTimeoutRef = useRef(null);
-  // FIX: always holds the newest handleStudentMessage (so the speech
-  // recognition callback never uses a stale conversationId = null)
   const handleStudentMessageRef = useRef(null);
-  const audioRef = useRef(null);
   const speakTokenRef = useRef(0);
-  const [voiceLoading, setVoiceLoading] = useState(true);
 
-  const profile = tutorProfiles[tutorId] || tutorProfiles[DEFAULT_TUTOR_ID];
+  const showNotice = (text) => {
+    setNotice(text);
+    if (noticeTimeoutRef.current) clearTimeout(noticeTimeoutRef.current);
+    noticeTimeoutRef.current = setTimeout(() => setNotice(null), 4000);
+  };
 
-  useEffect(() => {
-    const saved = localStorage.getItem(STORAGE_KEY);
-    if (saved && tutorProfiles[saved]) setTutorId(saved);
-  }, []);
-
-  useEffect(() => {
-    if (!('speechSynthesis' in window)) return;
-    const handleVoices = () => {
-      if (window.speechSynthesis.getVoices().length > 0) setVoicesReady(true);
-    };
-    handleVoices();
-    window.speechSynthesis.onvoiceschanged = handleVoices;
-    return () => {
-      window.speechSynthesis.onvoiceschanged = null;
-    };
-  }, []);
+  // ==========================================================
+  // SPEECH RECOGNITION (microphone input)
+  // ==========================================================
 
   useEffect(() => {
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-    if (!SpeechRecognition) {
-      setMicSupported(false);
-      return;
-    }
+    if (!SpeechRecognition) return;
 
     const recognition = new SpeechRecognition();
     recognition.continuous = false;
@@ -286,14 +249,17 @@ const TutorSession = () => {
     recognition.onresult = (event) => {
       let finalTranscript = '';
       let interim = '';
+
       for (let i = event.resultIndex; i < event.results.length; i++) {
         const transcript = event.results[i][0].transcript;
         if (event.results[i].isFinal) finalTranscript += transcript;
         else interim += transcript;
       }
+
       setInterimText(interim);
+
       if (finalTranscript.trim()) {
-        handleStudentMessageRef.current?.(finalTranscript.trim()); // CHANGED
+        handleStudentMessageRef.current?.(finalTranscript.trim());
       }
     };
 
@@ -301,7 +267,9 @@ const TutorSession = () => {
       setIsListening(false);
       setInterimText('');
     };
-    recognition.onerror = () => {
+
+    recognition.onerror = (event) => {
+      console.warn('Speech recognition error:', event.error);
       setIsListening(false);
       setInterimText('');
     };
@@ -312,52 +280,37 @@ const TutorSession = () => {
       recognition.onresult = null;
       recognition.onend = null;
       recognition.onerror = null;
-      recognition.abort();
+      try {
+        recognition.abort();
+      } catch {
+        // Ignore cleanup errors.
+      }
+      recognitionRef.current = null;
     };
   }, [tutorId]);
 
-  useEffect(() => {
-    return () => {
-      stopSpeaking();
-      if (recognitionRef.current) recognitionRef.current.abort();
-      if (noticeTimeoutRef.current) clearTimeout(noticeTimeoutRef.current);
-    };
-  }, []);
+  // ==========================================================
+  // CHAT SCROLLING (interimText is intentionally not included)
+  // ==========================================================
 
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [messages, interimText, isThinking]);
+    messagesEndRef.current?.scrollIntoView({ behavior: 'auto', block: 'nearest' });
+  }, [messages, isThinking]);
 
-  // Preload the Kokoro voice model as soon as the page opens
-  useEffect(() => {
-    loadTTS()
-      .then(() => setVoiceLoading(false))
-      .catch((err) => {
-        console.error('Kokoro load error:', err);
-        setVoiceLoading(false); // fall back to the browser voice
-      });
-  }, []);
+  // ==========================================================
+  // CREATE CONVERSATION
+  // ==========================================================
 
   useEffect(() => {
-    if (!voiceLoading && !hasGreetedRef.current) {
-      hasGreetedRef.current = true;
-      addTutorMessage(profile.greeting);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [voiceLoading, tutorId]);
+    let cancelled = false;
 
-  useEffect(() => {
     const createConversation = async () => {
       try {
         const response = await fetch(`${API_URL}/conversations`, {
           method: 'POST',
           credentials: 'include',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            title: `${profile.label} Math Session`,
-          }),
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ title: `${profile.label} Math Session` }),
         });
 
         const data = await response.json();
@@ -366,9 +319,13 @@ const TutorSession = () => {
           throw new Error(data.message || 'Failed to create conversation');
         }
 
+        if (cancelled) return;
+
         setConversationId(data.conversation.id);
         setIsSessionReady(true);
       } catch (error) {
+        if (cancelled) return;
+
         console.error('Conversation creation error:', error);
         setIsSessionReady(false);
         showNotice('I could not start the math session. Please try again.');
@@ -376,128 +333,106 @@ const TutorSession = () => {
     };
 
     createConversation();
+
+    return () => {
+      cancelled = true;
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [profile.label]);
 
-  const pickVoice = () => {
-    if (!('speechSynthesis' in window)) return null;
-    const voices = window.speechSynthesis.getVoices();
-    if (!voices.length) return null;
+  // ==========================================================
+  // TEXT TO SPEECH (basic browser voice)
+  // ==========================================================
 
-    const auVoices = voices.filter((v) => v.lang?.toLowerCase() === 'en-au');
-    const pool = auVoices.length ? auVoices : voices.filter((v) => v.lang?.startsWith('en'));
+  const stopSpeaking = () => {
+    speakTokenRef.current += 1;
 
-    if (profile.voiceGender === 'female') {
-      const femaleByLabel = pool.find((v) => /female/i.test(v.name));
-      if (femaleByLabel) return femaleByLabel;
-    }
-    if (profile.voiceGender === 'male') {
-      const maleByLabel = pool.find((v) => /male/i.test(v.name) && !/female/i.test(v.name));
-      if (maleByLabel) return maleByLabel;
+    if ('speechSynthesis' in window) {
+      const synth = window.speechSynthesis;
+      if (synth.speaking || synth.pending) synth.cancel();
     }
 
-    for (const hint of profile.namePreferHints) {
-      const match =
-        pool.find((v) => v.name.toLowerCase().includes(hint.toLowerCase())) ||
-        voices.find((v) => v.name.toLowerCase().includes(hint.toLowerCase()));
-      if (match) return match;
-    }
-
-    return pool[0] || voices.find((v) => v.lang?.startsWith('en')) || voices[0];
+    setIsSpeaking(false);
   };
 
-  // Fallback: the old browser voice
-  const speakWithBrowser = (text, onEnd) => {
-    if (!('speechSynthesis' in window)) {
-      if (onEnd) onEnd();
+  const speak = (text, onEnd) => {
+    stopSpeaking();
+
+    const speechText = text?.trim();
+
+    if (!speechText || !('speechSynthesis' in window)) {
+      onEnd?.();
       return;
     }
-    window.speechSynthesis.cancel();
 
-    const utterance = new SpeechSynthesisUtterance(text);
-    utterance.pitch = profile.pitch;
-    utterance.rate = profile.rate;
+    const token = speakTokenRef.current;
+
+    const utterance = new SpeechSynthesisUtterance(speechText);
+    utterance.lang = 'en-AU';
+    utterance.rate = 1;
+    utterance.pitch = 1;
     utterance.volume = 1;
-    utterance.lang = profile.lang;
 
-    const voice = pickVoice();
-    if (voice) utterance.voice = voice;
-
-    utterance.onstart = () => setIsSpeaking(true);
-    utterance.onend = () => {
-      setIsSpeaking(false);
-      if (onEnd) onEnd();
+    utterance.onstart = () => {
+      if (token !== speakTokenRef.current) return;
+      setIsSpeaking(true);
     };
-    utterance.onerror = () => {
+
+    utterance.onend = () => {
+      if (token !== speakTokenRef.current) return;
       setIsSpeaking(false);
-      if (onEnd) onEnd();
+      onEnd?.();
+    };
+
+    utterance.onerror = (event) => {
+      if (token !== speakTokenRef.current) return;
+
+      if (event.error !== 'canceled' && event.error !== 'interrupted') {
+        console.warn('Speech error:', event.error);
+      }
+
+      setIsSpeaking(false);
+      onEnd?.();
     };
 
     window.speechSynthesis.speak(utterance);
   };
 
-  const stopSpeaking = () => {
-    speakTokenRef.current += 1; // cancels any speak() that is in progress
-    if (audioRef.current) {
-      audioRef.current.pause();
-      audioRef.current = null;
-    }
-    if ('speechSynthesis' in window) window.speechSynthesis.cancel();
-    setIsSpeaking(false);
-  };
+  // ==========================================================
+  // INITIAL GREETING
+  // ==========================================================
 
-  const playBlob = (blob) =>
-    new Promise((resolve) => {
-      const url = URL.createObjectURL(blob);
-      const el = new Audio(url);
-      audioRef.current = el;
-      const done = () => {
-        URL.revokeObjectURL(url);
-        resolve();
-      };
-      el.onended = done;
-      el.onerror = done;
-      el.play().catch((err) => {
-        console.warn('Audio play blocked:', err);
-        done();
-      });
-    });
+  useEffect(() => {
+    if (hasGreetedRef.current) return;
+    hasGreetedRef.current = true;
 
-  // Main speak(): Kokoro, sentence by sentence (next one is generated
-  // while the current one plays). Falls back to the browser voice on error.
-  const speak = async (text, onEnd) => {
-    stopSpeaking();
-    const token = speakTokenRef.current;
+    setMessages((prev) => [...prev, { sender: 'tutor', text: profile.greeting }]);
+    speak(profile.greeting);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [profile.greeting]);
 
-    try {
-      await loadTTS();
-      if (token !== speakTokenRef.current) return;
+  // ==========================================================
+  // CLEANUP
+  // ==========================================================
 
-      const sentences = splitSentences(text);
-      if (!sentences.length) return;
-      setIsSpeaking(true);
+  useEffect(() => {
+    return () => {
+      stopSpeaking();
 
-      let next = generateSpeech(sentences[0], profile.kokoroVoice);
-
-      for (let i = 0; i < sentences.length; i++) {
-        const blob = await next;
-        if (token !== speakTokenRef.current) return;
-
-        if (i + 1 < sentences.length) {
-          next = generateSpeech(sentences[i + 1], profile.kokoroVoice);
-        }
-
-        await playBlob(blob);
-        if (token !== speakTokenRef.current) return;
+      try {
+        recognitionRef.current?.abort();
+      } catch {
+        // Ignore cleanup errors.
       }
 
-      setIsSpeaking(false);
-      onEnd?.();
-    } catch (err) {
-      console.error('Kokoro speak error:', err);
-      if (token === speakTokenRef.current) speakWithBrowser(text, onEnd);
-    }
-  };
+      if (noticeTimeoutRef.current) clearTimeout(noticeTimeoutRef.current);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // ==========================================================
+  // MESSAGE HELPERS
+  // ==========================================================
 
   const addTutorMessage = (text) => {
     setMessages((prev) => [...prev, { sender: 'tutor', text }]);
@@ -508,41 +443,25 @@ const TutorSession = () => {
     setMessages((prev) => [...prev, { sender: 'student', text }]);
   };
 
-  const showNotice = (text) => {
-    setNotice(text);
-    if (noticeTimeoutRef.current) clearTimeout(noticeTimeoutRef.current);
-    noticeTimeoutRef.current = setTimeout(() => setNotice(null), 4000);
-  };
+const getTutorSpeech = (tutor) => {
+  const parts = [];
 
-  const buildTutorSpeech = (tutor) => {
-    const parts = [];
+  if (tutor.message?.trim()) parts.push(tutor.message.trim());
 
-    if (tutor.message) {
-      parts.push(tutor.message);
-    }
+  tutor.steps?.forEach((step) => {
+    if (step.explanation) parts.push(`Step ${step.step}. ${step.explanation}`);
+  });
 
-    if (tutor.steps?.length) {
-      parts.push("Let's solve it step by step.");
+  if (tutor.answer) parts.push(`The answer is ${tutor.answer}.`);
+  if (tutor.hint) parts.push(`Hint: ${tutor.hint}`);
+  if (tutor.encouragement) parts.push(tutor.encouragement);
 
-      tutor.steps.forEach((step) => {
-        parts.push(`Step ${step.step}. ${step.explanation}. ${step.calculation}.`);
-      });
-    }
+  return parts.join(' ') || "Let's work through this together.";
+};
 
-    if (tutor.answer) {
-      parts.push(`So, the answer is ${tutor.answer}.`);
-    }
-
-    if (tutor.hint) {
-      parts.push(`Remember this: ${tutor.hint}.`);
-    }
-
-    if (tutor.encouragement) {
-      parts.push(tutor.encouragement);
-    }
-
-    return parts.join(' ');
-  };
+  // ==========================================================
+  // HANDLE STUDENT MESSAGE
+  // ==========================================================
 
   const handleStudentMessage = async (text) => {
     const cleanText = text?.trim();
@@ -564,9 +483,7 @@ const TutorSession = () => {
       const response = await fetch(`${API_URL}/tutor/message`, {
         method: 'POST',
         credentials: 'include',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           conversationId,
           lessonId,
@@ -597,53 +514,84 @@ const TutorSession = () => {
         },
       ]);
 
-      const speech = buildTutorSpeech(tutor);
-      speak(speech);
+      speak(getTutorSpeech(tutor));
     } catch (error) {
       console.error('Tutor request error:', error);
 
       setIsThinking(false);
 
-      addTutorMessage("Sorry! I had a little trouble thinking about that question. Let's try again.");
+      addTutorMessage(
+        "Sorry! I had a little trouble thinking about that question. Let's try again."
+      );
 
       showNotice('Something went wrong while talking to your math tutor.');
     }
   };
 
-  // FIX: keep the ref pointing at the newest handler on every render
-  handleStudentMessageRef.current = handleStudentMessage;
+  useEffect(() => {
+    handleStudentMessageRef.current = handleStudentMessage;
+  });
+
+  // ==========================================================
+  // MICROPHONE
+  // ==========================================================
 
   const toggleMic = () => {
     if (!isSessionReady) {
       showNotice('Your tutor is still getting ready. Please wait a moment.');
       return;
     }
+
     if (!micSupported) {
       showNotice("Voice input isn't available in this browser. Try Chrome on desktop or Android.");
       return;
     }
+
     if (isListening) {
-      recognitionRef.current?.stop();
+      try {
+        recognitionRef.current?.stop();
+      } catch {
+        // Ignore stop errors.
+      }
       setIsListening(false);
     } else {
       stopSpeaking();
-      recognitionRef.current?.start();
-      setIsListening(true);
+
+      try {
+        recognitionRef.current?.start();
+        setIsListening(true);
+      } catch (error) {
+        console.warn('Could not start speech recognition:', error);
+        setIsListening(false);
+      }
     }
   };
 
-  const handleTextSubmit = (e) => {
-    e.preventDefault();
+  // ==========================================================
+  // TEXT SUBMIT
+  // ==========================================================
+
+  const handleTextSubmit = (event) => {
+    event.preventDefault();
+
     const value = textInput.trim();
+
     if (!value) return;
+
     if (!isSessionReady) {
       showNotice('Your tutor is still getting ready. Please wait a moment.');
       return;
     }
+
     if (isListening) {
-      recognitionRef.current?.stop();
+      try {
+        recognitionRef.current?.stop();
+      } catch {
+        // Ignore stop errors.
+      }
       setIsListening(false);
     }
+
     setTextInput('');
     handleStudentMessage(value);
   };
@@ -652,10 +600,14 @@ const TutorSession = () => {
     handleStudentMessage('Can you show me a step-by-step example?');
   };
 
+  // ==========================================================
+  // STYLES
+  // ==========================================================
+
   const tutorBubbleStyle = {
-    maxWidth: '80%',
-    padding: '15px 19px',
-    borderRadius: '22px',
+    maxWidth: '82%',
+    padding: '14px 18px',
+    borderRadius: '20px',
     borderBottomLeftRadius: '6px',
     fontFamily: fontBody,
     fontSize: '1rem',
@@ -663,15 +615,14 @@ const TutorSession = () => {
     lineHeight: 1.55,
     background: palette.surface,
     color: palette.ink,
-    border: `2.5px solid ${palette.mist}`,
+    border: `2px solid ${palette.mist}`,
     borderLeft: `5px solid ${profile.color}`,
-    boxShadow: '0 3px 0 rgba(0,0,0,0.4)',
   };
 
   const studentBubbleStyle = {
-    maxWidth: '80%',
-    padding: '15px 19px',
-    borderRadius: '22px',
+    maxWidth: '82%',
+    padding: '14px 18px',
+    borderRadius: '20px',
     borderBottomRightRadius: '6px',
     fontFamily: fontBody,
     fontSize: '1rem',
@@ -682,19 +633,35 @@ const TutorSession = () => {
     boxShadow: shadow.sm,
   };
 
+  // ==========================================================
+  // RENDER
+  // ==========================================================
+
   return (
     <section
+      className="ts-root"
       style={{
         '--accent': profile.color,
-        minHeight: '100vh',
         background: palette.paper,
         display: 'flex',
         flexDirection: 'column',
         fontFamily: fontBody,
+        color: palette.ink,
       }}
     >
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;600;700;800&family=Nunito:wght@400;600;700;800;900&display=swap');
+
+        .ts-root {
+          height: 100vh;
+          height: 100dvh;
+          overflow: hidden;
+        }
+
+        .ts-text-input::placeholder {
+          color: ${palette.slate};
+          opacity: 0.8;
+        }
 
         .focus-ring:focus-visible {
           outline: 2px solid var(--accent, #4A5FE0);
@@ -702,6 +669,12 @@ const TutorSession = () => {
         }
         .focus-ring:focus:not(:focus-visible) {
           outline: none;
+        }
+
+        .ts-conversation::-webkit-scrollbar { width: 8px; }
+        .ts-conversation::-webkit-scrollbar-thumb {
+          background: ${palette.mist};
+          border-radius: 8px;
         }
 
         @media (prefers-reduced-motion: reduce) {
@@ -713,74 +686,26 @@ const TutorSession = () => {
         }
 
         @media (max-width: 575px) {
-          .ts-header { padding: 12px 14px !important; }
-          .ts-header-label { font-size: 0.85rem !important; }
+          .ts-header { padding: 10px 14px !important; }
+          .ts-header-label { font-size: 0.95rem !important; }
           .ts-header-status { font-size: 0.66rem !important; }
-
-          .ts-hero { padding: 22px 14px 12px !important; }
-          .ts-tutor-hero { transform: scale(0.82); }
-          .ts-status-text {
-            font-size: 0.82rem !important;
-            text-align: center;
-            padding: 0 10px;
-          }
-          .ts-example-btn {
-            padding: 8px 14px !important;
-            font-size: 0.76rem !important;
-          }
-
-          .ts-conversation { padding: 8px 12px 172px !important; }
+          .ts-status-text { font-size: 0.85rem !important; }
+          .ts-conversation { padding: 8px 12px !important; }
           .ts-bubble {
             max-width: 90% !important;
-            font-size: 0.88rem !important;
+            font-size: 0.9rem !important;
             padding: 11px 14px !important;
           }
-
+          .ts-dock { padding: 8px 12px calc(12px + env(safe-area-inset-bottom)) !important; }
+          .ts-text-input { font-size: 0.9rem !important; padding: 11px 14px !important; }
+          .ts-send-btn { width: 40px !important; height: 40px !important; }
+          .ts-mic-btn { width: 48px !important; height: 48px !important; }
           .ts-notice {
-            bottom: 126px !important;
             left: 12px !important;
             right: 12px !important;
             transform: none !important;
             max-width: none !important;
-            font-size: 0.78rem !important;
           }
-
-          .ts-input-bar-wrap {
-            bottom: 16px !important;
-            padding: 0 12px !important;
-          }
-          .ts-text-input {
-            font-size: 0.85rem !important;
-            padding: 10px 14px !important;
-          }
-          .ts-send-btn { width: 40px !important; height: 40px !important; }
-          .ts-mic-btn { width: 46px !important; height: 46px !important; }
-        }
-
-        @media (max-width: 380px) {
-          .ts-header { padding: 10px 10px !important; }
-          .ts-header-label { font-size: 0.78rem !important; }
-
-          .ts-hero { padding: 16px 10px 10px !important; }
-          .ts-tutor-hero { transform: scale(0.7); }
-          .ts-status-text { font-size: 0.75rem !important; }
-          .ts-example-btn {
-            padding: 7px 12px !important;
-            font-size: 0.7rem !important;
-          }
-
-          .ts-conversation { padding: 6px 8px 164px !important; }
-          .ts-bubble {
-            max-width: 94% !important;
-            font-size: 0.82rem !important;
-          }
-
-          .ts-text-input {
-            font-size: 0.8rem !important;
-            padding: 9px 12px !important;
-          }
-          .ts-send-btn { width: 38px !important; height: 38px !important; }
-          .ts-mic-btn { width: 42px !important; height: 42px !important; }
         }
       `}</style>
 
@@ -788,16 +713,15 @@ const TutorSession = () => {
       <div
         className="ts-header"
         style={{
-          position: 'sticky',
-          top: 0,
-          zIndex: 20,
+          flex: 'none',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
-          padding: '14px 20px',
-          boxShadow: '0 2px 12px rgba(0,0,0,0.4)',
+          padding: '12px 20px',
+          background: palette.paper,
           borderBottom: `4px solid ${profile.color}`,
-          background: palette.surface,
+          boxShadow: '0 2px 10px rgba(36,30,66,0.08)',
+          zIndex: 20,
         }}
       >
         <motion.button
@@ -848,7 +772,11 @@ const TutorSession = () => {
               fontFamily: fontBody,
               color: '#fff',
               fontWeight: 800,
-              background: isSpeaking ? profile.color : isListening ? palette.listening : palette.slate,
+              background: isSpeaking
+                ? profile.color
+                : isListening
+                ? palette.listening
+                : palette.slate,
               padding: '4px 10px',
               borderRadius: '999px',
             }}
@@ -866,37 +794,36 @@ const TutorSession = () => {
         </div>
       </div>
 
-      {/* Hero */}
+      {/* Tutor avatar and status */}
       <div
-        className="ts-hero"
         style={{
+          flex: 'none',
           display: 'flex',
           flexDirection: 'column',
           alignItems: 'center',
-          padding: '36px 20px 16px',
+          padding: '14px 20px 8px',
         }}
       >
-        <div className="ts-tutor-hero">
-          <TutorAvatar
-            tutorId={tutorId}
-            speaking={isSpeaking}
-            size={170}
-            reducedMotion={reducedMotion}
-          />
-        </div>
+        <TutorAvatar
+          tutorId={tutorId}
+          speaking={isSpeaking}
+          size={avatarSize}
+          reducedMotion={reducedMotion}
+        />
 
         <div
           className="ts-status-text"
           style={{
-            marginTop: '18px',
+            marginTop: '8px',
             fontFamily: fontDisplay,
-            fontSize: '1.05rem',
+            fontSize: '1rem',
             fontWeight: 700,
             color: palette.ink,
             display: 'flex',
             alignItems: 'center',
             gap: '8px',
             minHeight: '20px',
+            textAlign: 'center',
           }}
         >
           {isSpeaking ? (
@@ -906,54 +833,31 @@ const TutorSession = () => {
             </>
           ) : isListening ? (
             <>
-              <SoundBars active reducedMotion={reducedMotion} color={palette.listening} height={14} />
+              <SoundBars
+                active
+                reducedMotion={reducedMotion}
+                color={palette.listening}
+                height={14}
+              />
               Listening…
             </>
-          ) : voiceLoading ? (
-            `${profile.label} is getting ready…`
           ) : (
             `Talk or type to chat with ${profile.label}`
           )}
         </div>
-
-        <motion.button
-          type="button"
-          onClick={requestExample}
-          whileHover={{ scale: 1.03, y: -1 }}
-          whileTap={{ scale: 0.97 }}
-          className="focus-ring ts-example-btn"
-          style={{
-            marginTop: '16px',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '8px',
-            padding: '12px 22px',
-            borderRadius: '999px',
-            border: 'none',
-            background: profile.buttonGradient,
-            color: '#f3efef',
-            fontFamily: fontDisplay,
-            fontWeight: 700,
-            fontSize: '0.95rem',
-            cursor: 'pointer',
-            boxShadow: `0 5px 0 ${profile.deep}`,
-          }}
-        >
-          <Sparkles size={16} color="#fff" />
-          Show me an example!
-        </motion.button>
       </div>
 
-      {/* Conversation */}
+      {/* Conversation (scrolls on its own, never hides behind the input) */}
       <div
         role="log"
         aria-live="polite"
         className="ts-conversation"
         style={{
           flex: 1,
+          minHeight: 0,
           overflowY: 'auto',
-          padding: '10px 20px 172px',
-          maxWidth: '640px',
+          padding: '8px 20px',
+          maxWidth: '680px',
           width: '100%',
           margin: '0 auto',
         }}
@@ -961,7 +865,7 @@ const TutorSession = () => {
         <AnimatePresence initial={false}>
           {messages.map((msg, i) => (
             <motion.div
-              key={i}
+              key={`${msg.sender}-${i}`}
               className={`ts-message ${
                 msg.sender === 'student' ? 'ts-message-student' : 'ts-message-tutor'
               }`}
@@ -980,27 +884,34 @@ const TutorSession = () => {
                 <div>{msg.text}</div>
 
                 {msg.sender === 'tutor' && msg.tutor && (
-                  <div style={{ marginTop: '18px' }}>
+                  <div style={{ marginTop: '16px' }}>
                     {msg.tutor.steps?.length > 0 && (
                       <div>
-                        <div style={{ fontWeight: 700, marginBottom: '10px' }}>
+                        <div style={{ fontWeight: 800, marginBottom: '10px' }}>
                           Let's solve it step by step:
                         </div>
 
                         {msg.tutor.steps.map((step) => (
                           <div key={step.step} style={{ marginBottom: '14px' }}>
-                            <div style={{ fontWeight: 700, marginBottom: '4px' }}>
+                            <div
+                              style={{
+                                fontWeight: 800,
+                                marginBottom: '4px',
+                                color: profile.deep,
+                              }}
+                            >
                               Step {step.step}
                             </div>
 
-                            <div style={{ marginBottom: '5px' }}>{step.explanation}</div>
+                            <div style={{ marginBottom: '6px' }}>{step.explanation}</div>
 
                             <div
                               style={{
-                                background: 'rgba(14, 1, 1, 0.06)',
-                                borderRadius: '8px',
+                                background: profile.soft,
+                                border: `1.5px solid ${profile.color}55`,
+                                borderRadius: '10px',
                                 padding: '8px 12px',
-                                fontWeight: 600,
+                                fontWeight: 700,
                               }}
                             >
                               {step.calculation}
@@ -1015,9 +926,9 @@ const TutorSession = () => {
                         style={{
                           marginTop: '16px',
                           padding: '12px 14px',
-                          borderRadius: '10px',
-                          background: 'rgba(245,166,35,0.12)',
-                          border: '1px solid #f5a623',
+                          borderRadius: '12px',
+                          background: profile.soft,
+                          border: `2px solid ${profile.color}`,
                         }}
                       >
                         <strong>Answer: </strong>
@@ -1026,13 +937,13 @@ const TutorSession = () => {
                     )}
 
                     {msg.tutor.hint && (
-                      <div style={{ marginTop: '12px', fontSize: '14px' }}>
+                      <div style={{ marginTop: '12px', fontSize: '0.9rem' }}>
                         <strong>💡 Hint:</strong> {msg.tutor.hint}
                       </div>
                     )}
 
                     {msg.tutor.encouragement && (
-                      <div style={{ marginTop: '10px', fontWeight: 600 }}>
+                      <div style={{ marginTop: '10px', fontWeight: 700 }}>
                         {msg.tutor.encouragement}
                       </div>
                     )}
@@ -1064,7 +975,10 @@ const TutorSession = () => {
               className="ts-bubble"
               style={{
                 ...studentBubbleStyle,
-                background: 'rgba(18,23,43,0.5)',
+                background: palette.surface,
+                color: palette.slate,
+                border: `2px dashed ${palette.faint}`,
+                boxShadow: 'none',
                 fontStyle: 'italic',
               }}
             >
@@ -1076,7 +990,7 @@ const TutorSession = () => {
         <div ref={messagesEndRef} />
       </div>
 
-      {/* Inline notice */}
+      {/* Notice */}
       <AnimatePresence>
         {notice && (
           <motion.div
@@ -1088,7 +1002,7 @@ const TutorSession = () => {
             className="ts-notice"
             style={{
               position: 'fixed',
-              bottom: '136px',
+              bottom: '150px',
               left: '50%',
               transform: 'translateX(-50%)',
               display: 'flex',
@@ -1096,11 +1010,11 @@ const TutorSession = () => {
               gap: '9px',
               padding: '11px 18px',
               borderRadius: '14px',
-              background: '#1C1926',
+              background: palette.ink,
               color: '#fff',
               fontFamily: fontBody,
-              fontSize: '0.82rem',
-              fontWeight: 500,
+              fontSize: '0.85rem',
+              fontWeight: 600,
               boxShadow: shadow.lg,
               zIndex: 60,
               maxWidth: '86vw',
@@ -1113,143 +1027,187 @@ const TutorSession = () => {
         )}
       </AnimatePresence>
 
-      {/* Input bar */}
+      {/* Input dock */}
       <div
-        className="ts-input-bar-wrap"
+        className="ts-dock"
         style={{
-          position: 'fixed',
-          bottom: '24px',
-          left: 0,
-          right: 0,
-          display: 'flex',
-          justifyContent: 'center',
-          padding: '0 20px',
+          flex: 'none',
+          padding: '10px 20px calc(16px + env(safe-area-inset-bottom))',
+          background: palette.paper,
+          borderTop: `1px solid ${palette.mist}`,
           zIndex: 40,
         }}
       >
-        <form
-          onSubmit={handleTextSubmit}
+        <div
           style={{
+            maxWidth: '680px',
+            margin: '0 auto',
             display: 'flex',
-            alignItems: 'center',
+            flexDirection: 'column',
             gap: '10px',
-            width: '100%',
-            maxWidth: '640px',
           }}
         >
-          <div
-            style={{
-              flex: 1,
-              display: 'flex',
-              alignItems: 'center',
-              background: palette.surface,
-              border: `2.5px solid ${palette.mist}`,
-              borderRadius: '999px',
-              boxShadow: shadow.md,
-              paddingRight: '6px',
-            }}
-          >
-            <input
-              type="text"
-              value={textInput}
-              onChange={(e) => setTextInput(e.target.value)}
-              placeholder={`Ask ${profile.label} something…`}
-              aria-label="Type a message"
-              className="focus-ring ts-text-input"
-              style={{
-                flex: 1,
-                border: 'none',
-                outline: 'none',
-                background: 'transparent',
-                padding: '14px 20px',
-                fontFamily: fontBody,
-                fontWeight: 700,
-                fontSize: '1rem',
-                color: palette.ink,
-              }}
-            />
+          <div style={{ display: 'flex' }}>
             <motion.button
-              type="submit"
-              disabled={!textInput.trim()}
-              whileHover={textInput.trim() ? { scale: 1.06 } : {}}
-              whileTap={textInput.trim() ? { scale: 0.94 } : {}}
-              aria-label="Send message"
-              className="focus-ring ts-send-btn"
+              type="button"
+              onClick={requestExample}
+              whileHover={{ scale: 1.03, y: -1 }}
+              whileTap={{ scale: 0.97 }}
+              className="focus-ring"
               style={{
-                width: '46px',
-                height: '46px',
-                borderRadius: '50%',
-                border: 'none',
-                flexShrink: 0,
                 display: 'flex',
                 alignItems: 'center',
-                justifyContent: 'center',
-                background: textInput.trim() ? profile.buttonGradient : palette.mist,
-                color: '#fff',
-                cursor: textInput.trim() ? 'pointer' : 'not-allowed',
-                boxShadow: textInput.trim() ? `0 4px 0 ${profile.deep}` : 'none',
+                gap: '6px',
+                padding: '7px 14px',
+                borderRadius: '999px',
+                border: `2px solid ${profile.color}`,
+                background: profile.soft,
+                color: profile.deep,
+                fontFamily: fontDisplay,
+                fontWeight: 700,
+                fontSize: '0.85rem',
+                cursor: 'pointer',
               }}
             >
-              <Send size={18} color={textInput.trim() ? '#fff' : palette.faint} />
+              <Sparkles size={15} color={profile.deep} />
+              Show me an example!
             </motion.button>
           </div>
 
-          <motion.button
-            type="button"
-            onClick={toggleMic}
-            whileHover={{ scale: 1.06 }}
-            whileTap={{ scale: 0.94 }}
-            className="focus-ring ts-mic-btn"
-            aria-label={
-              !isSessionReady
-                ? 'Tutor is still connecting'
-                : !micSupported
-                ? 'Voice input not supported'
-                : isListening
-                ? 'Stop listening'
-                : 'Start voice input'
-            }
+          <form
+            onSubmit={handleTextSubmit}
             style={{
-              position: 'relative',
-              width: '58px',
-              height: '58px',
-              borderRadius: '50%',
-              border: 'none',
-              flexShrink: 0,
-              background: !isSessionReady
-                ? palette.faint
-                : !micSupported
-                ? palette.slate
-                : isListening
-                ? 'linear-gradient(135deg, #FF8A80, #E2483F)'
-                : profile.buttonGradient,
-              color: '#fff',
               display: 'flex',
               alignItems: 'center',
-              justifyContent: 'center',
-              cursor: isSessionReady && micSupported ? 'pointer' : 'not-allowed',
-              opacity: isSessionReady ? 1 : 0.6,
-              boxShadow: isListening ? `0 5px 0 #B8332F` : `0 5px 0 ${profile.deep}`,
+              gap: '10px',
+              width: '100%',
             }}
           >
-            {isListening ? <MicOff size={22} color="#fff" /> : <Mic size={22} color="#fff" />}
+            <div
+              style={{
+                flex: 1,
+                display: 'flex',
+                alignItems: 'center',
+                background: palette.card,
+                border: `2.5px solid ${palette.mist}`,
+                borderRadius: '999px',
+                boxShadow: shadow.md,
+                paddingRight: '6px',
+              }}
+            >
+              <input
+                type="text"
+                value={textInput}
+                onChange={(e) => setTextInput(e.target.value)}
+                placeholder={`Ask ${profile.label} something…`}
+                aria-label="Type a message"
+                className="focus-ring ts-text-input"
+                style={{
+                  flex: 1,
+                  minWidth: 0,
+                  border: 'none',
+                  outline: 'none',
+                  background: 'transparent',
+                  padding: '13px 20px',
+                  fontFamily: fontBody,
+                  fontWeight: 700,
+                  fontSize: '1rem',
+                  color: palette.ink,
+                }}
+              />
+              <motion.button
+                type="submit"
+                disabled={!textInput.trim()}
+                whileHover={textInput.trim() ? { scale: 1.06 } : {}}
+                whileTap={textInput.trim() ? { scale: 0.94 } : {}}
+                aria-label="Send message"
+                className="focus-ring ts-send-btn"
+                style={{
+                  width: '44px',
+                  height: '44px',
+                  borderRadius: '50%',
+                  border: 'none',
+                  flexShrink: 0,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  background: textInput.trim() ? profile.buttonGradient : palette.mist,
+                  color: '#fff',
+                  cursor: textInput.trim() ? 'pointer' : 'not-allowed',
+                  boxShadow: textInput.trim() ? `0 4px 0 ${profile.deep}` : 'none',
+                }}
+              >
+                <Send size={18} color={textInput.trim() ? '#fff' : palette.faint} />
+              </motion.button>
+            </div>
 
-            {isListening && !reducedMotion && (
-              <>
-                <motion.span
-                  animate={{ opacity: [0.5, 0], scale: [1, 1.8] }}
-                  transition={{ duration: 1.2, repeat: Infinity, ease: 'easeOut' }}
-                  style={{ position: 'absolute', inset: 0, borderRadius: '50%', border: '3px solid #E2483F' }}
-                />
-                <motion.span
-                  animate={{ opacity: [0.5, 0], scale: [1, 1.8] }}
-                  transition={{ duration: 1.2, repeat: Infinity, ease: 'easeOut', delay: 0.4 }}
-                  style={{ position: 'absolute', inset: 0, borderRadius: '50%', border: '3px solid #E2483F' }}
-                />
-              </>
-            )}
-          </motion.button>
-        </form>
+            <motion.button
+              type="button"
+              onClick={toggleMic}
+              whileHover={{ scale: 1.06 }}
+              whileTap={{ scale: 0.94 }}
+              className="focus-ring ts-mic-btn"
+              aria-label={
+                !isSessionReady
+                  ? 'Tutor is still connecting'
+                  : !micSupported
+                  ? 'Voice input not supported'
+                  : isListening
+                  ? 'Stop listening'
+                  : 'Start voice input'
+              }
+              style={{
+                position: 'relative',
+                width: '56px',
+                height: '56px',
+                borderRadius: '50%',
+                border: 'none',
+                flexShrink: 0,
+                background: !isSessionReady
+                  ? palette.faint
+                  : !micSupported
+                  ? palette.slate
+                  : isListening
+                  ? 'linear-gradient(135deg, #FF8A80, #E2483F)'
+                  : profile.buttonGradient,
+                color: '#fff',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                cursor: isSessionReady && micSupported ? 'pointer' : 'not-allowed',
+                opacity: isSessionReady ? 1 : 0.6,
+                boxShadow: isListening ? '0 5px 0 #B8332F' : `0 5px 0 ${profile.deep}`,
+              }}
+            >
+              {isListening ? <MicOff size={22} color="#fff" /> : <Mic size={22} color="#fff" />}
+
+              {isListening && !reducedMotion && (
+                <>
+                  <motion.span
+                    animate={{ opacity: [0.5, 0], scale: [1, 1.8] }}
+                    transition={{ duration: 1.2, repeat: Infinity, ease: 'easeOut' }}
+                    style={{
+                      position: 'absolute',
+                      inset: 0,
+                      borderRadius: '50%',
+                      border: '3px solid #E2483F',
+                    }}
+                  />
+                  <motion.span
+                    animate={{ opacity: [0.5, 0], scale: [1, 1.8] }}
+                    transition={{ duration: 1.2, repeat: Infinity, ease: 'easeOut', delay: 0.4 }}
+                    style={{
+                      position: 'absolute',
+                      inset: 0,
+                      borderRadius: '50%',
+                      border: '3px solid #E2483F',
+                    }}
+                  />
+                </>
+              )}
+            </motion.button>
+          </form>
+        </div>
       </div>
     </section>
   );
