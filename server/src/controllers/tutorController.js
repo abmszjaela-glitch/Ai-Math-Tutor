@@ -72,6 +72,162 @@ const tutorResponseSchema = {
 };
 
 
+// =========================================================
+// STREAMING HELPERS
+// =========================================================
+
+/**
+ * Incremental scanner for the tutor JSON while it is still being generated.
+ *
+ * Feed it text chunks with push(). It calls:
+ *   onField(key, stringValue)  when a top-level string field is complete
+ *   onStep(stepObject)         when one object inside "steps" is complete
+ *
+ * The final full JSON.parse after the stream ends is still the source of
+ * truth; this scanner only lets us start sending parts early.
+ */
+const createPartParser = (onField, onStep) => {
+  let buf = "";
+  let i = 0;
+  let depth = 0;
+  let inStr = false;
+  let esc = false;
+  let strStart = -1;
+  let strIsKey = false;
+  let currentKey = null;
+  let stepStart = -1;
+
+  const safeParse = (text) => {
+    try {
+      return JSON.parse(text);
+    } catch {
+      return undefined;
+    }
+  };
+
+  return (chunk) => {
+    buf += chunk;
+
+    for (; i < buf.length; i++) {
+      const ch = buf[i];
+
+      if (inStr) {
+        if (esc) {
+          esc = false;
+          continue;
+        }
+
+        if (ch === "\\") {
+          esc = true;
+          continue;
+        }
+
+        if (ch === '"') {
+          inStr = false;
+
+          const value = safeParse(buf.slice(strStart, i + 1));
+
+          if (strIsKey) {
+            currentKey = typeof value === "string" ? value : null;
+            if (currentKey === null) strIsKey = false;
+          } else if (depth === 1 && currentKey && typeof value === "string") {
+            onField(currentKey, value);
+            currentKey = null;
+          }
+        }
+
+        continue;
+      }
+
+      if (ch === '"') {
+        inStr = true;
+        strStart = i;
+        // At depth 1 with no pending key, the next string is a key.
+        strIsKey = depth === 1 && currentKey === null;
+        continue;
+      }
+
+      if (ch === "{") {
+        depth++;
+        if (depth === 3) stepStart = i;
+        continue;
+      }
+
+      if (ch === "}") {
+        if (depth === 3 && stepStart >= 0) {
+          const step = safeParse(buf.slice(stepStart, i + 1));
+          if (step && typeof step === "object") onStep(step);
+          stepStart = -1;
+        }
+        depth--;
+        continue;
+      }
+
+      if (ch === "[") {
+        depth++;
+        continue;
+      }
+
+      if (ch === "]") {
+        depth--;
+        if (depth === 1) currentKey = null;
+        continue;
+      }
+    }
+  };
+};
+
+// Parses the complete model output, tolerating code fences or stray text.
+const parseTutorJson = (rawOutput) => {
+  let jsonText = rawOutput.trim();
+
+  if (jsonText.startsWith("```")) {
+    jsonText = jsonText
+      .replace(/^```(?:json)?\s*/i, "")
+      .replace(/\s*```$/i, "")
+      .trim();
+  }
+
+  const first = jsonText.indexOf("{");
+  const last = jsonText.lastIndexOf("}");
+
+  if (first !== -1 && last > first) {
+    jsonText = jsonText.slice(first, last + 1);
+  }
+
+  return JSON.parse(jsonText);
+};
+
+// Returns an error message, or null when the response is valid.
+const validateTutorResponse = (tutor) => {
+  if (!tutor || typeof tutor !== "object") return "Invalid tutor response";
+  if (typeof tutor.message !== "string") return "Invalid tutor message";
+  if (!Array.isArray(tutor.steps)) return "Invalid tutor steps";
+  if (typeof tutor.answer !== "string") return "Invalid tutor answer";
+  if (typeof tutor.hint !== "string") return "Invalid tutor hint";
+  if (typeof tutor.encouragement !== "string") return "Invalid tutor encouragement";
+  if (typeof tutor.topic !== "string") return "Invalid tutor topic";
+
+  if (!["easy", "medium", "hard"].includes(tutor.difficulty)) {
+    return "Invalid tutor difficulty";
+  }
+
+  for (const step of tutor.steps) {
+    if (
+      !step ||
+      typeof step.step !== "number" ||
+      !Number.isInteger(step.step) ||
+      typeof step.explanation !== "string" ||
+      typeof step.calculation !== "string"
+    ) {
+      return "Invalid tutor step format";
+    }
+  }
+
+  return null;
+};
+
+
 const sendTutorMessage = async (req, res) => {
   try {
     const {
@@ -444,7 +600,8 @@ Do NOT use code fences.
 
 Do NOT add any text before or after the JSON.
 
-The JSON must contain exactly these fields:
+The JSON must contain exactly these fields,
+written in exactly this order:
 
 message:
 A friendly explanation for the student.
@@ -504,10 +661,12 @@ passing these checks.
 
 
     // =====================================================
-    // 11. CALL OPENROUTER
+    // 11. CALL OPENROUTER (STREAMING)
     // =====================================================
+    // The request is made BEFORE any response headers are sent, so
+    // errors such as 401 or 429 can still be returned as normal JSON.
 
-    const response =
+    const stream =
       await openai.chat.completions.create({
         // "openrouter/free" is OpenRouter's Free Models Router.
         // It randomly picks a currently-available free model,
@@ -516,6 +675,8 @@ passing these checks.
         // so it won't break the moment one specific free slug
         // (like openai/gpt-oss-120b:free) gets pulled or rate-limited.
         model: "openrouter/free",
+
+        stream: true,
 
         messages: [
           {
@@ -542,179 +703,174 @@ passing these checks.
 
 
     // =====================================================
-    // 12. GET AI OUTPUT
+    // 12. OPEN THE NDJSON STREAM TO THE BROWSER
+    // =====================================================
+    // One JSON object per line:
+    //   {"type":"message","text":"..."}
+    //   {"type":"step","step":1,"explanation":"...","calculation":"..."}
+    //   {"type":"answer","text":"..."}
+    //   {"type":"hint","text":"..."}
+    //   {"type":"encouragement","text":"..."}
+    //   {"type":"done","messageId":"..."}
+    //   {"type":"error","message":"..."}
+
+    res.status(200);
+    res.setHeader("Content-Type", "application/x-ndjson; charset=utf-8");
+    res.setHeader("Cache-Control", "no-cache, no-transform");
+    res.setHeader("Connection", "keep-alive");
+    res.setHeader("X-Accel-Buffering", "no"); // stop nginx buffering
+    res.flushHeaders();
+    res.socket?.setNoDelay(true);
+
+    // If the student interrupts (new question, mic, leaves the page),
+    // the browser aborts the request: stop reading from the AI too.
+    let aborted = false;
+
+    res.on("close", () => {
+      if (!res.writableFinished) {
+        aborted = true;
+        try {
+          stream.controller?.abort();
+        } catch {
+          // Ignore abort errors.
+        }
+      }
+    });
+
+    const send = (part) => {
+      if (aborted || res.writableEnded) return;
+      res.write(`${JSON.stringify(part)}\n`);
+      res.flush?.(); // needed if a compression middleware is active
+    };
+
+    // Tracks what has already been sent so nothing is sent twice.
+    const sent = {
+      message: false,
+      steps: 0,
+      answer: false,
+      hint: false,
+      encouragement: false,
+    };
+
+    const emitField = (key, value) => {
+      const text = typeof value === "string" ? value.trim() : "";
+
+      switch (key) {
+        case "message":
+          if (sent.message) return;
+          sent.message = true;
+          if (text) send({ type: "message", text });
+          break;
+
+        case "answer":
+          if (sent.answer) return;
+          sent.answer = true;
+          if (text) send({ type: "answer", text });
+          break;
+
+        case "hint":
+          if (sent.hint) return;
+          sent.hint = true;
+          if (text) send({ type: "hint", text });
+          break;
+
+        case "encouragement":
+          if (sent.encouragement) return;
+          sent.encouragement = true;
+          if (text) send({ type: "encouragement", text });
+          break;
+
+        default:
+          break; // topic and difficulty are not sent to the browser
+      }
+    };
+
+    const emitStep = (step) => {
+      sent.steps += 1;
+
+      if (typeof step.explanation !== "string" || !step.explanation.trim()) return;
+
+      send({
+        type: "step",
+        step: Number.isInteger(step.step) ? step.step : sent.steps,
+        explanation: step.explanation,
+        calculation:
+          typeof step.calculation === "string" ? step.calculation : "",
+      });
+    };
+
+    const pushChunk = createPartParser(emitField, emitStep);
+
+
+    // =====================================================
+    // 13. READ THE AI STREAM AND FORWARD PARTS EARLY
     // =====================================================
 
-    const aiMessage = response.choices?.[0]?.message;
+    let rawOutput = "";
 
-    const rawOutput =
-      typeof aiMessage?.content === "string"
-        ? aiMessage.content.trim()
-        : "";
+    try {
+      for await (const chunk of stream) {
+        if (aborted) break;
 
-    if (!rawOutput) {
-      console.error(
-        "OpenRouter returned an empty response:",
-        JSON.stringify(response, null, 2)
-      );
+        const delta = chunk.choices?.[0]?.delta?.content;
 
-      return res.status(500).json({
-        success: false,
-        message: "AI returned an empty response",
-      });
+        if (!delta) continue;
+
+        rawOutput += delta;
+        pushChunk(delta);
+      }
+    } catch (streamError) {
+      if (aborted) return;
+      throw streamError;
     }
 
-    console.log("OpenRouter model:", response.model);
+    if (aborted) return;
+
+    rawOutput = rawOutput.trim();
+
+    if (!rawOutput) {
+      console.error("OpenRouter returned an empty streamed response");
+      send({ type: "error", message: "AI returned an empty response" });
+      return res.end();
+    }
+
     console.log("Raw AI response:", rawOutput);
 
 
     // =====================================================
-    // 13. PARSE STRUCTURED OUTPUT
+    // 14. PARSE + VALIDATE THE COMPLETE RESPONSE
     // =====================================================
 
     let tutorResponse;
 
     try {
-      let jsonText = rawOutput.trim();
-
-      if (jsonText.startsWith("```")) {
-        jsonText = jsonText
-          .replace(/^```(?:json)?\s*/i, "")
-          .replace(/\s*```$/i, "")
-          .trim();
-      }
-
-      tutorResponse = JSON.parse(jsonText);
+      tutorResponse = parseTutorJson(rawOutput);
     } catch (error) {
-      console.error(
-        "AI JSON parsing error:",
-        error
-      );
+      console.error("AI JSON parsing error:", error);
+      console.error("Raw AI response:", rawOutput);
 
-      console.error(
-        "Raw AI response:",
-        rawOutput
-      );
-
-      return res.status(500).json({
-        success: false,
-        message:
-          "AI returned an invalid structured response",
+      send({
+        type: "error",
+        message: "AI returned an invalid structured response",
       });
+      return res.end();
     }
 
-    // =====================================================
-    // 14. EXTRA SERVER-SIDE VALIDATION
-    // =====================================================
+    const validationError = validateTutorResponse(tutorResponse);
 
-    if (
-      typeof tutorResponse.message !==
-      "string"
-    ) {
-      return res.status(500).json({
-        success: false,
-        message:
-          "Invalid tutor message",
-      });
+    if (validationError) {
+      console.error("Tutor validation error:", validationError);
+
+      send({ type: "error", message: validationError });
+      return res.end();
     }
 
-
-    if (
-      !Array.isArray(
-        tutorResponse.steps
-      )
-    ) {
-      return res.status(500).json({
-        success: false,
-        message:
-          "Invalid tutor steps",
-      });
-    }
-
-
-    if (
-      typeof tutorResponse.answer !==
-      "string"
-    ) {
-      return res.status(500).json({
-        success: false,
-        message:
-          "Invalid tutor answer",
-      });
-    }
-
-
-    if (
-      typeof tutorResponse.hint !==
-      "string"
-    ) {
-      return res.status(500).json({
-        success: false,
-        message:
-          "Invalid tutor hint",
-      });
-    }
-
-
-    if (
-      typeof tutorResponse.encouragement !==
-      "string"
-    ) {
-      return res.status(500).json({
-        success: false,
-        message:
-          "Invalid tutor encouragement",
-      });
-    }
-
-
-    if (
-      typeof tutorResponse.topic !==
-      "string"
-    ) {
-      return res.status(500).json({
-        success: false,
-        message:
-          "Invalid tutor topic",
-      });
-    }
-
-
-    if (
-      ![
-        "easy",
-        "medium",
-        "hard",
-      ].includes(
-        tutorResponse.difficulty
-      )
-    ) {
-      return res.status(500).json({
-        success: false,
-        message:
-          "Invalid tutor difficulty",
-      });
-    }
-
-
-    // Validate individual steps
-
-    for (
-      const step of tutorResponse.steps
-    ) {
-      if (
-        typeof step.step !== "number" ||
-        !Number.isInteger(step.step) ||
-        typeof step.explanation !== "string" ||
-        typeof step.calculation !== "string"
-      ) {
-        return res.status(500).json({
-          success: false,
-          message:
-            "Invalid tutor step format",
-        });
-      }
-    }
+    // Safety net: send anything the live scanner did not catch.
+    emitField("message", tutorResponse.message);
+    tutorResponse.steps.slice(sent.steps).forEach(emitStep);
+    emitField("answer", tutorResponse.answer);
+    emitField("hint", tutorResponse.hint);
+    emitField("encouragement", tutorResponse.encouragement);
 
 
     // =====================================================
@@ -753,23 +909,12 @@ passing these checks.
 
 
     // =====================================================
-    // 17. RETURN RESPONSE
+    // 17. FINISH THE STREAM
     // =====================================================
 
-    return res.status(200).json({
-      success: true,
+    send({ type: "done", messageId: savedMessage.id });
 
-      response: {
-        messageId:
-          savedMessage.id,
-
-        conversationId:
-          conversation.id,
-
-        tutor:
-          tutorResponse,
-      },
-    });
+    return res.end();
 
 
   } catch (error) {
@@ -782,6 +927,20 @@ passing these checks.
       "Tutor message error:",
       error
     );
+
+    // Stream already started: headers are sent, so report inside the stream.
+    if (res.headersSent) {
+      if (!res.writableEnded) {
+        res.write(
+          `${JSON.stringify({
+            type: "error",
+            message: "Unable to process tutor message",
+          })}\n`
+        );
+        res.end();
+      }
+      return;
+    }
 
     // OpenRouter / API rate limit
     if (error?.status === 429) {
