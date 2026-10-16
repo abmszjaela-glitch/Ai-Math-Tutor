@@ -127,11 +127,11 @@ const Login = () => {
 
 
 
-      // Restore this account's saved tutor before opening the conversation.
+      // Restore this account's saved tutor before returning home.
       const tutorIds = { Kangaroo: 'kanga', Panda: 'pandy', Koala: 'koala' };
       const tutorId = tutorIds[data.user?.student?.avatar?.name] || 'kanga';
       localStorage.setItem('selectedTutorId', tutorId);
-      navigate('/tutor-session', { replace: true });
+      navigate('/', { replace: true });
     } catch (error) {
 
       console.error(
