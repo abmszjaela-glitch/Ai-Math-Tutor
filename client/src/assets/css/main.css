@@ -7388,13 +7388,13 @@ p {
   z-index: -1;
 }
 .program-box-item .program-bg.bg-2 {
-  background-color: #FFDEE4;
+  background-color: var(--home-pink);
 }
 .program-box-item .program-bg.bg-3 {
-  background-color: #E3E8FF;
+  background-color: var(--home-indigo);
 }
 .program-box-item .program-bg.bg-4 {
-  background-color: #DBFFF9;
+  background-color: var(--home-mint);
 }
 .program-box-item .program-icon {
   margin-bottom: 20px;
@@ -8151,7 +8151,7 @@ p {
 }
 .pricing-wrapper-two .pricing-items-two.style-two::before {
   mask: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 370 649"><path   d="M8.30416 31.8871C7.74138 34.5797 7.34944 37.3439 7.04111 40.0774C5.70031 51.964 3.0325 96.7285 6.56025 257.873C11.0798 464.302 -34.2042 644.339 64.068 647.189C162.34 650.039 278.579 649.126 313.562 647.189C348.546 645.252 370 670.345 370 539.154C370 407.962 370 248.21 368.87 155.605C367.74 63.001 376.694 17.5115 336.103 14.2161C295.499 10.9207 190.533 5.13157 145.394 3.19443C101.586 1.31437 17.3622 -11.4506 8.30416 31.8871Z" /></svg>');
-  background-color: #FFDEE4;
+  background-color: var(--home-pink);
   height: 642px;
 }
 @media (max-width: 1399px) {
@@ -8167,7 +8167,7 @@ p {
   }
 }
 .pricing-wrapper-two .pricing-items-two.style-3::before {
-  background-color: #E3E8FF;
+  background-color: var(--home-indigo);
 }
 .pricing-wrapper-two .pricing-items-two .pricing-content {
   position: relative;
@@ -10226,10 +10226,10 @@ p {
   font-family: "Source Sans Pro";
 }
 .choose-us-wrapper-two .choose-img-items .box-1::before {
-  background-color: #DBFFF9;
+  background-color: var(--home-mint);
 }
 .choose-us-wrapper-two .choose-img-items .box-2::before {
-  background-color: #E3E8FF;
+  background-color: var(--home-indigo);
 }
 .choose-us-wrapper-two .choose-img-items .box-3::before {
   background-color: #F7FAE2;
@@ -10832,7 +10832,7 @@ p {
   }
 }
 .testimonial-wrapper-4 .testimonial-items-4 .test-box-bg.style-2 {
-  background-color: #DBFFF9;
+  background-color: var(--home-mint);
 }
 .testimonial-wrapper-4 .testimonial-items-4 .test-box-bg.style-3 {
   background-color: #F7FAE2;

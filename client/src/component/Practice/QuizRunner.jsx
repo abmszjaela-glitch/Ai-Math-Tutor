@@ -146,7 +146,7 @@ export default function QuizRunner({ mode, lesson, count, storageKey, resume, on
               <small>Enter a number only. Use a full stop for decimals.</small>
             </label>}
 
-        {invalidAnswer && <p id="quiz-answer-error" role="alert" style={{ color: '#b42318', marginTop: 10 }}>Enter a valid number, such as 12 or 3.5, without units.</p>}
+        {invalidAnswer && <p id="quiz-answer-error" role="alert" style={{ color: 'var(--color-error-text)', marginTop: 10 }}>Enter a valid number, such as 12 or 3.5, without units.</p>}
         <div className="practice-question-tools">
           <button className={`practice-text-btn ${flags.includes(current.id) ? 'flagged' : ''}`} onClick={toggleFlag} disabled={locked}><Flag size={16} />{flags.includes(current.id) ? 'Marked for review' : 'Review later'}</button>
           {mode === 'practice' && <button className="practice-text-btn" disabled={busy} onClick={() => setHint((v) => !v)}><Lightbulb size={16} />{hint ? 'Hide hint' : 'Need a hint?'}</button>}
@@ -167,7 +167,7 @@ export default function QuizRunner({ mode, lesson, count, storageKey, resume, on
         <h3>Your question map</h3>
         <p>{answered} answered · {attempt.questions.length - answered} to go</p>
         <div>{attempt.questions.map((q, i) => <button key={q.id} disabled={busy} aria-label={`Question ${i + 1}${validAnswer(q, answers[q.id]) ? ', answered' : ', unanswered'}${flags.includes(q.id) ? ', flagged' : ''}`} aria-current={i === index ? 'step' : undefined} className={`${i === index ? 'current' : ''} ${validAnswer(q, answers[q.id]) ? 'answered' : ''} ${flags.includes(q.id) ? 'marked' : ''}`} onClick={() => jump(i)}>{i + 1}{flags.includes(q.id) && <Flag size={9} />}</button>)}</div>
-        <small>● Green: answered<br />⚑ Orange: review later</small>
+        <small>✓ Answered<br />⚑ Marked for review</small>
         <button className="practice-btn practice-btn-outline" disabled={busy} onClick={() => setConfirm('submit')}>Submit {mode === 'mock' ? 'test' : 'practice'}</button>
       </aside>
     </div>

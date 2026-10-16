@@ -102,7 +102,7 @@ const handleLogout = async () => {
           cursor: pointer;
         }
         .header-section .nav-auth-action:disabled { opacity: 0.6; cursor: wait; }
-        .header-section .nav-auth-error { color: #b42318; font-size: 12px; max-width: 180px; }
+        .header-section .nav-auth-error { color: var(--color-error-text); font-size: 12px; max-width: 180px; }
 
         /* ---------- Tablet / below xl (max-width: 1199px) ---------- */
         @media (max-width: 1199px) {
@@ -241,10 +241,10 @@ const handleLogout = async () => {
         id="header-sticky"
         className={`header-1 ${isSticky ? 'sticky-active' : ''}`}
         animate={{
-          backgroundColor: isSticky ? '#ffffff' : 'rgba(255,255,255,0)',
+          backgroundColor: isSticky ? 'var(--color-surface)' : 'transparent',
           boxShadow: isSticky
-            ? '0 10px 35px rgba(0,0,0,0.12)'
-            : '0 0 0 rgba(0,0,0,0)',
+            ? '0 10px 35px var(--color-shadow)'
+            : '0 0 0 transparent',
           y: isSticky ? 0 : 0,
           paddingTop: isSticky ? 12 : 20,
           paddingBottom: isSticky ? 12 : 20,

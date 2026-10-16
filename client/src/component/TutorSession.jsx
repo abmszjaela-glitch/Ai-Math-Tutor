@@ -4,6 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { AlertCircle, ArrowLeft, Mic, MicOff, Send, Sparkles, Volume2, VolumeX } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import TutorAvatar from './TutorAvatar';
+import { colors } from '../theme/colors';
 
 const easeOut = [0.25, 0.1, 0.25, 1];
 const AVATAR_NAMES = { kanga: 'Kangaroo', pandy: 'Panda', koala: 'Koala' };
@@ -14,23 +15,32 @@ const STORAGE_KEY = 'selectedTutorId';
 // ============================================================
 
 const palette = {
-  ink: '#1F1B2E', // main text
-  paper: '#FFFFFF', // page background
-  card: '#FFFFFF', // input bar
-  surface: '#F6F3FB', // tutor bubble background
-  mist: '#E6E1F0', // borders
-  slate: '#7A7394', // secondary text / idle status
-  faint: '#B9B3CC', // disabled
-  listening: '#E2483F',
+  ink: colors.ink,
+  paper: colors.page,
+  card: colors.surface,
+  surface: colors.soft,
+  mist: colors.border,
+  slate: colors.text,
+  faint: colors.text,
+  listening: colors.primary,
 };
 
 const fontDisplay = "'Baloo 2', 'Fredoka', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif";
 const fontBody = "'Nunito', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif";
 
 const shadow = {
-  sm: '0 3px 0 rgba(36,30,66,0.10)',
-  md: '0 4px 0 rgba(36,30,66,0.08)',
-  lg: '0 10px 24px rgba(36,30,66,0.18)',
+  sm: '0 3px 0 var(--color-shadow)',
+  md: '0 4px 0 var(--color-shadow)',
+  lg: 'var(--shadow-card)',
+};
+
+// Every tutor shares the Home identity; character art provides individuality.
+const tutorAppearance = {
+  color: colors.primary,
+  deep: colors.deep,
+  soft: colors.primarySoft,
+  gradient: colors.primary,
+  buttonGradient: colors.primary,
 };
 
 // ============================================================
@@ -43,31 +53,19 @@ const tutorProfiles = {
     label: 'Kanga',
     greeting:
       "G'day, I'm Kanga! I'm so excited to help you learn maths today. Tap the microphone and ask me anything, or type your question below.",
-    color: '#F0A23D',
-    deep: '#C4611A',
-    soft: '#FFF3E0',
-    gradient: 'linear-gradient(135deg, #FFCB82 0%, #F0A23D 55%, #E1791F 100%)',
-    buttonGradient: 'linear-gradient(135deg, #F0A23D 0%, #C4611A 100%)',
+    ...tutorAppearance,
   },
   pandy: {
     label: 'Pandy',
     greeting:
       "G'day, I'm Pandy! Ready to work through some maths together? Tap the microphone or type your question below.",
-    color: '#4A5FE0',
-    deep: '#1E1A4A',
-    soft: '#ECEFFF',
-    gradient: 'linear-gradient(135deg, #93A4FF 0%, #4A5FE0 55%, #3626B8 100%)',
-    buttonGradient: 'linear-gradient(135deg, #4A5FE0 0%, #1E1A4A 100%)',
+    ...tutorAppearance,
   },
   koala: {
     label: 'Koala',
     greeting:
       "G'day, I'm Koala! Let's take maths nice and easy together. Tap the microphone and ask me anything, or type your question below.",
-    color: '#6E96AA',
-    deep: '#3E5A68',
-    soft: '#E8F2F6',
-    gradient: 'linear-gradient(135deg, #A8CBDA 0%, #6E96AA 55%, #4A7385 100%)',
-    buttonGradient: 'linear-gradient(135deg, #6E96AA 0%, #3E5A68 100%)',
+    ...tutorAppearance,
   },
 };
 
@@ -178,7 +176,7 @@ const useAvatarSize = () => {
 // SOUND BARS
 // ============================================================
 
-const SoundBars = ({ active, reducedMotion, color = '#fff', count = 4, height = 15 }) => (
+const SoundBars = ({ active, reducedMotion, color = 'var(--color-surface)', count = 4, height = 15 }) => (
   <div style={{ display: 'flex', alignItems: 'flex-end', gap: '3px', height }}>
     {Array.from({ length: count }).map((_, i) =>
       reducedMotion ? (
@@ -846,7 +844,7 @@ const TutorSession = () => {
     fontWeight: 700,
     lineHeight: 1.55,
     background: profile.buttonGradient,
-    color: '#fff',
+    color: 'var(--color-on-primary)',
     boxShadow: shadow.sm,
   };
 
@@ -881,7 +879,7 @@ const TutorSession = () => {
         }
 
         .focus-ring:focus-visible {
-          outline: 2px solid var(--accent, #4A5FE0);
+          outline: 2px solid var(--accent, var(--color-border));
           outline-offset: 2px;
         }
         .focus-ring:focus:not(:focus-visible) {
@@ -937,7 +935,7 @@ const TutorSession = () => {
           padding: '12px 20px',
           background: palette.paper,
           borderBottom: `4px solid ${profile.color}`,
-          boxShadow: '0 2px 10px rgba(36,30,66,0.08)',
+          boxShadow: '0 2px 10px var(--color-shadow)',
           zIndex: 20,
         }}
       >
@@ -987,7 +985,7 @@ const TutorSession = () => {
               gap: '6px',
               fontSize: '0.72rem',
               fontFamily: fontBody,
-              color: '#fff',
+              color: 'var(--color-on-primary)',
               fontWeight: 800,
               background: isSpeaking
                 ? profile.color
@@ -1003,7 +1001,7 @@ const TutorSession = () => {
                 width: 7,
                 height: 7,
                 borderRadius: '50%',
-                background: '#fff',
+                background: 'var(--color-surface)',
               }}
             />
             {isSpeaking ? 'Speaking' : isListening ? 'Listening' : 'Ready'}
@@ -1262,7 +1260,7 @@ const TutorSession = () => {
               padding: '11px 18px',
               borderRadius: '14px',
               background: palette.ink,
-              color: '#fff',
+              color: 'var(--color-on-primary)',
               fontFamily: fontBody,
               fontSize: '0.85rem',
               fontWeight: 600,
@@ -1384,12 +1382,12 @@ const TutorSession = () => {
                   alignItems: 'center',
                   justifyContent: 'center',
                   background: textInput.trim() ? profile.buttonGradient : palette.mist,
-                  color: '#fff',
+                  color: 'var(--color-on-primary)',
                   cursor: textInput.trim() ? 'pointer' : 'not-allowed',
                   boxShadow: textInput.trim() ? `0 4px 0 ${profile.deep}` : 'none',
                 }}
               >
-                <Send size={18} color={textInput.trim() ? '#fff' : palette.faint} />
+                <Send size={18} color={textInput.trim() ? 'var(--color-surface)' : palette.faint} />
               </motion.button>
             </div>
 
@@ -1421,18 +1419,18 @@ const TutorSession = () => {
                   : !micSupported
                   ? palette.slate
                   : isListening
-                  ? 'linear-gradient(135deg, #FF8A80, #E2483F)'
+                  ? 'var(--color-primary)'
                   : profile.buttonGradient,
-                color: '#fff',
+                color: 'var(--color-on-primary)',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
                 cursor: isSessionReady && micSupported ? 'pointer' : 'not-allowed',
                 opacity: isSessionReady ? 1 : 0.6,
-                boxShadow: isListening ? '0 5px 0 #B8332F' : `0 5px 0 ${profile.deep}`,
+                boxShadow: isListening ? '0 5px 0 var(--color-accent)' : `0 5px 0 ${profile.deep}`,
               }}
             >
-              {isListening ? <MicOff size={22} color="#fff" /> : <Mic size={22} color="#fff" />}
+              {isListening ? <MicOff size={22} color="var(--color-surface)" /> : <Mic size={22} color="var(--color-surface)" />}
 
               {isListening && !reducedMotion && (
                 <>
@@ -1443,7 +1441,7 @@ const TutorSession = () => {
                       position: 'absolute',
                       inset: 0,
                       borderRadius: '50%',
-                      border: '3px solid #E2483F',
+                      border: '3px solid var(--color-border)',
                     }}
                   />
                   <motion.span
@@ -1453,7 +1451,7 @@ const TutorSession = () => {
                       position: 'absolute',
                       inset: 0,
                       borderRadius: '50%',
-                      border: '3px solid #E2483F',
+                      border: '3px solid var(--color-border)',
                     }}
                   />
                 </>

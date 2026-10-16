@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { API_URL } from '../../config/api';
 
-const focusRing = 'focus-visible:outline focus-visible:outline-4 focus-visible:outline-offset-2 focus-visible:outline-cyan-400';
+const focusRing = 'app-focus-ring';
 
 export default function SubjectLessons({ subject }) {
   const navigate = useNavigate();
@@ -35,22 +35,22 @@ export default function SubjectLessons({ subject }) {
   }, [subject, navigate]);
 
   return (
-    <main className="container section-padding mx-auto max-w-5xl px-4 py-8 text-slate-800 sm:px-6 dark:text-slate-100">
+    <main className="container section-padding mx-auto max-w-5xl px-4 py-8 app-text sm:px-6 ">
       <Link
         to="/dashboard"
-        className={`inline-flex items-center gap-1.5 rounded-xl px-3.5 py-2 text-sm font-semibold text-slate-500 transition hover:bg-violet-50 hover:text-violet-600 dark:text-slate-400 dark:hover:bg-violet-500/10 dark:hover:text-violet-300 ${focusRing}`}
+        className={`inline-flex items-center gap-1.5 rounded-xl px-3.5 py-2 text-sm font-semibold app-muted transition app-hover-soft app-hover-link ${focusRing}`}
       >
         ← Dashboard
       </Link>
 
       {/* ---------- Header ---------- */}
-      <div className="mb-8 mt-4 rounded-3xl bg-gradient-to-r from-violet-500 via-cyan-500 to-violet-500 bg-[length:200%_auto] p-6 text-white shadow-2xl shadow-violet-500/30 animate-shimmer sm:p-8">
-        <span className="inline-block rounded-full bg-white/20 px-3 py-1 text-[0.7rem] font-bold uppercase tracking-[0.14em]">
+      <div className="app-hero mb-8 mt-4 rounded-3xl p-6 app-on-primary shadow-2xl animate-shimmer sm:p-8">
+        <span className="inline-block rounded-full app-badge px-3 py-1 text-[0.7rem] font-bold uppercase tracking-[0.14em]">
           Your lessons
         </span>
         <h1 className="mt-2 text-3xl font-extrabold sm:text-4xl">{subject}</h1>
         {!loading && !error && lessons.length > 0 && (
-          <p className="mt-1 text-white/90">{lessons.length} {lessons.length === 1 ? 'lesson' : 'lessons'} ready for you</p>
+          <p className="mt-1 app-on-primary">{lessons.length} {lessons.length === 1 ? 'lesson' : 'lessons'} ready for you</p>
         )}
       </div>
 
@@ -59,11 +59,11 @@ export default function SubjectLessons({ subject }) {
         <div role="status" aria-live="polite" className="grid gap-4 sm:grid-cols-2">
           <span className="sr-only">Loading your lessons…</span>
           {[0, 1, 2, 3].map((i) => (
-            <div key={i} className="animate-pulse rounded-3xl border border-slate-200 bg-white p-6 dark:border-slate-700 dark:bg-slate-800">
-              <div className="mb-4 size-11 rounded-2xl bg-slate-200 dark:bg-slate-700" />
-              <div className="mb-3 h-5 w-3/4 rounded-full bg-slate-200 dark:bg-slate-700" />
-              <div className="mb-2 h-3 w-full rounded-full bg-slate-200 dark:bg-slate-700" />
-              <div className="h-3 w-2/3 rounded-full bg-slate-200 dark:bg-slate-700" />
+            <div key={i} className="animate-pulse rounded-3xl border app-border app-surface p-6  ">
+              <div className="mb-4 size-11 rounded-2xl app-primary-soft " />
+              <div className="mb-3 h-5 w-3/4 rounded-full app-primary-soft " />
+              <div className="mb-2 h-3 w-full rounded-full app-primary-soft " />
+              <div className="h-3 w-2/3 rounded-full app-primary-soft " />
             </div>
           ))}
         </div>
@@ -71,14 +71,14 @@ export default function SubjectLessons({ subject }) {
 
       {/* ---------- Error ---------- */}
       {error && (
-        <p role="alert" className="rounded-2xl border-l-4 border-red-500 bg-red-50 px-4 py-3.5 font-semibold text-red-600 dark:bg-red-500/10 dark:text-red-300">
+        <p role="alert" className="rounded-2xl border-l-4 app-error-border app-error-soft px-4 py-3.5 font-semibold app-error-text  ">
           {error}
         </p>
       )}
 
       {/* ---------- Empty ---------- */}
       {!loading && !error && !lessons.length && (
-        <div className="grid justify-items-center gap-2 rounded-3xl border-2 border-dashed border-violet-300 bg-violet-50 px-6 py-12 text-center text-violet-600 dark:border-violet-500/40 dark:bg-violet-500/10 dark:text-violet-300">
+        <div className="grid justify-items-center gap-2 rounded-3xl border-2 border-dashed app-border app-soft px-6 py-12 text-center app-link   ">
           <span className="text-4xl" aria-hidden="true">📚</span>
           <p className="font-semibold">No lessons are available for your grade yet.</p>
         </div>
@@ -90,16 +90,16 @@ export default function SubjectLessons({ subject }) {
           <li
             key={lesson.id}
             style={{ animationDelay: `${i * 70}ms` }}
-            className="group flex animate-fade-up flex-col rounded-3xl border border-slate-200 bg-white p-6 shadow-xl shadow-violet-500/10 transition hover:-translate-y-1 hover:border-violet-400 hover:shadow-2xl hover:shadow-violet-500/20 dark:border-slate-700 dark:bg-slate-800"
+            className="group flex animate-fade-up flex-col rounded-3xl border app-border app-surface p-6 shadow-xl  transition hover:-translate-y-1 app-hover-border hover:shadow-2xl   "
           >
-            <span className="mb-4 grid size-11 place-items-center rounded-2xl bg-violet-100 text-lg font-extrabold text-violet-600 transition group-hover:bg-violet-500 group-hover:text-white dark:bg-violet-500/20 dark:text-violet-300">
+            <span className="mb-4 grid size-11 place-items-center rounded-2xl app-primary-soft text-lg font-extrabold app-link transition app-group-selected app-group-on-primary  ">
               {i + 1}
             </span>
             <h2 className="mb-2 text-xl font-bold leading-snug">{lesson.title}</h2>
-            <p className="mb-5 flex-1 text-slate-500 dark:text-slate-400">{lesson.description}</p>
+            <p className="mb-5 flex-1 app-muted ">{lesson.description}</p>
             <Link
               to={`/tutor-session?lesson=${encodeURIComponent(lesson.id)}`}
-              className={`inline-flex items-center justify-center gap-2 rounded-2xl bg-gradient-to-br from-violet-500 to-cyan-500 px-5 py-3 text-sm font-semibold text-white shadow-lg shadow-violet-500/30 transition hover:brightness-105 active:scale-95 ${focusRing}`}
+              className={`app-primary inline-flex items-center justify-center gap-2 rounded-2xl px-5 py-3 text-sm font-semibold app-on-primary shadow-lg  transition  active:scale-95 ${focusRing}`}
             >
               Learn with your tutor <span aria-hidden="true" className="transition group-hover:translate-x-1">→</span>
             </Link>

@@ -102,18 +102,18 @@ const socials = [
 // Self-contained styles
 const css = `
 .oc-root {
-  --oc-accent: #4A5FE0;
-  --oc-accent-dark: #1E1A4A;
-  --oc-ink: #1b1a2e;
-  --oc-muted: #6b6a80;
-  --oc-line: #ececf3;
-  --oc-bg: #ffffff;
+  --oc-accent: var(--color-primary);
+  --oc-accent-dark: var(--color-deep);
+  --oc-ink: var(--color-deep);
+  --oc-muted: var(--color-text);
+  --oc-line: var(--color-surface-soft);
+  --oc-bg: var(--color-surface);
 }
 
 .oc-overlay {
   position: fixed;
   inset: 0;
-  background: rgba(10, 8, 30, 0.55);
+  background: var(--color-overlay);
   z-index: 9998;
   cursor: pointer;
 }
@@ -127,7 +127,7 @@ const css = `
   background: var(--oc-bg);
   color: var(--oc-ink);
   z-index: 9999;
-  box-shadow: -12px 0 40px rgba(0, 0, 0, 0.25);
+  box-shadow: -12px 0 40px var(--color-shadow);
   overflow-y: auto;
   overscroll-behavior: contain;
   font-family: inherit;
@@ -244,14 +244,14 @@ const css = `
   width: 40px;
   height: 40px;
   border-radius: 50%;
-  background: #f3f3f9;
+  background: var(--color-surface-soft);
   color: var(--oc-ink);
   text-decoration: none;
 }
 
 .oc-social a:hover {
   background: var(--oc-accent);
-  color: #fff;
+  color: var(--color-on-primary);
 }
 
 .oc-contact h3 {
@@ -283,7 +283,7 @@ const css = `
   align-items: center;
   justify-content: center;
   background: var(--oc-accent);
-  color: #fff;
+  color: var(--color-on-primary);
 }
 
 .oc-contact p {
@@ -315,7 +315,7 @@ const css = `
   padding: 14px 28px;
   border-radius: 999px;
   background: var(--oc-accent);
-  color: #fff;
+  color: var(--color-on-primary);
   font-weight: 800;
   text-decoration: none;
   box-shadow: 0 5px 0 var(--oc-accent-dark);

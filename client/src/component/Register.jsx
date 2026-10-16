@@ -96,7 +96,7 @@ const Register = () => {
 
               {/* Register Form */}
               <form onSubmit={handleSubmit}>
-                {error && <p role="alert" style={{ color: "#c62828" }}>{error}</p>}
+                {error && <p role="alert" style={{ color: "var(--color-error-text)" }}>{error}</p>}
 
                 <input
                   className="form-control"

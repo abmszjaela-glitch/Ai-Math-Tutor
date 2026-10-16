@@ -1,10 +1,11 @@
 import { Link, NavLink } from 'react-router-dom';
-import { ArrowLeft, BookOpen, Brain, ChartNoAxesCombined, Timer } from 'lucide-react';
+import { ArrowLeft, BookOpen, ChartNoAxesCombined, Timer } from 'lucide-react';
+import logo from '../../assets/img/logo/NUMORA.png';
 import './practice.css';
 export default function PracticeShell({ children, student }) {
   return <div className="practice-app">
     <header className="practice-nav">
-      <Link className="practice-brand" to="/"><span><Brain size={24} /></span>numora<span className="practice-brand-dot">.</span></Link>
+      <Link className="practice-brand" to="/" aria-label="Numora home"><img src={logo} alt="Numora" /></Link>
       <nav aria-label="Practice navigation">
         <NavLink to="/practice" end><BookOpen size={17} /> Practice</NavLink>
         <NavLink to="/practice/tests"><Timer size={17} /> Mock tests</NavLink>

@@ -76,7 +76,7 @@ const TutorAvatar = ({
 
         // White backdrop inside this element, so the video's
         // multiply blend below always has white to blend with.
-        background: '#FFFFFF',
+        background: 'var(--color-surface)',
         transform: 'translateZ(0)',
       }}
       aria-label={`${avatar.name} animated tutor`}

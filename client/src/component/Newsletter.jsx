@@ -89,7 +89,7 @@ const Newsletter = () => {
                     name="email"
                     placeholder="Enter your email address"
                     required
-                    whileFocus={{ scale: 1.02, borderColor: '#ffcb00' }}
+                    whileFocus={{ scale: 1.02, borderColor: 'var(--color-border)' }}
                     transition={{ duration: 0.25, ease: easeOut }}
                   />
 
@@ -136,7 +136,7 @@ const Newsletter = () => {
                   animate={{ scale: 1, rotate: 0 }}
                   transition={{ duration: 0.5, delay: 0.15, ease: easeOut }}
                 >
-                  <CheckCircle size={24} color="#2ecc71" />
+                  <CheckCircle size={24} color="var(--color-success)" />
                 </motion.div>
                 You're subscribed! Welcome to our learning community.
               </motion.div>

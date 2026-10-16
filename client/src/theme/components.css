@@ -1,0 +1,145 @@
+/* Shared semantic paint. Layout and component behavior stay in their own files. */
+body { background-color: var(--color-page); color: var(--color-text); }
+::selection { background: var(--color-primary); color: var(--color-on-primary); }
+:where(a, button, input, select, textarea):focus-visible {
+  outline: 3px solid var(--color-focus);
+  outline-offset: 3px;
+}
+:where(input, textarea, select)::placeholder { color: var(--color-text); opacity: 1; }
+
+/* Home's orange stays orange; dark Home ink gives its small labels contrast. */
+.theme-btn, .theme-btn span, .theme-btn svg {
+  color: var(--color-on-accent) !important;
+}
+.theme-btn:hover, .theme-btn:focus-visible {
+  background-color: var(--color-deep);
+  color: var(--color-on-primary) !important;
+}
+.theme-btn:hover :is(span, svg) { color: var(--color-on-primary) !important; }
+
+/* Auth styles are injected by the auth pages, so selectors remain scoped. */
+.form-body .form-content { background: var(--color-page); color: var(--color-ink); }
+.form-body .form-content :is(h1,h2,h3,label,p) { color: var(--color-ink); }
+.form-body .form-content p { color: var(--color-text); }
+.form-body .form-content :is(input,select,textarea) {
+  background: var(--color-surface-soft);
+  color: var(--color-ink);
+  border: 1px solid var(--color-input-border);
+}
+.form-body .form-content :is(input,select,textarea):focus {
+  background: var(--color-surface);
+  border-color: var(--color-primary);
+  outline-color: var(--color-focus);
+}
+.form-body .form-button .btn-primary {
+  background: var(--color-primary); color: var(--color-on-primary);
+  border-color: var(--color-primary); box-shadow: var(--shadow-card);
+}
+.form-body .form-button .btn-primary:hover, .form-body .form-button .btn-primary:focus-visible {
+  background: var(--color-deep); color: var(--color-on-primary); border-color: var(--color-deep);
+}
+.form-body .form-button .btn-outline-primary {
+  background: var(--color-surface); color: var(--color-link); border-color: var(--color-primary);
+}
+.form-body .form-button .btn-outline-primary:hover {
+  background: var(--color-primary-soft); color: var(--color-ink);
+}
+.form-body .form-content [role='alert'] { background: var(--color-error-soft); color: var(--color-error-text); }
+
+/* Catalog, quiz, result, and progress all bind to the same Home tokens. */
+.practice-app { --ink: var(--color-ink); --muted: var(--color-text); --purple: var(--color-primary); --line: var(--color-border); background: var(--color-page); }
+.practice-app :is(.practice-card,.practice-test-card,.practice-quiz,.practice-question,.practice-question-map,.practice-result-hero,.practice-answer-review article,.practice-modal) {
+  background: var(--color-surface); color: var(--color-ink); border-color: var(--color-border);
+}
+.practice-app .practice-btn { background: var(--color-primary); border-color: var(--color-primary); color: var(--color-on-primary) !important; filter: none; }
+.practice-app .practice-btn:hover:not(:disabled) { background: var(--color-deep); border-color: var(--color-deep); filter: none; }
+.practice-app :is(.practice-btn-outline,.practice-btn-light) { background: var(--color-surface); color: var(--color-link) !important; }
+.practice-app :is(.practice-btn-outline,.practice-btn-light):hover:not(:disabled) { background: var(--color-primary-soft); color: var(--color-ink) !important; }
+.practice-app .practice-tabs button.selected, .practice-app .practice-question-map button.current { background: var(--color-primary); border-color: var(--color-primary); color: var(--color-on-primary); }
+.practice-app :is(.practice-text-btn,.practice-pill,.practice-card-number,.practice-card-meta,.practice-card>p,.practice-question-meta,.practice-question-map p,.practice-question-map small,.practice-footer,.practice-back) { color: var(--color-text); }
+.practice-app .practice-quiz-top { background: var(--color-primary); color: var(--color-on-primary); }
+.practice-app .practice-quiz-top :is(h2,.practice-eyebrow,.practice-text-btn) { color: var(--color-on-primary); }
+.practice-app .practice-question-map button.answered { background: var(--color-success-soft); border-color: var(--color-input-border); color: var(--color-success-text); }
+.practice-app .practice-question-map button.marked, .practice-app .practice-text-btn.flagged, .practice-app .practice-hint { background: var(--color-warning-soft); border-color: var(--color-input-border); color: var(--color-warning-text); }
+.practice-app .practice-question-map button.current { background: var(--color-primary); border-color: var(--color-primary); color: var(--color-on-primary); }
+.practice-app .practice-alert, .practice-app .practice-timer.urgent { background: var(--color-error-soft); color: var(--color-error-text); }
+.practice-app .practice-answer-review>article>div:first-child { color: var(--color-success-text); }
+.practice-app .practice-answer-review>article.is-incorrect>div:first-child { color: var(--color-error-text); }
+.practice-app .practice-options label.chosen { background: var(--color-primary-soft); border-color: var(--color-primary); }
+.practice-app :is(input,.practice-number-answer input) { color: var(--color-ink); background: var(--color-surface); border-color: var(--color-input-border); accent-color: var(--color-primary); }
+.practice-app :is(input,button,a,label):focus-visible, .practice-app .practice-options label:focus-within { outline-color: var(--color-focus); }
+.practice-app .practice-modal { color: var(--color-ink); }
+.practice-modal :is(h2,h3) { color: var(--color-ink); }
+.practice-modal :is(p,li) { color: var(--color-text); }
+.practice-modal .practice-btn { background: var(--color-primary); color: var(--color-on-primary) !important; }
+.practice-modal .practice-btn-outline { background: var(--color-surface); color: var(--color-link) !important; }
+.practice-app .practice-result-score { color: var(--color-link); }
+.practice-app .practice-meter { background: var(--color-primary-soft); }
+.practice-app .practice-meter>span { background: var(--color-primary); }
+
+/* Existing lesson utility layout with shared semantic colors. */
+.app-text { color: var(--color-ink); }
+.app-muted { color: var(--color-text); }
+.app-link { color: var(--color-link); }
+.app-on-primary { color: var(--color-on-primary); }
+.app-surface { background: var(--color-surface); }
+.app-soft { background: var(--color-surface-soft); }
+.app-primary-soft, .app-badge { background: var(--color-primary-soft); color: var(--color-ink); }
+.app-border { border-color: var(--color-border); }
+.app-primary, .app-hero { background: var(--color-primary); color: var(--color-on-primary); }
+.app-hero h1, .app-hero p { color: var(--color-on-primary); }
+.app-primary:hover { background: var(--color-deep); }
+.app-error-text { color: var(--color-error-text); }
+.app-error-soft { background: var(--color-error-soft); }
+.app-error-border { border-color: var(--color-error); }
+.app-hover-soft:hover { background: var(--color-primary-soft); }
+.app-hover-link:hover { color: var(--color-link); }
+.app-hover-border:hover { border-color: var(--color-primary); }
+.app-focus-ring:focus-visible { outline: 3px solid var(--color-focus); outline-offset: 3px; }
+.group:hover .app-group-selected { background: var(--color-primary); }
+.group:hover .app-group-on-primary { color: var(--color-on-primary); }
+
+/* Dashboard dark mode remains a variation of Home, with readable status text. */
+.numora-dashboard .graph-paper { background-image: radial-gradient(circle, var(--color-border) 1px, transparent 1px); }
+.numora-dashboard .logout-btn { background: var(--color-error-soft); color: var(--color-error-text); }
+.numora-dashboard .logout-btn:hover { background: var(--color-primary-soft); color: var(--color-link); }
+.numora-dashboard .notification-dropdown { background: var(--color-surface); color: var(--color-ink); }
+.numora-dashboard .glow-card { background: var(--color-primary); color: var(--color-on-primary); }
+.numora-dashboard .glow-card :is(h3,p,button) { color: var(--color-on-primary) !important; }
+.numora-dashboard .focus-ring:focus { outline: 3px solid var(--color-focus); box-shadow: none; }
+.numora-dashboard .btn-press { filter: none; }
+.numora-dashboard .dashboard-sections a { color: var(--color-link); background: var(--color-primary-soft); }
+
+.ts-root .ts-text-input { color: var(--color-ink); }
+.ts-root .ts-text-input:focus { outline: 3px solid var(--color-focus) !important; outline-offset: -3px; }
+.ts-root .ts-notice { background: var(--color-deep) !important; color: var(--color-on-primary) !important; }
+.ts-root .focus-ring:focus-visible { outline: 3px solid var(--color-focus); outline-offset: 3px; }
+.practice-app .practice-quiz-top :is(.practice-eyebrow,.practice-text-btn) {
+  background: var(--color-deep); color: var(--color-on-primary);
+}
+.practice-app .practice-quiz-top .practice-text-btn:hover { background: var(--color-ink); color: var(--color-on-primary); }
+.numora-dashboard .ai-card-shine { color: var(--color-on-primary); }
+.numora-dashboard .ai-card-shine h3 { color: var(--color-on-primary); }
+.numora-dashboard .ai-card-shine .pulse-ring { background: var(--color-deep) !important; }
+.numora-dashboard :is(.drift-blob,.drift-blob-slow) { opacity: 0.1; }
+.numora-dashboard .dashboard-tutor-chat>div { color: var(--color-ink); }
+.practice-app .practice-options label.chosen .practice-option-letter { background: var(--color-primary); color: var(--color-on-primary); }
+.practice-app .practice-option-letter { color: var(--color-on-soft); }
+.practice-app .subject-algebra :is(.practice-subject-icon,.practice-pill) { background: var(--bg-2); color: var(--header); }
+.practice-app .subject-measurement :is(.practice-subject-icon,.practice-pill) { background: var(--home-pink); color: var(--header); }
+.practice-app .subject-statistics :is(.practice-subject-icon,.practice-pill) { background: var(--home-indigo); color: var(--header); }
+.practice-app .subject-problem-solving :is(.practice-subject-icon,.practice-pill) { background: var(--home-mint); color: var(--header); }
+.practice-app .practice-results .practice-result-hero .practice-btn:hover:not(:disabled) {
+  background: var(--color-deep); color: var(--color-on-primary) !important; border-color: var(--color-deep);
+}
+.header-top-section :is(p,a) { color: var(--color-on-primary) !important; }
+.program-box-item .link-btn { color: var(--color-deep); }
+.classes-box-item .classes-content .theme-btn { background-color: var(--color-accent); color: var(--color-on-accent) !important; }
+.classes-box-item .classes-content .theme-btn:hover { background-color: var(--color-deep); color: var(--color-on-primary) !important; }
+.contact-section :is(h2,h3,p,label,.text-white) { color: var(--header) !important; }
+.footer-section a:hover { color: var(--color-deep); }
+.theme-btn:focus-visible { outline: 3px solid var(--color-focus) !important; outline-offset: 4px; }
+.classes-box-item .theme-btn:focus-visible, .numora-dashboard :is(.glow-card,.ai-card-shine) button:focus-visible { outline-color: var(--color-on-primary) !important; }
+.form-body .form-content :is(input,select,textarea):focus-visible {
+  outline: 3px solid var(--color-focus); outline-offset: 2px;
+}

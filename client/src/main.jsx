@@ -8,6 +8,8 @@ import './assets/css/odometer.css';
 import './assets/css/swiper-bundle.min.css';
 import './assets/css/nice-select.css';
 import './assets/css/main.css';
+import './theme/home-palette.css';
+import './theme/components.css';
 
 import App from './App.jsx'
 

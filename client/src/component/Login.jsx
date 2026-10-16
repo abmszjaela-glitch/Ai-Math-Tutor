@@ -242,8 +242,8 @@ const Login = () => {
                     marginBottom: '15px',
                     padding: '10px 14px',
                     borderRadius: '8px',
-                    background: '#ffe8e8',
-                    color: '#c62828',
+                    background: 'var(--color-surface-soft)',
+                    color: 'var(--color-error-text)',
                     fontSize: '14px',
                   }}
                 >

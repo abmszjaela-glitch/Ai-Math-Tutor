@@ -264,25 +264,25 @@ const SelectFriend = ({
           width: '42px',
           height: '42px',
           borderRadius: '50%',
-          border: '1.5px solid #E6E4DD',
-          background: '#fff',
+          border: '1.5px solid var(--color-border)',
+          background: 'var(--color-surface)',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
           boxShadow:
-            '0 4px 12px rgba(0,0,0,0.08)',
+            '0 4px 12px var(--color-shadow)',
           cursor: 'pointer',
         }}
       >
         {isMuted ? (
           <VolumeX
             size={18}
-            color="#5B6B85"
+            color="var(--color-primary)"
           />
         ) : (
           <Volume2
             size={18}
-            color="#F5A623"
+            color="var(--color-accent)"
           />
         )}
       </motion.button>
@@ -396,7 +396,7 @@ const SelectFriend = ({
                   whileHover={{
                     y: -12,
                     boxShadow:
-                      '0 20px 40px rgba(0,0,0,0.12)',
+                      '0 20px 40px var(--color-shadow)',
                     transition: {
                       duration: 0.35,
                       ease: easeOut,
@@ -406,7 +406,7 @@ const SelectFriend = ({
                     cursor: 'pointer',
                     position: 'relative',
                     outline: isSelected
-                      ? '3px solid #F5A623'
+                      ? '3px solid var(--color-accent)'
                       : '3px solid transparent',
                     outlineOffset: '4px',
                     borderRadius: '16px',
@@ -438,17 +438,17 @@ const SelectFriend = ({
                         width: '30px',
                         height: '30px',
                         borderRadius: '50%',
-                        background: '#F5A623',
+                        background: 'var(--color-accent)',
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'center',
                         boxShadow:
-                          '0 4px 10px rgba(245,166,35,0.4)',
+                          '0 4px 10px var(--color-shadow)',
                       }}
                     >
                       <Check
                         size={16}
-                        color="#14213D"
+                        color="var(--color-deep)"
                         strokeWidth={3}
                       />
                     </motion.div>
@@ -558,10 +558,10 @@ const SelectFriend = ({
               fontWeight: 700,
               fontSize: '1rem',
               border: 'none',
-              color: '#14213D',
+              color: 'var(--color-ink)',
               background: selectedId
-                ? '#F5A623'
-                : '#E6E4DD',
+                ? 'var(--color-accent)'
+                : 'var(--color-surface-soft)',
               cursor: selectedId
                 ? 'pointer'
                 : 'not-allowed',

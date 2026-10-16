@@ -256,7 +256,7 @@ const StartLearning = () => {
       className="section-padding"
       style={{
         position: "relative",
-        backgroundColor: "#EAEAEA",
+        backgroundColor: "var(--color-surface-soft)",
       }}
     >
       <div className="container">
@@ -305,14 +305,14 @@ const StartLearning = () => {
               style={{
                 flex: 1,
                 minHeight: "280px",
-                backgroundColor: "#f9fafb",
-                border: "1px solid #e5e7eb",
+                backgroundColor: "var(--color-surface)",
+                border: "1px solid var(--color-border)",
                 borderRadius: "16px",
                 padding: "20px",
                 fontSize: "16px",
                 color: transcript
-                  ? "#111827"
-                  : "#9ca3af",
+                  ? "var(--color-deep)"
+                  : "var(--color-text)",
                 overflowY: "auto",
               }}
             >
@@ -356,15 +356,15 @@ const StartLearning = () => {
                     : "not-allowed",
 
                   backgroundColor: !videoEnded
-                    ? "#c7c7c7"
+                    ? "var(--color-surface-soft)"
                     : isRecording
-                    ? "#ef4444"
-                    : "#4f46e5",
+                    ? "var(--color-accent)"
+                    : "var(--color-primary)",
 
-                  color: "#fff",
+                  color: "var(--color-on-primary)",
 
                   boxShadow: videoEnded
-                    ? "0 8px 24px rgba(79, 70, 229, 0.35)"
+                    ? "0 8px 24px var(--color-shadow)"
                     : "none",
 
                   transition:
@@ -395,7 +395,7 @@ const StartLearning = () => {
               <p
                 style={{
                   fontSize: "13px",
-                  color: "#6b7280",
+                  color: "var(--color-text)",
                 }}
               >
                 {!videoEnded
@@ -442,11 +442,11 @@ const StartLearning = () => {
                   width: "100%",
                   aspectRatio: "16 / 9",
                   borderRadius: "16px",
-                  backgroundColor: "#111827",
+                  backgroundColor: "var(--color-deep)",
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "center",
-                  color: "#fff",
+                  color: "var(--color-on-primary)",
                 }}
               >
                 Loading tutor...

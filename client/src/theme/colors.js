@@ -1,0 +1,22 @@
+// CSS variables are the single source for JSX styles, including animated styles.
+export const colors = Object.freeze({
+  primary: 'var(--color-primary)',
+  accent: 'var(--color-accent)',
+  page: 'var(--color-page)',
+  surface: 'var(--color-surface)',
+  soft: 'var(--color-surface-soft)',
+  primarySoft: 'var(--color-primary-soft)',
+  ink: 'var(--color-ink)',
+  text: 'var(--color-text)',
+  link: 'var(--color-link)',
+  border: 'var(--color-border)',
+  onPrimary: 'var(--color-on-primary)',
+  onAccent: 'var(--color-on-accent)',
+  deep: 'var(--color-deep)',
+  success: 'var(--color-success)',
+  successSoft: 'var(--color-success-soft)',
+  error: 'var(--color-error)',
+  errorSoft: 'var(--color-error-soft)',
+  warning: 'var(--color-warning)',
+  shadow: 'var(--color-shadow)',
+});
