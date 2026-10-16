@@ -1,34 +1,36 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { ArrowLeft, ArrowRight, Check, CheckCircle2, CircleHelp, Clock3, Flag, Lightbulb, RotateCcw, Trophy, XCircle } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
+import { practiceRequest } from './practiceApi';
+import { readQuizSnapshot, validAttempt, validResult, validAnswer, remainingSeconds } from './quizState';
 import PracticeDialog from './PracticeDialog';
 import '../../assets/css/QuizRunner.css';
 
-function restore(key, resume) {
-  if (!resume || !key) return null;
-  try {
-    const value = JSON.parse(sessionStorage.getItem(key));
-    if (value?.attempt?.token && Array.isArray(value.attempt.questions) && value.attempt.questions.length && Date.now() - value.attempt.startedAt < 2 * 60 * 60 * 1000) return value;
-  } catch { /* An unavailable or damaged cache must not break the quiz. */ }
-  return null;
-}
 
 export default function QuizRunner({ mode, lesson, count, storageKey, resume, onExit }) {
-  const [saved] = useState(() => restore(storageKey, resume));
+  const navigate = useNavigate();
+  const [saved] = useState(() => resume ? readQuizSnapshot(storageKey, mode) : null);
   const [attempt, setAttempt] = useState(saved?.attempt || null);
   const [answers, setAnswers] = useState(saved?.answers || {});
   const [flags, setFlags] = useState(saved?.flags || []);
   const [index, setIndex] = useState(saved?.index >= 0 && saved.index < saved.attempt.questions.length ? saved.index : 0);
   const [now, setNow] = useState(Date.now);
-  const [error, setError] = useState('');
+  const [error, setError] = useState(saved?.submitted && !saved.result ? 'Your submission was not confirmed. Retry to recover your result.' : '');
+  const [submitted, setSubmitted] = useState(saved?.submitted || false);
   const [busy, setBusy] = useState(false);
-  const [result, setResult] = useState(null);
+  const [result, setResult] = useState(saved?.result || null);
   const [confirm, setConfirm] = useState(null);
   const closeConfirm = useCallback(() => setConfirm(null), []);
   const [hint, setHint] = useState(false);
   const requestPending = useRef(false);
   const autoSubmitted = useRef(false);
   const questionHeading = useRef(null);
+  const answerInput = useRef(null);
+  const mounted = useRef(false);
+  const answersRef = useRef(answers);
+  const draftSaved = useRef(false);
+  useEffect(() => { answersRef.current = answers; }, [answers]);
+  useEffect(() => { mounted.current = true; return () => { mounted.current = false; }; }, []);
 
   useEffect(() => {
     if (saved) return;
@@ -38,15 +40,19 @@ export default function QuizRunner({ mode, lesson, count, storageKey, resume, on
       return;
     }
     practiceRequest('/attempts', { method: 'POST', signal: controller.signal, body: JSON.stringify(mode === 'practice' ? { mode, lessonId: lesson.id } : { mode, count }) })
-      .then((data) => setAttempt(data.attempt))
-      .catch((error) => { if (error.name !== 'AbortError') setError(error.message); });
+      .then((data) => {
+        if (controller.signal.aborted) return;
+        if (!validAttempt(data.attempt, mode)) throw new Error('The server returned an invalid quiz. Please start again.');
+        setAttempt({ ...data.attempt, clockOffsetMs: Number.isFinite(data.attempt.serverNow) ? data.attempt.serverNow - Date.now() : 0 });
+      })
+      .catch((error) => { if (controller.signal.aborted) return; if (error.status === 401) navigate('/login', { replace: true }); setError(error.message); });
     return () => controller.abort();
-  }, [mode, lesson, count, saved, resume]);
+  }, [mode, lesson, count, saved, resume, navigate]);
 
   useEffect(() => {
-    if (!attempt || result) return;
-    try { sessionStorage.setItem(storageKey, JSON.stringify({ attempt, answers, flags, index })); } catch { /* Practice also works without session storage. */ }
-  }, [attempt, answers, flags, index, storageKey, result]);
+    if (!attempt || !storageKey) return;
+    try { sessionStorage.setItem(storageKey, JSON.stringify({ attempt, answers, flags, index, result, submitted })); draftSaved.current = true; } catch { draftSaved.current = false; }
+  }, [attempt, answers, flags, index, storageKey, result, submitted]);
 
   useEffect(() => {
     if (!attempt?.deadline || result) return;
@@ -56,28 +62,36 @@ export default function QuizRunner({ mode, lesson, count, storageKey, resume, on
 
   useEffect(() => {
     if (!attempt || result) return;
-    const beforeUnload = (event) => { event.preventDefault(); event.returnValue = ''; };
+    const beforeUnload = (event) => { if (!draftSaved.current) { event.preventDefault(); event.returnValue = ''; } };
     window.addEventListener('beforeunload', beforeUnload);
     return () => window.removeEventListener('beforeunload', beforeUnload);
   }, [attempt, result]);
 
-  const submit = useCallback(async () => {
+  const submit = useCallback(async (automatic = false) => {
     if (!attempt || requestPending.current || result) return;
+    const currentAnswers = answersRef.current;
+    const invalidIndex = attempt.questions.findIndex((q) => currentAnswers[q.id]?.trim() && !validAnswer(q, currentAnswers[q.id]));
+    if (!automatic && invalidIndex !== -1) {
+      setConfirm(null); setIndex(invalidIndex);
+      setError('Please enter a valid number for the highlighted question, or leave it blank.');
+      requestAnimationFrame(() => answerInput.current?.focus());
+      return;
+    }
     requestPending.current = true;
-    setConfirm(null); setBusy(true); setError('');
+    setConfirm(null); setBusy(true); setSubmitted(true); setError('');
     try {
-      const data = await practiceRequest('/submit', { method: 'POST', body: JSON.stringify({ token: attempt.token, answers }) });
-      setResult(data.result);
-      try { sessionStorage.removeItem(storageKey); } catch { /* Storage is optional. */ }
-    } catch (error) { setError(error.message); }
-    finally { requestPending.current = false; setBusy(false); }
-  }, [attempt, answers, result, storageKey]);
+      const data = await practiceRequest('/submit', { method: 'POST', body: JSON.stringify({ token: attempt.token, answers: currentAnswers }) });
+      if (!validResult(data.result, attempt)) throw new Error('The server returned an invalid result. Please retry submission.');
+      if (mounted.current) setResult(data.result);
+    } catch (error) { if (mounted.current) { if (error.status === 401 && error.code !== 'ATTEMPT_EXPIRED') navigate('/login', { replace: true }); setError(error.message); } }
+    finally { requestPending.current = false; if (mounted.current) setBusy(false); }
+  }, [attempt, result, navigate]);
 
   useEffect(() => {
-    if (!attempt?.deadline || now < attempt.deadline || result || autoSubmitted.current) return;
+    if (!attempt?.deadline || remainingSeconds(attempt, now) > 0 || result || autoSubmitted.current) return;
     autoSubmitted.current = true;
     // Use a microtask so submission state changes happen in the asynchronous callback.
-    Promise.resolve().then(submit);
+    Promise.resolve().then(() => { if (mounted.current) return submit(true); });
   }, [attempt, now, result, submit]);
 
   const leave = () => { try { sessionStorage.removeItem(storageKey); } catch { /* Storage is optional. */ } onExit(); };
@@ -86,10 +100,12 @@ export default function QuizRunner({ mode, lesson, count, storageKey, resume, on
   if (!attempt) return <section className="practice-quiz-loading"><CircleHelp size={30} /><h2>{error || (resume ? 'This saved session has expired.' : 'Putting your questions together…')}</h2>{(error || resume) && <button className="practice-btn" onClick={leave}>Back to lessons</button>}</section>;
 
   const current = attempt.questions[index];
-  const answered = attempt.questions.filter((q) => answers[q.id]?.trim()).length;
-  const remaining = attempt.deadline ? Math.min(attempt.durationSeconds, Math.max(0, Math.ceil((attempt.deadline - now) / 1000))) : null;
-  const locked = busy || remaining === 0;
-  const jump = (value) => { setIndex(value); setHint(false); requestAnimationFrame(() => questionHeading.current?.focus()); };
+  const answered = attempt.questions.filter((q) => validAnswer(q, answers[q.id])).length;
+  const remaining = remainingSeconds(attempt, now);
+  const locked = busy || submitted || remaining === 0;
+  const jump = (value) => { if (requestPending.current) return; setIndex(Math.max(0, Math.min(value, attempt.questions.length - 1))); setHint(false); requestAnimationFrame(() => questionHeading.current?.focus()); };
+  const updateAnswer = (value) => { if (requestPending.current || submitted || remainingSeconds(attempt) === 0) return; setError(''); setAnswers((old) => { const next = { ...old, [current.id]: value }; answersRef.current = next; return next; }); };
+  const invalidAnswer = Boolean(answers[current.id]?.trim() && !validAnswer(current, answers[current.id]));
   const toggleFlag = () => setFlags((items) => items.includes(current.id) ? items.filter((id) => id !== current.id) : [...items, current.id]);
 
   return <section className="practice-quiz">
@@ -104,9 +120,9 @@ export default function QuizRunner({ mode, lesson, count, storageKey, resume, on
       </div>
     </div>
 
-    <div className="practice-meter" aria-label={`${answered} of ${attempt.questions.length} answered`}><span style={{ width: `${answered / attempt.questions.length * 100}%` }} /></div>
+    <div className="practice-meter" role="progressbar" aria-valuemin={0} aria-valuemax={attempt.questions.length} aria-valuenow={answered} aria-label={`${answered} of ${attempt.questions.length} answered`}><span style={{ width: `${answered / attempt.questions.length * 100}%` }} /></div>
 
-    {error && <div role="alert" className="practice-alert">{error}<button disabled={busy} onClick={submit}>Retry submission</button><button onClick={leave}>Start over</button></div>}
+    {error && <div role="alert" className="practice-alert">{error}{submitted && <button disabled={busy} onClick={() => submit()}>Retry submission</button>}<button onClick={leave}>Start over</button></div>}
 
     <div className="practice-quiz-layout">
       {/* key={current.id} re-triggers the fade-in animation on every new question */}
@@ -118,7 +134,7 @@ export default function QuizRunner({ mode, lesson, count, storageKey, resume, on
           ? <fieldset className="practice-options" disabled={locked}>
               <legend className="practice-sr-only">Choose your answer</legend>
               {current.options.map((option, i) => <label key={option} className={answers[current.id] === option ? 'chosen' : ''}>
-                <input type="radio" name={current.id} value={option} checked={answers[current.id] === option} onChange={() => setAnswers((old) => ({ ...old, [current.id]: option }))} />
+                <input type="radio" name={current.id} value={option} checked={answers[current.id] === option} onChange={() => updateAnswer(option)} />
                 <span className="practice-option-letter">{String.fromCharCode(65 + i)}</span>
                 <strong>{option}{current.unit ? ` ${current.unit}` : ''}</strong>
                 {answers[current.id] === option && <Check size={19} />}
@@ -126,13 +142,14 @@ export default function QuizRunner({ mode, lesson, count, storageKey, resume, on
             </fieldset>
           : <label className="practice-number-answer">
               <span>Your answer{current.unit ? ` (${current.unit})` : ''}</span>
-              <input type="text" inputMode="decimal" maxLength={40} value={answers[current.id] || ''} placeholder="Type a number" disabled={locked} onChange={(e) => setAnswers((old) => ({ ...old, [current.id]: e.target.value }))} />
+              <input type="text" inputMode="decimal" maxLength={40} value={answers[current.id] || ''} placeholder="Type a number" disabled={locked} onChange={(e) => updateAnswer(e.target.value)} ref={answerInput} aria-invalid={invalidAnswer} aria-describedby={invalidAnswer ? 'quiz-answer-error' : undefined} />
               <small>Enter a number only. Use a full stop for decimals.</small>
             </label>}
 
+        {invalidAnswer && <p id="quiz-answer-error" role="alert" style={{ color: '#b42318', marginTop: 10 }}>Enter a valid number, such as 12 or 3.5, without units.</p>}
         <div className="practice-question-tools">
           <button className={`practice-text-btn ${flags.includes(current.id) ? 'flagged' : ''}`} onClick={toggleFlag} disabled={locked}><Flag size={16} />{flags.includes(current.id) ? 'Marked for review' : 'Review later'}</button>
-          {mode === 'practice' && <button className="practice-text-btn" onClick={() => setHint((v) => !v)}><Lightbulb size={16} />{hint ? 'Hide hint' : 'Need a hint?'}</button>}
+          {mode === 'practice' && <button className="practice-text-btn" disabled={busy} onClick={() => setHint((v) => !v)}><Lightbulb size={16} />{hint ? 'Hide hint' : 'Need a hint?'}</button>}
         </div>
 
         {/* The "💡 Hint:" label is added by CSS (::before) */}
@@ -141,7 +158,7 @@ export default function QuizRunner({ mode, lesson, count, storageKey, resume, on
         <div className="practice-question-navigation">
           <button className="practice-btn practice-btn-outline" disabled={index === 0 || busy} onClick={() => jump(index - 1)}><ArrowLeft size={16} />Previous</button>
           {index < attempt.questions.length - 1
-            ? <button className="practice-btn" onClick={() => jump(index + 1)}>Next question <ArrowRight size={16} /></button>
+            ? <button className="practice-btn" disabled={busy} onClick={() => jump(index + 1)}>Next question <ArrowRight size={16} /></button>
             : <button className="practice-btn" disabled={busy} onClick={() => setConfirm('submit')}>{busy ? 'Saving…' : 'Finish & see results'}<CheckCircle2 size={16} /></button>}
         </div>
       </div>
@@ -149,7 +166,7 @@ export default function QuizRunner({ mode, lesson, count, storageKey, resume, on
       <aside className="practice-question-map">
         <h3>Your question map</h3>
         <p>{answered} answered · {attempt.questions.length - answered} to go</p>
-        <div>{attempt.questions.map((q, i) => <button key={q.id} aria-label={`Question ${i + 1}${answers[q.id]?.trim() ? ', answered' : ', unanswered'}${flags.includes(q.id) ? ', flagged' : ''}`} aria-current={i === index ? 'step' : undefined} className={`${i === index ? 'current' : ''} ${answers[q.id]?.trim() ? 'answered' : ''} ${flags.includes(q.id) ? 'marked' : ''}`} onClick={() => jump(i)}>{i + 1}{flags.includes(q.id) && <Flag size={9} />}</button>)}</div>
+        <div>{attempt.questions.map((q, i) => <button key={q.id} disabled={busy} aria-label={`Question ${i + 1}${validAnswer(q, answers[q.id]) ? ', answered' : ', unanswered'}${flags.includes(q.id) ? ', flagged' : ''}`} aria-current={i === index ? 'step' : undefined} className={`${i === index ? 'current' : ''} ${validAnswer(q, answers[q.id]) ? 'answered' : ''} ${flags.includes(q.id) ? 'marked' : ''}`} onClick={() => jump(i)}>{i + 1}{flags.includes(q.id) && <Flag size={9} />}</button>)}</div>
         <small>● Green: answered<br />⚑ Orange: review later</small>
         <button className="practice-btn practice-btn-outline" disabled={busy} onClick={() => setConfirm('submit')}>Submit {mode === 'mock' ? 'test' : 'practice'}</button>
       </aside>
@@ -160,7 +177,7 @@ export default function QuizRunner({ mode, lesson, count, storageKey, resume, on
       <p>{confirm === 'leave' ? 'This attempt and its answers will be discarded. Your previously saved progress stays safe.' : `${attempt.questions.length - answered} unanswered questions will receive no marks. You can review every explanation after submitting.`}</p>
       <div className="practice-card-actions">
         <button autoFocus className="practice-btn practice-btn-outline" onClick={() => setConfirm(null)}>Keep working</button>
-        <button className="practice-btn" onClick={confirm === 'leave' ? leave : submit}>{confirm === 'leave' ? 'Discard & leave' : 'Submit answers'}</button>
+        <button className="practice-btn" disabled={busy} onClick={confirm === 'leave' ? leave : () => submit()}>{confirm === 'leave' ? 'Discard & leave' : 'Submit answers'}</button>
       </div>
     </PracticeDialog>}
   </section>;

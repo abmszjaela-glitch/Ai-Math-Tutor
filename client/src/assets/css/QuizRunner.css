@@ -393,3 +393,13 @@
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation: none !important; transition: none !important; }
 }
+/* Keep result text readable when the shared practice styles are loaded. */
+.practice-app .practice-results .practice-result-hero {
+  background: radial-gradient(circle at 20% 10%, #08758c 0, transparent 45%),
+              radial-gradient(circle at 85% 90%, #963b68 0, transparent 40%),
+              linear-gradient(135deg, #5844b6, #4233a5);
+}
+.practice-app .practice-results .practice-result-hero :is(h2, p, small, .practice-result-score, .practice-eyebrow) { color: #fff; opacity: 1; }
+.practice-app .practice-results .practice-result-hero .practice-btn { color: #493691 !important; }
+.practice-app .practice-results .practice-result-hero .practice-btn-outline { color: #fff !important; }
+.practice-app .practice-options label:has(input:focus-visible) { outline: 3px solid #7560d7; outline-offset: 3px; }

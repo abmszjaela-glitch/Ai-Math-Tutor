@@ -46,7 +46,7 @@ const start = async (req, res) => {
   const durationSeconds = mode === 'mock' ? questions.length * 60 : null;
   const deadline = durationSeconds ? startedAt + durationSeconds * 1000 : null;
   const token = jwt.sign({ version: VERSION, userId: req.userId, grade: student.grade.number, ids: questions.map((q) => q.id), mode, startedAt, deadline, attemptId: crypto.randomUUID() }, process.env.JWT_SECRET, { audience: 'math-practice', expiresIn: '2h', algorithm: 'HS256' });
-  return res.status(201).json({ success: true, attempt: { token, title, mode, startedAt, deadline, durationSeconds, questions: questions.map(publicQuestion) } });
+  return res.status(201).json({ success: true, attempt: { token, title, mode, startedAt, deadline, durationSeconds, serverNow: startedAt, expiresAt: startedAt + 7200000, questions: questions.map(publicQuestion) } });
 };
 async function saveResult(student, lessons, result) {
   // Reuse the existing curriculum/progress tables. No destructive schema migration is needed.
@@ -86,7 +86,7 @@ const submit = async (req, res) => {
   if (!input.success) return res.status(400).json({ success: false, message: 'Invalid test submission' });
   let claims;
   try { claims = jwt.verify(input.data.token, process.env.JWT_SECRET, { audience: 'math-practice', algorithms: ['HS256'] }); }
-  catch { return res.status(401).json({ success: false, message: 'This test session expired. Please start a new one.' }); }
+  catch { return res.status(401).json({ success: false, code: 'ATTEMPT_EXPIRED', message: 'This test session expired. Please start a new one.' }); }
   if (claims.userId !== req.userId || claims.version !== VERSION || !Array.isArray(claims.ids)) return res.status(403).json({ success: false, message: 'This test belongs to a different session' });
   const student = await studentFor(req.userId);
   if (!student || student.grade.number !== claims.grade) return res.status(403).json({ success: false, message: 'Your grade changed. Please start a new test.' });
