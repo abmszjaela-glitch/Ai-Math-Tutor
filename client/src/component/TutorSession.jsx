@@ -1,7 +1,7 @@
 import { API_URL } from '../config/api';
 import { useEffect, useRef, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { AlertCircle, ArrowLeft, Mic, MicOff, Send, Sparkles } from 'lucide-react';
+import { AlertCircle, ArrowLeft, Mic, MicOff, Send, Sparkles, Volume2, VolumeX } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import TutorAvatar from './TutorAvatar';
 
@@ -15,7 +15,7 @@ const STORAGE_KEY = 'selectedTutorId';
 
 const palette = {
   ink: '#1F1B2E', // main text
-  paper: '#F4F4F6', // page background
+  paper: '#FFFFFF', // page background
   card: '#FFFFFF', // input bar
   surface: '#F6F3FB', // tutor bubble background
   mist: '#E6E1F0', // borders
@@ -72,6 +72,67 @@ const tutorProfiles = {
 };
 
 const DEFAULT_TUTOR_ID = 'kanga';
+
+// ============================================================
+// STREAMING HELPERS
+// ============================================================
+
+// Split text into sentences without breaking decimals like "3.5".
+const splitSentences = (text) =>
+  text
+    .split(/(?<=[.!?])\s+/)
+    .map((s) => s.trim())
+    .filter(Boolean);
+
+// What the tutor says out loud for each streamed part.
+const partToSpeech = (part) => {
+  switch (part.type) {
+    case 'message':
+      return part.text;
+    case 'step':
+      return part.explanation ? `Step ${part.step}. ${part.explanation}` : '';
+    case 'answer':
+      return part.text ? `The answer is ${part.text}.` : '';
+    case 'hint':
+      return part.text ? `Hint: ${part.text}` : '';
+    case 'encouragement':
+      return part.text;
+    default:
+      return '';
+  }
+};
+
+// Turn a complete tutor object into the same list of parts the stream sends.
+// Used as a fallback when the backend still returns plain JSON.
+const tutorToParts = (tutor) => {
+  const parts = [];
+  if (tutor.message?.trim()) parts.push({ type: 'message', text: tutor.message.trim() });
+  tutor.steps?.forEach((step) => parts.push({ type: 'step', ...step }));
+  if (tutor.answer) parts.push({ type: 'answer', text: String(tutor.answer) });
+  if (tutor.hint) parts.push({ type: 'hint', text: tutor.hint });
+  if (tutor.encouragement) parts.push({ type: 'encouragement', text: tutor.encouragement });
+  return parts;
+};
+
+// Merge one streamed part into the tutor object shown in the bubble.
+const applyPartToTutor = (tutor, part) => {
+  switch (part.type) {
+    case 'message':
+      return { ...tutor, message: part.text };
+    case 'step': {
+      const { type, ...step } = part; // eslint-disable-line no-unused-vars
+      return { ...tutor, steps: [...(tutor.steps || []), step] };
+    }
+    case 'answer':
+      return { ...tutor, answer: part.text };
+    case 'hint':
+      return { ...tutor, hint: part.text };
+    case 'encouragement':
+      return { ...tutor, encouragement: part.text };
+    default:
+      return tutor;
+  }
+};
 
 // ============================================================
 // HOOKS
@@ -220,6 +281,7 @@ const TutorSession = () => {
   const [lessonId] = useState(() => new URLSearchParams(window.location.search).get('lesson'));
   const [isSessionReady, setIsSessionReady] = useState(false);
   const [textInput, setTextInput] = useState('');
+  const [replayingId, setReplayingId] = useState(null); // message whose speaker icon was tapped
 
   const recognitionRef = useRef(null);
   const messagesEndRef = useRef(null);
@@ -227,8 +289,14 @@ const TutorSession = () => {
   const noticeTimeoutRef = useRef(null);
   const handleStudentMessageRef = useRef(null);
   const speakTokenRef = useRef(0);
-  const pendingRef = useRef(false);
-  const requestRef = useRef(null);
+  const pendingSpeechRef = useRef(0); // utterances queued but not finished
+  const abortRef = useRef(null); // AbortController for the active stream
+  const messageIdRef = useRef(0);
+
+  const nextMessageId = () => {
+    messageIdRef.current += 1;
+    return messageIdRef.current;
+  };
 
   const showNotice = (text) => {
     setNotice(text);
@@ -356,11 +424,12 @@ const TutorSession = () => {
   }, [profile.label, tutorId, navigate]);
 
   // ==========================================================
-  // TEXT TO SPEECH (basic browser voice)
+  // TEXT TO SPEECH (basic browser voice, sentence queue)
   // ==========================================================
 
   const stopSpeaking = () => {
     speakTokenRef.current += 1;
+    pendingSpeechRef.current = 0;
 
     if ('speechSynthesis' in window) {
       const synth = window.speechSynthesis;
@@ -368,49 +437,58 @@ const TutorSession = () => {
     }
 
     setIsSpeaking(false);
+    setReplayingId(null);
   };
 
-  const speak = (text, onEnd) => {
-    stopSpeaking();
-
+  // Adds text to the end of the speech queue WITHOUT interrupting what is
+  // already being said. Each sentence is its own utterance, which starts
+  // speaking sooner and avoids Chrome cutting off long utterances.
+  const enqueueSpeech = (text) => {
     const speechText = text?.trim();
-
-    if (!speechText || !('speechSynthesis' in window)) {
-      onEnd?.();
-      return;
-    }
+    if (!speechText || !('speechSynthesis' in window)) return;
 
     const token = speakTokenRef.current;
 
-    const utterance = new SpeechSynthesisUtterance(speechText);
-    utterance.lang = 'en-AU';
-    utterance.rate = 1;
-    utterance.pitch = 1;
-    utterance.volume = 1;
+    splitSentences(speechText).forEach((sentence) => {
+      const utterance = new SpeechSynthesisUtterance(sentence);
+      utterance.lang = 'en-AU';
+      utterance.rate = 1;
+      utterance.pitch = 1;
+      utterance.volume = 1;
 
-    utterance.onstart = () => {
-      if (token !== speakTokenRef.current) return;
-      setIsSpeaking(true);
-    };
+      pendingSpeechRef.current += 1;
 
-    utterance.onend = () => {
-      if (token !== speakTokenRef.current) return;
-      setIsSpeaking(false);
-      onEnd?.();
-    };
+      utterance.onstart = () => {
+        if (token !== speakTokenRef.current) return;
+        setIsSpeaking(true);
+      };
 
-    utterance.onerror = (event) => {
-      if (token !== speakTokenRef.current) return;
+      const finish = () => {
+        if (token !== speakTokenRef.current) return;
+        pendingSpeechRef.current = Math.max(0, pendingSpeechRef.current - 1);
+        if (pendingSpeechRef.current === 0) {
+          setIsSpeaking(false);
+          setReplayingId(null);
+        }
+      };
 
-      if (event.error !== 'canceled' && event.error !== 'interrupted') {
-        console.warn('Speech error:', event.error);
-      }
+      utterance.onend = finish;
 
-      setIsSpeaking(false);
-      onEnd?.();
-    };
+      utterance.onerror = (event) => {
+        if (event.error !== 'canceled' && event.error !== 'interrupted') {
+          console.warn('Speech error:', event.error);
+        }
+        finish();
+      };
 
-    window.speechSynthesis.speak(utterance);
+      window.speechSynthesis.speak(utterance);
+    });
+  };
+
+  // Replaces whatever is being said (used for greeting and error lines).
+  const speak = (text) => {
+    stopSpeaking();
+    enqueueSpeech(text);
   };
 
   // ==========================================================
@@ -421,7 +499,10 @@ const TutorSession = () => {
     if (hasGreetedRef.current) return;
     hasGreetedRef.current = true;
 
-    setMessages((prev) => [...prev, { sender: 'tutor', text: profile.greeting }]);
+    setMessages((prev) => [
+      ...prev,
+      { id: nextMessageId(), sender: 'tutor', text: profile.greeting },
+    ]);
     speak(profile.greeting);
     // Speech is triggered once for this greeting, not for each render.
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -433,7 +514,7 @@ const TutorSession = () => {
 
   useEffect(() => {
     return () => {
-      requestRef.current?.abort();
+      abortRef.current?.abort();
       stopSpeaking();
 
       try {
@@ -451,32 +532,60 @@ const TutorSession = () => {
   // ==========================================================
 
   const addTutorMessage = (text) => {
-    setMessages((prev) => [...prev, { sender: 'tutor', text }]);
+    setMessages((prev) => [...prev, { id: nextMessageId(), sender: 'tutor', text }]);
     speak(text);
   };
 
   const addStudentMessage = (text) => {
-    setMessages((prev) => [...prev, { sender: 'student', text }]);
+    setMessages((prev) => [...prev, { id: nextMessageId(), sender: 'student', text }]);
   };
 
-const getTutorSpeech = (tutor) => {
-  const parts = [];
-
-  if (tutor.message?.trim()) parts.push(tutor.message.trim());
-
-  tutor.steps?.forEach((step) => {
-    if (step.explanation) parts.push(`Step ${step.step}. ${step.explanation}`);
-  });
-
-  if (tutor.answer) parts.push(`The answer is ${tutor.answer}.`);
-  if (tutor.hint) parts.push(`Hint: ${tutor.hint}`);
-  if (tutor.encouragement) parts.push(tutor.encouragement);
-
-  return parts.join(' ') || "Let's work through this together.";
-};
+  // Stops the current answer: cancels the network stream and the voice.
+  const cancelTutorResponse = () => {
+    abortRef.current?.abort();
+    abortRef.current = null;
+    setIsThinking(false);
+    stopSpeaking();
+  };
 
   // ==========================================================
-  // HANDLE STUDENT MESSAGE
+  // REPLAY A PREVIOUS MESSAGE (speaker icon)
+  // ==========================================================
+
+  // Builds what the tutor should say for a saved message.
+  const getMessageSpeech = (msg) => {
+    if (msg.tutor) {
+      return tutorToParts(msg.tutor).map(partToSpeech).filter(Boolean).join(' ');
+    }
+    return msg.text || ''; // greeting and plain messages
+  };
+
+  const replayMessage = (msg) => {
+    const text = getMessageSpeech(msg);
+    if (!text) return;
+
+    // Tapping the same icon again stops the voice.
+    if (isSpeaking && replayingId === msg.id) {
+      stopSpeaking();
+      return;
+    }
+
+    if (isListening) {
+      try {
+        recognitionRef.current?.stop();
+      } catch {
+        // Ignore stop errors.
+      }
+      setIsListening(false);
+    }
+
+    cancelTutorResponse(); // stops any current voice or streaming answer
+    setReplayingId(msg.id);
+    enqueueSpeech(text);
+  };
+
+  // ==========================================================
+  // HANDLE STUDENT MESSAGE (streaming)
   // ==========================================================
 
   const handleStudentMessage = async (text) => {
@@ -489,20 +598,75 @@ const getTutorSpeech = (tutor) => {
       return;
     }
 
-    pendingRef.current = true;
-    requestRef.current = new AbortController();
-    stopSpeaking();
+    // A new question replaces any answer that is still streaming or speaking.
+    cancelTutorResponse();
     setInterimText('');
 
     addStudentMessage(cleanText);
     setIsThinking(true);
+
+    const controller = new AbortController();
+    abortRef.current = controller;
+
+    // Id of the tutor bubble for this answer. Created on the first part.
+    let tutorMessageId = null;
+    let receivedAnyPart = false;
+
+    // Renders a part in the bubble and queues it for speech right away.
+    const handlePart = (part) => {
+      if (controller.signal.aborted) return;
+
+      if (part.type === 'error') {
+        throw new Error(part.message || 'Tutor stream failed');
+      }
+
+      if (!['message', 'step', 'answer', 'hint', 'encouragement'].includes(part.type)) {
+        return; // ignore 'done' and unknown types
+      }
+
+      receivedAnyPart = true;
+
+      if (tutorMessageId === null) {
+        tutorMessageId = nextMessageId();
+        const id = tutorMessageId;
+        setIsThinking(false);
+        setMessages((prev) => [
+          ...prev,
+          {
+            id,
+            sender: 'tutor',
+            text: part.type === 'message' ? part.text : '',
+            tutor: applyPartToTutor({}, part),
+          },
+        ]);
+      } else {
+        const id = tutorMessageId;
+        setMessages((prev) =>
+          prev.map((m) =>
+            m.id === id
+              ? {
+                  ...m,
+                  text: part.type === 'message' ? part.text : m.text,
+                  tutor: applyPartToTutor(m.tutor || {}, part),
+                }
+              : m
+          )
+        );
+      }
+
+      enqueueSpeech(partToSpeech(part));
+    };
 
     try {
       const response = await fetch(`${API_URL}/tutor/message`, {
         signal: requestRef.current.signal,
         method: 'POST',
         credentials: 'include',
-        headers: { 'Content-Type': 'application/json' },
+        signal: controller.signal,
+        headers: {
+          'Content-Type': 'application/json',
+          Accept: 'application/x-ndjson, application/json',
+        },
         body: JSON.stringify({
           conversationId,
           lessonId,
@@ -510,44 +674,73 @@ const getTutorSpeech = (tutor) => {
         }),
       });
 
-      const data = await response.json();
+      const contentType = response.headers.get('content-type') || '';
 
-      if (!response.ok || !data.success) {
-        throw new Error(data.message || 'Tutor request failed');
+      // ---- Fallback: backend still returns one complete JSON object ----
+      if (!response.ok || contentType.includes('application/json')) {
+        const data = await response.json();
+
+        if (!response.ok || !data.success) {
+          throw new Error(data.message || 'Tutor request failed');
+        }
+
+        const tutor = data.response?.tutor;
+        if (!tutor) throw new Error('Tutor returned an invalid response');
+
+        tutorToParts(tutor).forEach(handlePart);
+        setIsThinking(false);
+        return;
       }
 
-      const tutor = data.response?.tutor;
+      // ---- Streaming: one JSON object per line (NDJSON) ----
+      if (!response.body) throw new Error('Streaming is not supported by this browser');
 
-      if (!tutor) {
-        throw new Error('Tutor returned an invalid response');
+      const reader = response.body.getReader();
+      const decoder = new TextDecoder();
+      let buffer = '';
+
+      const processLine = (line) => {
+        const trimmed = line.trim();
+        if (!trimmed) return;
+        handlePart(JSON.parse(trimmed));
+      };
+
+      while (true) {
+        const { value, done } = await reader.read();
+        if (done) break;
+
+        buffer += decoder.decode(value, { stream: true });
+
+        const lines = buffer.split('\n');
+        buffer = lines.pop() ?? ''; // keep the incomplete last line
+
+        lines.forEach(processLine);
       }
+
+      buffer += decoder.decode();
+      processLine(buffer);
+
+      if (!receivedAnyPart) throw new Error('Tutor returned an empty response');
 
       setIsThinking(false);
-
-      setMessages((prev) => [
-        ...prev,
-        {
-          sender: 'tutor',
-          text: tutor.message,
-          tutor,
-        },
-      ]);
-
-      speak(getTutorSpeech(tutor));
     } catch (error) {
-      if (error.name === 'AbortError') return;
+      if (error.name === 'AbortError' || controller.signal.aborted) return;
+
       console.error('Tutor request error:', error);
 
       setIsThinking(false);
 
-      addTutorMessage(
-        "Sorry! I had a little trouble thinking about that question. Let's try again."
-      );
-
-      showNotice(error.message || 'Something went wrong while talking to your math tutor.');
+      if (receivedAnyPart) {
+        // Part of the answer already showed and was spoken. Keep it.
+        showNotice('The answer was cut short. Ask again if something is missing.');
+      } else {
+        addTutorMessage(
+          "Sorry! I had a little trouble thinking about that question. Let's try again."
+        );
+        showNotice('Something went wrong while talking to your math tutor.');
+      }
     } finally {
-      pendingRef.current = false;
-      setIsThinking(false);
+      if (abortRef.current === controller) abortRef.current = null;
     }
   };
 
@@ -578,7 +771,8 @@ const getTutorSpeech = (tutor) => {
       }
       setIsListening(false);
     } else {
-      stopSpeaking();
+      // Student wants to talk: stop the tutor's voice and any answer still streaming.
+      cancelTutorResponse();
 
       try {
         recognitionRef.current?.start();
@@ -886,9 +1080,9 @@ const getTutorSpeech = (tutor) => {
         }}
       >
         <AnimatePresence initial={false}>
-          {messages.map((msg, i) => (
+          {messages.map((msg) => (
             <motion.div
-              key={`${msg.sender}-${i}`}
+              key={msg.id}
               className={`ts-message ${
                 msg.sender === 'student' ? 'ts-message-student' : 'ts-message-tutor'
               }`}
@@ -904,10 +1098,10 @@ const getTutorSpeech = (tutor) => {
                 className="ts-bubble"
                 style={msg.sender === 'student' ? studentBubbleStyle : tutorBubbleStyle}
               >
-                <div>{msg.text}</div>
+                {msg.text && <div>{msg.text}</div>}
 
                 {msg.sender === 'tutor' && msg.tutor && (
-                  <div style={{ marginTop: '16px' }}>
+                  <div style={{ marginTop: msg.text ? '16px' : 0 }}>
                     {msg.tutor.steps?.length > 0 && (
                       <div>
                         <div style={{ fontWeight: 800, marginBottom: '10px' }}>
@@ -928,17 +1122,19 @@ const getTutorSpeech = (tutor) => {
 
                             <div style={{ marginBottom: '6px' }}>{step.explanation}</div>
 
-                            <div
-                              style={{
-                                background: profile.soft,
-                                border: `1.5px solid ${profile.color}55`,
-                                borderRadius: '10px',
-                                padding: '8px 12px',
-                                fontWeight: 700,
-                              }}
-                            >
-                              {step.calculation}
-                            </div>
+                            {step.calculation && (
+                              <div
+                                style={{
+                                  background: profile.soft,
+                                  border: `1.5px solid ${profile.color}55`,
+                                  borderRadius: '10px',
+                                  padding: '8px 12px',
+                                  fontWeight: 700,
+                                }}
+                              >
+                                {step.calculation}
+                              </div>
+                            )}
                           </div>
                         ))}
                       </div>
@@ -971,6 +1167,38 @@ const getTutorSpeech = (tutor) => {
                       </div>
                     )}
                   </div>
+                )}
+
+                {msg.sender === 'tutor' && (
+                  <button
+                    type="button"
+                    onClick={() => replayMessage(msg)}
+                    className="focus-ring"
+                    aria-label={
+                      isSpeaking && replayingId === msg.id
+                        ? 'Stop reading'
+                        : 'Read this message aloud'
+                    }
+                    style={{
+                      marginTop: '10px',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      width: '34px',
+                      height: '34px',
+                      borderRadius: '50%',
+                      border: `2px solid ${profile.color}`,
+                      background: profile.soft,
+                      color: profile.deep,
+                      cursor: 'pointer',
+                    }}
+                  >
+                    {isSpeaking && replayingId === msg.id ? (
+                      <VolumeX size={16} />
+                    ) : (
+                      <Volume2 size={16} />
+                    )}
+                  </button>
                 )}
               </div>
             </motion.div>
