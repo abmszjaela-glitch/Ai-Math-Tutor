@@ -1,3 +1,4 @@
+import { FaArrowRight as AppIconFaArrowRight } from 'react-icons/fa';
 import { motion, useInView } from 'framer-motion';
 import { useRef } from 'react';
 
@@ -242,7 +243,7 @@ const ChooseUs = () => {
 >
   <Link to="/start-learning" className="theme-btn">
     Start Learning Maths
-    <i className="icon-arrow-icon"></i>
+    <AppIconFaArrowRight aria-hidden="true" />
   </Link>
 </motion.div>
 

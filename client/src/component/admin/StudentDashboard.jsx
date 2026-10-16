@@ -1,9 +1,10 @@
-import React, { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
+import { API_URL } from '../../config/api';
 import { useNavigate } from "react-router-dom";
 import {
-  Search, Bell, Settings, Sparkles, Brain, Play, MessageSquare,
+  Search, Bell, Settings, Sparkles, Brain, Play,
   Trophy, ChevronRight, Plus, Download, FolderOpen, Send, Sun, Moon,
-  Menu, X, Flame, CheckCircle2, Circle, Clock, Star, Zap, Target,
+  Menu, X, Flame, CheckCircle2, Circle, Clock,
   BookOpen, Calendar, Users, BarChart3, Share2, TrendingUp
 } from "lucide-react";
 
@@ -62,11 +63,11 @@ function Confetti({ x, y, active }) {
           key={i}
           className="confetti-piece"
           style={{
-            "--dx": `${(Math.random() - 0.5) * 160}px`,
-            "--dy": `${-Math.random() * 140 - 40}px`,
-            "--rot": `${Math.random() * 360}deg`,
+            "--dx": `${Math.sin(i * 2.4) * 80}px`,
+            "--dy": `${-40 - (i * 37 % 140)}px`,
+            "--rot": `${i * 137.5}deg`,
             background: colors[i % colors.length],
-            animationDelay: `${Math.random() * 0.08}s`,
+            animationDelay: `${(i % 4) * 0.02}s`,
           }}
         />
       ))}
@@ -84,7 +85,6 @@ function TypingDots() {
 
 export default function StudentDashboard() {
   const navigate = useNavigate();
-  const API_URL = "http://localhost:5000/api";
 
   const [dark, setDark] = useState(false);
   const [student, setStudent] = useState(null);
@@ -103,7 +103,7 @@ export default function StudentDashboard() {
   const [confetti, setConfetti] = useState({ active: false, x: 0, y: 0 });
   const [chatMessages, setChatMessages] = useState([]);
   const [chatInput, setChatInput] = useState("");
-  const [aiTyping, setAiTyping] = useState(false);
+  const aiTyping = false;
   const [unlockedPulse, setUnlockedPulse] = useState(null);
 
   useEffect(() => {
@@ -190,29 +190,20 @@ export default function StudentDashboard() {
   ];
   const unreadCount = notifications.filter((n) => !n.read).length;
 
-  const toggleTask = (index, e) => {
-    const rect = e.currentTarget.getBoundingClientRect();
-    setTasks((prev) => {
-      const next = [...prev];
-      const wasDone = next[index].done;
-      next[index] = { ...next[index], done: !wasDone };
-      if (!wasDone) {
-        setConfetti({ active: true, x: rect.left, y: rect.top });
-        setTimeout(() => setConfetti((c) => ({ ...c, active: false })), 900);
-      }
-      return next;
-    });
+  const toggleTask = (index, event) => {
+    const rect = event.currentTarget.getBoundingClientRect();
+    if (!tasks[index].done) {
+      setConfetti({ active: true, x: rect.left, y: rect.top });
+      setTimeout(() => setConfetti((current) => ({ ...current, active: false })), 900);
+    }
+    setTasks((previous) => previous.map((task, i) => i === index ? { ...task, done: !task.done } : task));
   };
 
   const tryUnlock = (index) => {
-    setAchievements((prev) => {
-      if (prev[index].unlocked) return prev;
-      const next = [...prev];
-      next[index] = { ...next[index], unlocked: true };
-      setUnlockedPulse(index);
-      setTimeout(() => setUnlockedPulse(null), 1000);
-      return next;
-    });
+    if (achievements[index].unlocked) return;
+    setUnlockedPulse(index);
+    setTimeout(() => setUnlockedPulse(null), 1000);
+    setAchievements((previous) => previous.map((item, i) => i === index ? { ...item, unlocked: true } : item));
   };
 
   const sendChat = () => {
@@ -252,6 +243,7 @@ export default function StudentDashboard() {
     <div style={{ ...s.container, background: t.appBg, color: t.ink }}>
       <style>{css}</style>
       <Confetti {...confetti} />
+      {loadingStudent && <div role="status">Loading your profile…</div>}
 
       {/* Mobile overlay */}
       {sidebarOpen && <div style={s.overlay} onClick={() => setSidebarOpen(false)} />}

@@ -6,11 +6,7 @@ import tailwindcss from '@tailwindcss/vite'
 export default defineConfig({
   plugins: [react(), tailwindcss()],
 
-  // Kokoro (onnxruntime / wasm) Vite pre-bundle karanna giyama awul wenawa,
-  // eka nisa ekata exclude karanawa
-  optimizeDeps: {
-    exclude: ['kokoro-js'],
-  },
+  server: { proxy: { '/api': 'http://localhost:5000' } },
 
   build: {
     target: 'esnext',

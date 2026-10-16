@@ -1,3 +1,4 @@
+import { FaArrowRight as AppIconFaArrowRight } from 'react-icons/fa';
 import { motion } from 'framer-motion';
 
 import perasuteShape from '../assets/img/contact/perasute.png';
@@ -332,7 +333,7 @@ const Contact = () => {
                       transition={{ duration: 0.3, ease: easeOut }}
                     >
                       Send Your Message
-                      <i className="icon-arrow-icon"></i>
+                      <AppIconFaArrowRight aria-hidden="true" />
                     </motion.button>
                   </motion.div>
 

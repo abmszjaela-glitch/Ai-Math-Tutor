@@ -1,3 +1,4 @@
+import { FaArrowRight as AppIconFaArrowRight, FaHome as AppIconFaHome } from 'react-icons/fa';
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { CheckCircle } from 'lucide-react';
@@ -92,7 +93,7 @@ const Newsletter = () => {
                     transition={{ duration: 0.25, ease: easeOut }}
                   />
 
-                  <i className="far fa-house house-icon"></i>
+                  <AppIconFaHome aria-hidden="true" className="house-icon" />
 
                 </motion.div>
 
@@ -108,7 +109,7 @@ const Newsletter = () => {
                   whileTap={{ scale: 0.96 }}
                 >
                   Join Our Learning Community
-                  <i className="icon-arrow-icon"></i>
+                  <AppIconFaArrowRight aria-hidden="true" />
                 </motion.button>
 
               </motion.form>

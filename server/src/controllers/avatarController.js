@@ -1,3 +1,4 @@
+const { avatarInput } = require("../utils/validation");
 const prisma = require("../config/prisma");
 
 const getAvatars = async (req, res) => {
@@ -31,14 +32,9 @@ const getAvatars = async (req, res) => {
 
 const selectAvatar = async (req, res) => {
   try {
-    const { avatarId } = req.body;
-
-    if (!avatarId) {
-      return res.status(400).json({
-        success: false,
-        message: "Avatar ID is required",
-      });
-    }
+    const validation = avatarInput.safeParse(req.body);
+    if (!validation.success) return res.status(400).json({ success: false, message: "Invalid request data", errors: validation.error.flatten().fieldErrors });
+    const { avatarId } = validation.data;
 
     const avatar = await prisma.avatar.findUnique({
       where: {

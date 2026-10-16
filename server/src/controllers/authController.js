@@ -1,3 +1,4 @@
+const cookieOptions = require("../config/cookies");
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
 const { z } = require("zod");
@@ -5,9 +6,9 @@ const { z } = require("zod");
 const prisma = require("../config/prisma");
 
 const registerSchema = z.object({
-  name: z.string().min(2, "Name must be at least 2 characters"),
-  email: z.string().email("Please enter a valid email"),
-  password: z.string().min(6, "Password must be at least 6 characters"),
+  name: z.string().trim().min(2, "Name must be at least 2 characters").max(100),
+  email: z.string().trim().toLowerCase().max(254).email("Please enter a valid email"),
+  password: z.string().min(6, "Password must be at least 6 characters").refine((value) => Buffer.byteLength(value, "utf8") <= 72, "Password must be at most 72 bytes"),
   grade: z.number().int().min(1).max(6),
 });
 
@@ -88,9 +89,7 @@ const register = async (req, res) => {
     );
 
     res.cookie("token", token, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: "lax",
+      ...cookieOptions(),
       maxAge: 7 * 24 * 60 * 60 * 1000,
     });
 
@@ -108,6 +107,7 @@ const register = async (req, res) => {
       },
     });
   } catch (error) {
+    if (error.code === "P2002") return res.status(409).json({ success: false, message: "An account with this email already exists" });
     console.error("Registration error:", error);
 
     return res.status(500).json({
@@ -117,7 +117,7 @@ const register = async (req, res) => {
   }
 };
 const loginSchema = z.object({
-  email: z.string().email("Please enter a valid email"),
+  email: z.string().trim().toLowerCase().max(254).email("Please enter a valid email"),
   password: z.string().min(1, "Password is required"),
 });
 
@@ -181,9 +181,7 @@ const login = async (req, res) => {
     );
 
     res.cookie("token", token, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: "lax",
+      ...cookieOptions(),
       maxAge: 7 * 24 * 60 * 60 * 1000,
     });
 
@@ -274,9 +272,7 @@ const getMe = async (req, res) => {
 const logout = async (req, res) => {
   try {
     res.clearCookie("token", {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: "lax",
+      ...cookieOptions(),
     });
 
     return res.status(200).json({

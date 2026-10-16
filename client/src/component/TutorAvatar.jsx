@@ -100,7 +100,6 @@ const TutorAvatar = ({
           width: '100%',
           height: '100%',
 
-          mixBlendMode: 'multiply',
           filter: 'brightness(1.08)',
 
           // contain prevents the ears/head from being cropped.

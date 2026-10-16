@@ -1,3 +1,5 @@
+import { Link } from 'react-router-dom';
+import { API_URL } from '../config/api';
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import headerImage from '../assets/img/header1.png';
@@ -13,8 +15,6 @@ import {
   FaShapes as Shapes,
   FaArrowRight as ArrowRight,
 } from 'react-icons/fa';
-
-const API_URL = 'http://localhost:5000/api';
 
 const easeOut = [0.25, 0.1, 0.25, 1];
 
@@ -309,7 +309,7 @@ const handleLogout = async () => {
                         <ul className="submenu">
                           <li><a href="/practice">Practice Problems</a></li>
                           <li><a href="/practice/tests">Mock Tests</a></li>
-                          <li><a href="/practice/progress">My Progress</a></li>
+                          <li><Link to="/dashboard">My Progress</Link></li>
                         </ul>
                       </li>
 

@@ -36,30 +36,13 @@ const STORAGE_KEY = "selectedTutorId";
 const StartLearning = () => {
   const [videoEnded, setVideoEnded] = useState(false);
   const [currentClip, setCurrentClip] = useState("intro");
-  const [selectedTutor, setSelectedTutor] = useState(null);
+  const [selectedTutor] = useState(() => TUTORS.find((t) => t.id === localStorage.getItem(STORAGE_KEY)) || TUTORS[0]);
   const [isRecording, setIsRecording] = useState(false);
   const [transcript, setTranscript] = useState("");
 
   const videoRef = useRef(null);
   const recognitionRef = useRef(null);
 
-  /*
-   * Load selected tutor
-   */
-  useEffect(() => {
-    const savedTutorId = localStorage.getItem(STORAGE_KEY);
-
-    const tutor = TUTORS.find(
-      (t) => t.id === savedTutorId
-    );
-
-    if (tutor) {
-      setSelectedTutor(tutor);
-    } else {
-      // Fallback
-      setSelectedTutor(TUTORS[0]);
-    }
-  }, []);
 
   /*
    * Speech Recognition setup
@@ -101,7 +84,7 @@ const StartLearning = () => {
       }
 
       if (finalText) {
-        setTranscript((prev) => prev + finalText);
+        setTranscript((prev) => prev.replace(/\[\.\.\..*?\]$/, "") + finalText);
       }
 
       if (interimText) {
@@ -130,13 +113,7 @@ const StartLearning = () => {
        * Only change to after video if
        * the intro has already finished.
        */
-      setVideoEnded((wasEnded) => {
-        if (wasEnded) {
-          setCurrentClip("after");
-        }
-
-        return wasEnded;
-      });
+      setCurrentClip("after");
     };
 
     recognition.onerror = (event) => {
@@ -151,9 +128,12 @@ const StartLearning = () => {
     recognitionRef.current = recognition;
 
     return () => {
+      recognition.onresult = null;
+      recognition.onend = null;
+      recognition.onerror = null;
       try {
-        recognition.stop();
-      } catch (error) {
+        recognition.abort();
+      } catch {
         // Ignore stop errors during cleanup
       }
     };
@@ -248,7 +228,7 @@ const StartLearning = () => {
        * Make sure after video is not showing
        * while user is recording.
        */
-      setCurrentClip("intro");
+      videoRef.current?.pause();
 
       try {
         recognitionRef.current.start();

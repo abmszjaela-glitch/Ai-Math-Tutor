@@ -1,3 +1,4 @@
+import { Link } from 'react-router-dom';
 import { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -531,6 +532,12 @@ const Offcanvas = ({
 
                     <li>
                       <a href="/home-4">Home 04</a>
+                    </li>
+                  </SubmenuAccordion>
+
+                  <SubmenuAccordion label="Practice">
+                    <li>
+                      <Link to="/dashboard" onClick={onClose}>My Progress</Link>
                     </li>
                   </SubmenuAccordion>
 

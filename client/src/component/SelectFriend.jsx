@@ -88,22 +88,15 @@ const SelectFriend = ({
 }) => {
   const navigate = useNavigate();
 
-  const [selectedId, setSelectedId] = useState(null);
+  const [selectedId, setSelectedId] = useState(() => {
+    const saved = localStorage.getItem(STORAGE_KEY);
+    return teachers.some((teacher) => teacher.id === saved) ? saved : null;
+  });
   const [isMuted, setIsMuted] = useState(false);
 
   const audioRef = useRef(null);
   const clickAudioRef = useRef(null);
 
-  /*
-   * Restore previous tutor selection
-   */
-  useEffect(() => {
-    const saved = localStorage.getItem(STORAGE_KEY);
-
-    if (saved) {
-      setSelectedId(saved);
-    }
-  }, []);
 
   /*
    * Background music
@@ -120,7 +113,7 @@ const SelectFriend = ({
       try {
         await audio.play();
         setIsMuted(false);
-      } catch (err) {
+      } catch {
         // Browser blocked autoplay
         setIsMuted(true);
       }
@@ -161,8 +154,7 @@ const SelectFriend = ({
     if (!audio) return;
 
     if (audio.paused) {
-      audio.play();
-      setIsMuted(false);
+      audio.play().then(() => setIsMuted(false)).catch(() => setIsMuted(true));
     } else {
       audio.pause();
       setIsMuted(true);

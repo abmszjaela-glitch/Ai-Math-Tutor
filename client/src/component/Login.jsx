@@ -1,3 +1,4 @@
+import { API_URL } from '../config/api';
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 
@@ -5,14 +6,7 @@ import graphicImage from '../assets/img/Login/graphic15.svg';
 import logoImage from '../assets/img/logo/NUMORA.png';
 import authStyles from '../assets/Hooks/Authstyles.js';
 
-import {
-  FaFacebookF,
-  FaGoogle,
-  FaLinkedinIn,
-} from 'react-icons/fa';
 
-
-const API_URL = 'http://localhost:5000/api';
 
 
 const Login = () => {
@@ -73,6 +67,7 @@ const Login = () => {
 
     event.preventDefault();
 
+    if (isLoading) return;
     setError('');
 
     // Basic validation
@@ -129,14 +124,14 @@ const Login = () => {
       }
 
 
-      console.log(
-        'Login successful:',
-        data
-      );
 
 
-      // Go to student dashboard
-navigate('/');
+
+      // Restore this account's saved tutor before opening the conversation.
+      const tutorIds = { Kangaroo: 'kanga', Panda: 'pandy', Koala: 'koala' };
+      const tutorId = tutorIds[data.user?.student?.avatar?.name] || 'kanga';
+      localStorage.setItem('selectedTutorId', tutorId);
+      navigate('/tutor-session', { replace: true });
     } catch (error) {
 
       console.error(
@@ -272,7 +267,7 @@ navigate('/');
                   className="form-control"
                   type="email"
                   name="username"
-                  placeholder="E-mail Address"
+                  placeholder="E-mail Address" aria-label="Email address" autoComplete="email"
                   value={email}
                   onChange={(event) =>
                     setEmail(
@@ -289,7 +284,7 @@ navigate('/');
                   className="form-control"
                   type="password"
                   name="password"
-                  placeholder="Password"
+                  placeholder="Password" aria-label="Password" autoComplete="current-password"
                   value={password}
                   onChange={(event) =>
                     setPassword(
@@ -333,26 +328,6 @@ navigate('/');
               {/* =================================================
                   SOCIAL LOGIN
               ================================================= */}
-
-              <div className="other-links">
-
-                <span>
-                  Or login with
-                </span>
-
-                <a href="#">
-                  <FaFacebookF />
-                </a>
-
-                <a href="#">
-                  <FaGoogle />
-                </a>
-
-                <a href="#">
-                  <FaLinkedinIn />
-                </a>
-
-              </div>
 
 
             </div>

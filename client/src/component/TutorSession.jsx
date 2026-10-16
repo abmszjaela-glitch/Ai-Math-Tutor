@@ -1,3 +1,4 @@
+import { API_URL } from '../config/api';
 import { useEffect, useRef, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { AlertCircle, ArrowLeft, Mic, MicOff, Send, Sparkles } from 'lucide-react';
@@ -5,8 +6,8 @@ import { useNavigate } from 'react-router-dom';
 import TutorAvatar from './TutorAvatar';
 
 const easeOut = [0.25, 0.1, 0.25, 1];
+const AVATAR_NAMES = { kanga: 'Kangaroo', pandy: 'Panda', koala: 'Koala' };
 const STORAGE_KEY = 'selectedTutorId';
-const API_URL = 'http://localhost:5000/api';
 
 // ============================================================
 // DESIGN TOKENS (light theme)
@@ -216,7 +217,7 @@ const TutorSession = () => {
   const [interimText, setInterimText] = useState('');
   const [notice, setNotice] = useState(null);
   const [conversationId, setConversationId] = useState(null);
-  const [lessonId] = useState(null);
+  const [lessonId] = useState(() => new URLSearchParams(window.location.search).get('lesson'));
   const [isSessionReady, setIsSessionReady] = useState(false);
   const [textInput, setTextInput] = useState('');
 
@@ -226,6 +227,8 @@ const TutorSession = () => {
   const noticeTimeoutRef = useRef(null);
   const handleStudentMessageRef = useRef(null);
   const speakTokenRef = useRef(0);
+  const pendingRef = useRef(false);
+  const requestRef = useRef(null);
 
   const showNotice = (text) => {
     setNotice(text);
@@ -306,6 +309,19 @@ const TutorSession = () => {
 
     const createConversation = async () => {
       try {
+        const avatarsResponse = await fetch(`${API_URL}/avatars`, { credentials: 'include' });
+        if (avatarsResponse.status === 401) { navigate('/login', { replace: true }); return; }
+        const avatarsData = await avatarsResponse.json();
+        if (!avatarsResponse.ok || !avatarsData.success) throw new Error(avatarsData.message || 'Unable to load tutors');
+        const avatar = avatarsData.avatars.find((item) => item.name === AVATAR_NAMES[tutorId]);
+        if (!avatar) throw new Error('Selected tutor is unavailable. Please seed the database.');
+        if (cancelled) return;
+        const selection = await fetch(`${API_URL}/avatars/me`, {
+          method: 'PUT', credentials: 'include', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ avatarId: avatar.id }),
+        });
+        if (!selection.ok) throw new Error('Unable to select tutor');
+        if (cancelled) return;
         const response = await fetch(`${API_URL}/conversations`, {
           method: 'POST',
           credentials: 'include',
@@ -337,8 +353,7 @@ const TutorSession = () => {
     return () => {
       cancelled = true;
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [profile.label]);
+  }, [profile.label, tutorId, navigate]);
 
   // ==========================================================
   // TEXT TO SPEECH (basic browser voice)
@@ -408,6 +423,7 @@ const TutorSession = () => {
 
     setMessages((prev) => [...prev, { sender: 'tutor', text: profile.greeting }]);
     speak(profile.greeting);
+    // Speech is triggered once for this greeting, not for each render.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [profile.greeting]);
 
@@ -417,6 +433,7 @@ const TutorSession = () => {
 
   useEffect(() => {
     return () => {
+      requestRef.current?.abort();
       stopSpeaking();
 
       try {
@@ -427,7 +444,6 @@ const TutorSession = () => {
 
       if (noticeTimeoutRef.current) clearTimeout(noticeTimeoutRef.current);
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // ==========================================================
@@ -466,13 +482,15 @@ const getTutorSpeech = (tutor) => {
   const handleStudentMessage = async (text) => {
     const cleanText = text?.trim();
 
-    if (!cleanText) return;
+    if (!cleanText || pendingRef.current) return;
 
     if (!conversationId || !isSessionReady) {
       showNotice('Your tutor is still getting ready. Please try again in a moment.');
       return;
     }
 
+    pendingRef.current = true;
+    requestRef.current = new AbortController();
     stopSpeaking();
     setInterimText('');
 
@@ -481,6 +499,7 @@ const getTutorSpeech = (tutor) => {
 
     try {
       const response = await fetch(`${API_URL}/tutor/message`, {
+        signal: requestRef.current.signal,
         method: 'POST',
         credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
@@ -516,6 +535,7 @@ const getTutorSpeech = (tutor) => {
 
       speak(getTutorSpeech(tutor));
     } catch (error) {
+      if (error.name === 'AbortError') return;
       console.error('Tutor request error:', error);
 
       setIsThinking(false);
@@ -524,7 +544,10 @@ const getTutorSpeech = (tutor) => {
         "Sorry! I had a little trouble thinking about that question. Let's try again."
       );
 
-      showNotice('Something went wrong while talking to your math tutor.');
+      showNotice(error.message || 'Something went wrong while talking to your math tutor.');
+    } finally {
+      pendingRef.current = false;
+      setIsThinking(false);
     }
   };
 
@@ -576,7 +599,7 @@ const getTutorSpeech = (tutor) => {
 
     const value = textInput.trim();
 
-    if (!value) return;
+    if (!value || pendingRef.current) return;
 
     if (!isSessionReady) {
       showNotice('Your tutor is still getting ready. Please wait a moment.');
@@ -1051,6 +1074,7 @@ const getTutorSpeech = (tutor) => {
             <motion.button
               type="button"
               onClick={requestExample}
+              disabled={!isSessionReady || isThinking}
               whileHover={{ scale: 1.03, y: -1 }}
               whileTap={{ scale: 0.97 }}
               className="focus-ring"
@@ -1117,7 +1141,7 @@ const getTutorSpeech = (tutor) => {
               />
               <motion.button
                 type="submit"
-                disabled={!textInput.trim()}
+                disabled={!textInput.trim() || !isSessionReady || isThinking}
                 whileHover={textInput.trim() ? { scale: 1.06 } : {}}
                 whileTap={textInput.trim() ? { scale: 0.94 } : {}}
                 aria-label="Send message"
@@ -1144,6 +1168,7 @@ const getTutorSpeech = (tutor) => {
             <motion.button
               type="button"
               onClick={toggleMic}
+              disabled={!isSessionReady || isThinking || !micSupported}
               whileHover={{ scale: 1.06 }}
               whileTap={{ scale: 0.94 }}
               className="focus-ring ts-mic-btn"

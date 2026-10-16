@@ -1,11 +1,2 @@
-import React from 'react'
-
-const Algebra = () => {
-  return (
-    <div>
-      
-    </div>
-  )
-}
-
-export default Algebra
+import SubjectLessons from './SubjectLessons';
+export default function Algebra() { return <SubjectLessons subject="Algebra" />; }

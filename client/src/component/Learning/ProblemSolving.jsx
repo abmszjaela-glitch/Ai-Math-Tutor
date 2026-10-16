@@ -1,11 +1,2 @@
-import React from 'react'
-
-const ProblemSolving = () => {
-  return (
-    <div>
-      
-    </div>
-  )
-}
-
-export default ProblemSolving
+import SubjectLessons from './SubjectLessons';
+export default function ProblemSolving() { return <SubjectLessons subject="Problem Solving" />; }
