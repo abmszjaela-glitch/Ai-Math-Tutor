@@ -37,6 +37,8 @@ const Header = ({ onMenuClick }) => {
   };
 const [user, setUser] = useState(null);
 const [isLoadingUser, setIsLoadingUser] = useState(true);
+const [isLoggingOut, setIsLoggingOut] = useState(false);
+const [authError, setAuthError] = useState('');
 
 useEffect(() => {
   const getCurrentUser = async () => {
@@ -65,16 +67,21 @@ useEffect(() => {
 }, []);
 
 const handleLogout = async () => {
+  if (isLoggingOut) return;
+  setIsLoggingOut(true);
+  setAuthError('');
   try {
-    await fetch(`${API_URL}/auth/logout`, {
+    const response = await fetch(`${API_URL}/auth/logout`, {
       method: 'POST',
       credentials: 'include',
     });
-
+    if (!response.ok) throw new Error('Unable to log out. Please try again.');
     setUser(null);
     window.location.href = '/';
   } catch (error) {
-    console.error('Logout error:', error);
+    setAuthError(error.message || 'Unable to log out. Please try again.');
+  } finally {
+    setIsLoggingOut(false);
   }
 };
 
@@ -84,6 +91,19 @@ const handleLogout = async () => {
 
       {/* Mobile responsive CSS - scoped to this component's markup */}
       <style>{`
+        .header-section .nav-auth-action {
+          border: 0;
+          background: transparent;
+          color: inherit;
+          font: inherit;
+          font-weight: 700;
+          padding: 8px 0;
+          white-space: nowrap;
+          cursor: pointer;
+        }
+        .header-section .nav-auth-action:disabled { opacity: 0.6; cursor: wait; }
+        .header-section .nav-auth-error { color: #b42318; font-size: 12px; max-width: 180px; }
+
         /* ---------- Tablet / below xl (max-width: 1199px) ---------- */
         @media (max-width: 1199px) {
           .header-top-section {
@@ -113,10 +133,6 @@ const handleLogout = async () => {
 
           /* full nav menu hidden on mobile, hamburger takes over */
           .header-1 .mean__menu-wrapper .main-menu {
-            display: none;
-          }
-
-          .header-1 .header-right-icon .main-header__signin {
             display: none;
           }
 
@@ -307,8 +323,8 @@ const handleLogout = async () => {
                       <li className="has-dropdown">
                         <a href="#">Practice<ChevronDown size={14} /></a>
                         <ul className="submenu">
-                          <li><a href="/practice">Practice Problems</a></li>
-                          <li><a href="/practice/tests">Mock Tests</a></li>
+                          <li><Link to="/practice">Practice Problems</Link></li>
+                          <li><Link to="/practice/tests">Mock Tests</Link></li>
                           <li><Link to="/dashboard">My Progress</Link></li>
                         </ul>
                       </li>
@@ -337,23 +353,17 @@ const handleLogout = async () => {
               {/* Right Side */}
               <div className="header-right d-flex justify-content-end align-items-center">
                 <div className="header-right-icon">
-  {!isLoadingUser && (
-    user ? (
-      <span className="main-header__signin">
-        Hi, {user.name}
-      </span>
-    ) : (
-      <motion.a
-        href="/login"
-        className="main-header__signin"
-        whileHover={{ scale: 1.05 }}
-        transition={{ duration: 0.25, ease: easeOut }}
-      >
-        Sign In
-      </motion.a>
-    )
-  )}
-</div>
+                  {!isLoadingUser && (
+                    user ? (
+                      <button type="button" className="nav-auth-action" onClick={handleLogout} disabled={isLoggingOut}>
+                        {isLoggingOut ? 'Logging out…' : 'Logout'}
+                      </button>
+                    ) : (
+                      <Link to="/login" className="nav-auth-action">Login</Link>
+                    )
+                  )}
+                  {authError && <span className="nav-auth-error" role="alert">{authError}</span>}
+                </div>
 
                 <motion.a
                   href="/SelectFriend"
@@ -376,13 +386,7 @@ const handleLogout = async () => {
                   </motion.div>
                 </div>
                 
-<button
-  type="button"
-  className="main-header__signin"
-  onClick={handleLogout}
->
-  Logout
-</button>
+
               </div>
 
             </div>
