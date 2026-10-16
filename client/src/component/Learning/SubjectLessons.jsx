@@ -33,6 +33,7 @@ export default function SubjectLessons({ subject }) {
   return <main className="container section-padding">
     <Link to="/dashboard">← Dashboard</Link>
     <h1>{subject}</h1>
+    <p><Link to="/practice">Explore guided lessons & quizzes →</Link> · <Link to="/practice/tests">Take a mock test →</Link></p>
     {loading && <p role="status">Loading your lessons…</p>}
     {error && <p role="alert">{error}</p>}
     {!loading && !error && !lessons.length && <p>No lessons are available for your grade yet.</p>}

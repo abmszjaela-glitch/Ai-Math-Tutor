@@ -42,6 +42,7 @@ app.use("/api/progress", progressRoutes);
 app.use("/api/conversations", conversationRoutes);
 app.use("/api", messageRoutes);
 app.use("/api/tutor", tutorRoutes);
+app.use("/api/practice", require("./routes/practiceRoutes"));
 
 app.use((req, res) => res.status(404).json({ success: false, message: "API route not found" }));
 app.use((error, req, res, next) => {

@@ -21,6 +21,8 @@ import MainLayout from "./component/MainLayout";
 const StartLearning = lazy(() => import('./component/StartLearning'));
 
 const Stdashboard = lazy(() => import('./component/admin/StudentDashboard'));
+const PracticeProblems = lazy(() => import('./component/Practice/PracticeProblems'));
+const MockTests = lazy(() => import('./component/Practice/MockTests'));
 const Home = lazy(() => import('./component/Home'));
 
 
@@ -84,6 +86,9 @@ const App = () => {
     element={<TutorSession />}
   />
 
+<Route path="/practice" element={<PracticeProblems />} />
+<Route path="/practice/tests" element={<MockTests />} />
+<Route path="/practice/progress" element={<Navigate to="/dashboard" replace />} />
 <Route path="*" element={<Navigate to="/" replace />} />
 </Routes></Suspense>
 

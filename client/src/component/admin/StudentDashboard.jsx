@@ -1,8 +1,9 @@
+import PracticeProgress from '../Practice/PracticeProgress';
 import { useState, useEffect } from "react";
 import { API_URL } from '../../config/api';
 import { useNavigate } from "react-router-dom";
 import {
-  Search, Bell, Settings, Sparkles, Brain, Play,
+  Target as TargetIcon, Search, Bell, Settings, Sparkles, Brain, Play,
   Trophy, ChevronRight, Plus, Download, FolderOpen, Send, Sun, Moon,
   Menu, X, Flame, CheckCircle2, Circle, Clock,
   BookOpen, Calendar, Users, BarChart3, Share2, TrendingUp
@@ -86,6 +87,7 @@ function TypingDots() {
 export default function StudentDashboard() {
   const navigate = useNavigate();
 
+  const [quizStats, setQuizStats] = useState({ completed: 0, total: 8, attempted: 0, average: 0, attempts: 0 });
   const [dark, setDark] = useState(false);
   const [student, setStudent] = useState(null);
   const [loadingStudent, setLoadingStudent] = useState(true);
@@ -232,6 +234,8 @@ export default function StudentDashboard() {
   const navItems = [
     { icon: TrendingUp, label: "Dashboard", id: "dashboard", route: "/dashboard" },
     { icon: BookOpen, label: "My Courses", id: "courses", route: "/start-learning" },
+    { icon: BookOpen, label: "Practice", id: "practice", route: "/practice" },
+    { icon: Clock, label: "Mock Tests", id: "mock-tests", route: "/practice/tests" },
     { icon: Brain, label: "AI Tutor", id: "tutor", route: "/SelectFriend", badge: "AI" },
     { icon: Calendar, label: "Schedule", id: "schedule" },
     { icon: Trophy, label: "Achievements", id: "achievements" },
@@ -344,7 +348,7 @@ export default function StudentDashboard() {
                   year: "numeric",
                 })}
               </p>
-              <h2 className={mounted ? "fade-in-up" : ""} style={{ ...s.headerTitle, color: t.ink }}>Good morning, Alex 👋</h2>
+              <h2 className={mounted ? "fade-in-up" : ""} style={{ ...s.headerTitle, color: t.ink }}>Welcome back, {student?.name || "learner"} 👋</h2>
               <p style={{ ...s.headerSub, color: t.muted }}>Ready to continue your learning journey?</p>
             </div>
           </div>
@@ -422,13 +426,14 @@ export default function StudentDashboard() {
         </header>
 
         <div style={{ padding: "28px 32px 48px" }} className="graph-paper">
+          <PracticeProgress onSummary={setQuizStats} />
           {/* Stats */}
           <div style={s.statsGrid} className="stats-grid-responsive">
             {[
-              { label: "Learning Time (Week)", value: "6.5h", badge: "+12%", icon: Clock, color: "#2563eb", bg: "#dbeafe", ring: 65, ringColor: "#2563eb" },
-              { label: "Lessons Completed", value: "24", badge: "+5", icon: CheckCircle2, color: "#059669", bg: "#d1fae5", ring: 80, ringColor: "#059669" },
-              { label: "Average Score", value: "92%", badge: "87%", icon: Trophy, color: "#7c3aed", bg: "#ede9fe", ring: 92, ringColor: "#7c3aed" },
-              { label: "Learning Streak", value: "7 Days", badge: "🔥", icon: Flame, color: "#f97316", bg: "#ffedd5", ring: 70, ringColor: "#f97316" },
+              { label: "Lessons Mastered", value: String(quizStats.completed), badge: `of ${quizStats.total}`, icon: CheckCircle2, color: "#059669", bg: "#d1fae5", ring: quizStats.total ? quizStats.completed / quizStats.total * 100 : 0, ringColor: "#059669" },
+              { label: "Average Best Score", value: `${quizStats.average}%`, badge: "Saved scores", icon: Trophy, color: "#7c3aed", bg: "#ede9fe", ring: quizStats.average, ringColor: "#7c3aed" },
+              { label: "Lessons Practised", value: String(quizStats.attempted), badge: `of ${quizStats.total}`, icon: BookOpen, color: "#2563eb", bg: "#dbeafe", ring: quizStats.total ? quizStats.attempted / quizStats.total * 100 : 0, ringColor: "#2563eb" },
+              { label: "Lesson Attempts", value: String(quizStats.attempts), badge: "Keep growing", icon: TargetIcon, color: "#f97316", bg: "#ffedd5", ring: Math.min(quizStats.attempts * 10, 100), ringColor: "#f97316" },
             ].map((stat, i) => (
               <div key={i} className={`stat-card ${mounted ? "fade-in-up" : ""}`} style={{ ...s.statCard, background: t.cardBg, boxShadow: t.cardShadow, animationDelay: `${i * 70}ms` }}>
                 <div style={s.statHeader}>
