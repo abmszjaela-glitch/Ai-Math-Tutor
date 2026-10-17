@@ -1,7 +1,7 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { motion } from 'framer-motion';
-import { Check, Volume2, VolumeX } from 'lucide-react';
+import { Check, Volume2, VolumeX, ArrowLeft } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
 import flower from '../assets/img/team/flower.png';
@@ -231,6 +231,35 @@ const SelectFriend = ({
         position: 'relative',
       }}
     >
+    {/* Back Button */}
+<motion.button
+  type="button"
+  onClick={() => navigate(-1)}
+  whileHover={{ scale: 1.06, x: -3 }}
+  whileTap={{ scale: 0.94 }}
+  transition={{ duration: 0.2, ease: easeOut }}
+  style={{
+    position: 'absolute',
+    top: '0px',
+    left: '20px',
+    zIndex: 5,
+    display: 'flex',
+    alignItems: 'center',
+    gap: '8px',
+    padding: '10px 16px',
+    borderRadius: '24px',
+    border: '1.5px solid #E6E4DD',
+    background: '#fff',
+    color: '#14213D',
+    fontWeight: 600,
+    fontSize: '14px',
+    boxShadow: '0 4px 12px rgba(0,0,0,0.08)',
+    cursor: 'pointer',
+  }}
+>
+  <ArrowLeft size={18} />
+  Back
+</motion.button>
       {/* Background sound */}
       <audio
         ref={audioRef}

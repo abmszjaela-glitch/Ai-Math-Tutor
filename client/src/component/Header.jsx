@@ -84,6 +84,22 @@ const handleLogout = async () => {
 
       {/* Mobile responsive CSS - scoped to this component's markup */}
       <style>{`
+        /* Responsive Numora logo */
+        .header-1 .header-left .header-logo {
+          display: flex;
+          align-items: center;
+          flex: 0 0 auto;
+          min-width: 0;
+        }
+
+        .header-1 .header-left .header-logo img {
+          display: block;
+          width: clamp(90px, 11vw, 160px);
+          max-width: 100%;
+          height: auto;
+          object-fit: contain;
+        }
+
         /* ---------- Tablet / below xl (max-width: 1199px) ---------- */
         @media (max-width: 1199px) {
           .header-top-section {
@@ -376,13 +392,15 @@ const handleLogout = async () => {
                   </motion.div>
                 </div>
                 
-<button
-  type="button"
-  className="main-header__signin"
-  onClick={handleLogout}
->
-  Logout
-</button>
+{!isLoadingUser && user && (
+  <button
+    type="button"
+    className="main-header__signin"
+    onClick={handleLogout}
+  >
+    Logout
+  </button>
+)}
               </div>
 
             </div>

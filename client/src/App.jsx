@@ -14,6 +14,7 @@ import Testimonial from './component/Testimonial';
 import Brand from './component/Brand';
 import Contact from './component/Contact';
 import Newsletter from './component/Newsletter';
+import Map from "./component/map";
 
 import Team from './component/Team';
 
@@ -153,7 +154,7 @@ const App = () => {
     path="/tutor-session"
     element={<TutorSession />}
   />
-
+<Route path="/map" element={<Map />} />
 </Routes>
 
 

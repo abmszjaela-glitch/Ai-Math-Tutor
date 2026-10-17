@@ -7,6 +7,7 @@ import Offcanvas from "./Offcanvas";
 import SearchPopup from "./SearchPopup";
 import MouseCursor from "./MouseCursor";
 import BackToTop from "./BackToTop";
+import FloatingTutorButton from "./FloatingTutorButton";
 
 const MainLayout = () => {
   const [offcanvasOpen, setOffcanvasOpen] = useState(false);
@@ -29,6 +30,8 @@ const MainLayout = () => {
       <SearchPopup />
       <MouseCursor />
       <BackToTop />
+
+      <FloatingTutorButton />
     </>
   );
 };
