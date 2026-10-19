@@ -1,6 +1,6 @@
-const Webname = () => {
+const Loading = () => {
   return (
-    <>
+    <div className="preloader" role="status" aria-label="Loading Numora">
       <div className="animation-preloader">
         <div className="spinner"></div>
 
@@ -52,8 +52,8 @@ const Webname = () => {
           </div>
         </div>
       </div>
-    </>
+    </div>
   );
 };
 
-export default Webname;
+export default Loading;

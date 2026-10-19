@@ -3,27 +3,33 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 
 import Loading from './component/Loading';
 
+// Load the page and the minimum display timer together.
+const lazyWithMinimumDelay = (loadPage) => lazy(() => Promise.all([
+  loadPage(),
+  new Promise((resolve) => setTimeout(resolve, 3000)),
+]).then(([page]) => page));
 
 
-const Login = lazy(() => import('./component/Login'));
-const Register = lazy(() => import('./component/Register'));
 
-const Algebra = lazy(() => import('./component/Learning/Algebra'));
-const Measurement = lazy(() => import('./component/Learning/Measurement'));
-const ProblemSolving = lazy(() => import('./component/Learning/ProblemSolving'));
-const Statistics = lazy(() => import('./component/Learning/Statistics'));
+const Login = lazyWithMinimumDelay(() => import('./component/Login'));
+const Register = lazyWithMinimumDelay(() => import('./component/Register'));
 
-const SelectFriend = lazy(() => import('./component/SelectFriend'));
-const TutorSession = lazy(() => import('./component/TutorSession'));
+const Algebra = lazyWithMinimumDelay(() => import('./component/Learning/Algebra'));
+const Measurement = lazyWithMinimumDelay(() => import('./component/Learning/Measurement'));
+const ProblemSolving = lazyWithMinimumDelay(() => import('./component/Learning/ProblemSolving'));
+const Statistics = lazyWithMinimumDelay(() => import('./component/Learning/Statistics'));
+
+const SelectFriend = lazyWithMinimumDelay(() => import('./component/SelectFriend'));
+const TutorSession = lazyWithMinimumDelay(() => import('./component/TutorSession'));
 
 
 import MainLayout from "./component/MainLayout";
-const StartLearning = lazy(() => import('./component/StartLearning'));
+const StartLearning = lazyWithMinimumDelay(() => import('./component/StartLearning'));
 
-const Stdashboard = lazy(() => import('./component/admin/StudentDashboard'));
-const PracticeProblems = lazy(() => import('./component/Practice/PracticeProblems'));
-const MockTests = lazy(() => import('./component/Practice/MockTests'));
-const Home = lazy(() => import('./component/Home'));
+const Stdashboard = lazyWithMinimumDelay(() => import('./component/admin/StudentDashboard'));
+const PracticeProblems = lazyWithMinimumDelay(() => import('./component/Practice/PracticeProblems'));
+const MockTests = lazyWithMinimumDelay(() => import('./component/Practice/MockTests'));
+const Home = lazyWithMinimumDelay(() => import('./component/Home'));
 
 
 const App = () => {
