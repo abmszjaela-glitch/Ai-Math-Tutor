@@ -7,16 +7,14 @@
     "dev": "vite",
     "build": "vite build",
     "lint": "eslint .",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "test": "node --test test/*.test.js"
   },
   "dependencies": {
     "@tailwindcss/vite": "^4.3.3",
-    "aos": "^2.3.4",
     "framer-motion": "^12.42.2",
-    "kokoro-js": "^1.2.1",
     "lucide-react": "^1.25.0",
     "react": "^19.2.7",
-    "react-countup": "^6.5.3",
     "react-dom": "^19.2.7",
     "react-icons": "^5.7.0",
     "react-router-dom": "^7.18.1",

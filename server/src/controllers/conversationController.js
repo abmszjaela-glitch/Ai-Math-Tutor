@@ -1,8 +1,11 @@
+const { conversationInput } = require("../utils/validation");
 const prisma = require("../config/prisma");
 
 const createConversation = async (req, res) => {
   try {
-    const { title } = req.body;
+    const validation = conversationInput.safeParse(req.body);
+    if (!validation.success) return res.status(400).json({ success: false, message: "Invalid conversation title" });
+    const { title } = validation.data;
 
     const student = await prisma.student.findUnique({
       where: {

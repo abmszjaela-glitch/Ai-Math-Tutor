@@ -1,5 +1,6 @@
+import { FaGraduationCap as AppIconFaGraduationCap, FaStar as AppIconFaStar } from 'react-icons/fa';
 import { motion } from 'framer-motion';
-import { ArrowRight, Calculator, Star } from 'lucide-react';
+import { ArrowRight, Calculator } from 'lucide-react';
 
 import classes1 from '../assets/img/classes/classes1.jpg';
 import classes2 from '../assets/img/classes/classes2.png';
@@ -176,7 +177,7 @@ const Classes = () => {
                   {/* Grade Level */}
                   <div className="date-box">
                     <span>
-                      <i className="fas fa-graduation-cap"></i>
+                      <AppIconFaGraduationCap aria-hidden="true" />
                       {item.date}
                     </span>
                   </div>
@@ -237,7 +238,7 @@ const Classes = () => {
                               visible: { opacity: 1, scale: 1, transition: { duration: 0.3, ease: easeOut } },
                             }}
                           >
-                            <i className="fas fa-star"></i>
+                            <AppIconFaStar aria-hidden="true" />
                           </motion.li>
                         ))}
                       </motion.ul>

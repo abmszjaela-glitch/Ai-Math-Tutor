@@ -1,107 +1,36 @@
-import { useEffect, useState } from 'react';
-import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import { lazy } from 'react';
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 
-import Header from './component/Header';
-import Loading from './component/Loading';
-import Hero from './component/Hero';
-import About from './component/About';
-import Program from './component/Program';
-import Classes from './component/Classes';
-import ChooseUs from './component/ChooseUs';
-import Counter from './component/Counter';
-import Session from './component/Session';
-import Testimonial from './component/Testimonial';
-import Brand from './component/Brand';
-import Contact from './component/Contact';
-import Newsletter from './component/Newsletter';
-import Map from "./component/map";
+import RouteLoading from './component/RouteLoading';
 
-import Team from './component/Team';
+const Login = lazy(() => import('./component/Login'));
+const Register = lazy(() => import('./component/Register'));
 
+const Algebra = lazy(() => import('./component/Learning/Algebra'));
+const Measurement = lazy(() => import('./component/Learning/Measurement'));
+const ProblemSolving = lazy(() => import('./component/Learning/ProblemSolving'));
+const Statistics = lazy(() => import('./component/Learning/Statistics'));
 
-import Login from './component/Login';
-import Register from './component/Register';
-
-import Algebra from './component/Learning/Algebra';
-import Measurement from './component/Learning/Measurement';
-import ProblemSolving from './component/Learning/ProblemSolving';
-import Statistics from './component/Learning/Statistics';
-
-import SelectFriend from './component/SelectFriend';
-import TutorSession from "./component/TutorSession"
+const SelectFriend = lazy(() => import('./component/SelectFriend'));
+const TutorSession = lazy(() => import('./component/TutorSession'));
 
 
 import MainLayout from "./component/MainLayout";
-import StartLearning from "./component/StartLearning";
+const StartLearning = lazy(() => import('./component/StartLearning'));
 
-import Stdashboard from "./component/admin/StudentDashboard"
-const Home = () => {
-  return (
-    <>
-      <Hero />
-
-      <About />
-
-      <Program />
-
-      <Classes />
-
-      <ChooseUs />
-
-      <Team />
-
-      <Counter />
-
-      <Session />
-
-      <Testimonial />
-
-      <Brand />
-
-      <Contact />
-
-      <Newsletter />
-    </>
-  );
-};
+const Stdashboard = lazy(() => import('./component/admin/StudentDashboard'));
+const PracticeProblems = lazy(() => import('./component/Practice/PracticeProblems'));
+const MockTests = lazy(() => import('./component/Practice/MockTests'));
+const Home = lazy(() => import('./component/Home'));
 
 
 const App = () => {
-
-  const [isLoading, setIsLoading] = useState(true);
-
-
-  useEffect(() => {
-
-    const timer = setTimeout(() => {
-      setIsLoading(false);
-    }, 6000);
-
-
-    return () => clearTimeout(timer);
-
-  }, []);
-
-
-  if (isLoading) {
-
-    return (
-      <div
-        id="preloader"
-        className="preloader"
-      >
-        <Loading />
-      </div>
-    );
-
-  }
-
 
   return (
 
     <BrowserRouter>
 
-      <Routes>
+      <RouteLoading><Routes>
 
   <Route element={<MainLayout />}>
     <Route path="/" element={<Home />} />
@@ -154,8 +83,12 @@ const App = () => {
     path="/tutor-session"
     element={<TutorSession />}
   />
-<Route path="/map" element={<Map />} />
-</Routes>
+
+<Route path="/practice" element={<PracticeProblems />} />
+<Route path="/practice/tests" element={<MockTests />} />
+<Route path="/practice/progress" element={<Navigate to="/dashboard" replace />} />
+<Route path="*" element={<Navigate to="/" replace />} />
+</Routes></RouteLoading>
 
 
     </BrowserRouter>

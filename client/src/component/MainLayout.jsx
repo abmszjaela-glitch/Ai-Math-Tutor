@@ -5,7 +5,6 @@ import Header from "./Header";
 import Footer from "./Footer";
 import Offcanvas from "./Offcanvas";
 import SearchPopup from "./SearchPopup";
-import MouseCursor from "./MouseCursor";
 import BackToTop from "./BackToTop";
 import FloatingTutorButton from "./FloatingTutorButton";
 
@@ -28,7 +27,6 @@ const MainLayout = () => {
       />
 
       <SearchPopup />
-      <MouseCursor />
       <BackToTop />
 
       <FloatingTutorButton />

@@ -1,5 +1,7 @@
+import { Link } from 'react-router-dom';
+import { API_URL } from '../config/api';
 import { useState, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 import headerImage from '../assets/img/header1.png';
 import logo from '../assets/img/logo/NUMORA.png';
 import {
@@ -7,19 +9,12 @@ import {
   FaPhone as Phone,
   FaChevronDown as ChevronDown,
   FaBars as Menu,
-  FaCalculator as Calculator,
-  FaSquareRootAlt as Sigma,
-  FaChartLine as ChartSpline,
-  FaShapes as Shapes,
   FaArrowRight as ArrowRight,
 } from 'react-icons/fa';
-
-const API_URL = 'http://localhost:5000/api';
 
 const easeOut = [0.25, 0.1, 0.25, 1];
 
 const Header = ({ onMenuClick }) => {
-  const [subjectsOpen, setSubjectsOpen] = useState(false);
   const [isSticky, setIsSticky] = useState(false);
 
   useEffect(() => {
@@ -30,13 +25,10 @@ const Header = ({ onMenuClick }) => {
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
-  const dropdownVariants = {
-    hidden: { opacity: 0, y: -10, scale: 0.97 },
-    visible: { opacity: 1, y: 0, scale: 1, transition: { duration: 0.25, ease: easeOut } },
-    exit: { opacity: 0, y: -10, scale: 0.97, transition: { duration: 0.18, ease: easeOut } },
-  };
 const [user, setUser] = useState(null);
 const [isLoadingUser, setIsLoadingUser] = useState(true);
+const [isLoggingOut, setIsLoggingOut] = useState(false);
+const [authError, setAuthError] = useState('');
 
 useEffect(() => {
   const getCurrentUser = async () => {
@@ -65,16 +57,21 @@ useEffect(() => {
 }, []);
 
 const handleLogout = async () => {
+  if (isLoggingOut) return;
+  setIsLoggingOut(true);
+  setAuthError('');
   try {
-    await fetch(`${API_URL}/auth/logout`, {
+    const response = await fetch(`${API_URL}/auth/logout`, {
       method: 'POST',
       credentials: 'include',
     });
-
+    if (!response.ok) throw new Error('Unable to log out. Please try again.');
     setUser(null);
     window.location.href = '/';
   } catch (error) {
-    console.error('Logout error:', error);
+    setAuthError(error.message || 'Unable to log out. Please try again.');
+  } finally {
+    setIsLoggingOut(false);
   }
 };
 
@@ -84,21 +81,36 @@ const handleLogout = async () => {
 
       {/* Mobile responsive CSS - scoped to this component's markup */}
       <style>{`
-        /* Responsive Numora logo */
-        .header-1 .header-left .header-logo {
+        .header-section .header-1 .header-left {
+          flex-shrink: 0;
+          gap: 0;
+        }
+        .header-section .header-1 .header-logo {
           display: flex;
           align-items: center;
-          flex: 0 0 auto;
-          min-width: 0;
+          flex-shrink: 0;
+          line-height: 1;
         }
-
         .header-1 .header-left .header-logo img {
           display: block;
-          width: clamp(90px, 11vw, 160px);
+          width: 156px;
           max-width: 100%;
           height: auto;
           object-fit: contain;
         }
+
+        .header-section .nav-auth-action {
+          border: 0;
+          background: transparent;
+          color: inherit;
+          font: inherit;
+          font-weight: 700;
+          padding: 8px 0;
+          white-space: nowrap;
+          cursor: pointer;
+        }
+        .header-section .nav-auth-action:disabled { opacity: 0.6; cursor: wait; }
+        .header-section .nav-auth-error { color: var(--color-error-text); font-size: 12px; max-width: 180px; }
 
         /* ---------- Tablet / below xl (max-width: 1199px) ---------- */
         @media (max-width: 1199px) {
@@ -114,25 +126,13 @@ const handleLogout = async () => {
             flex-wrap: nowrap;
           }
 
-          .header-1 .header-left {
-            gap: 12px;
-          }
-
-          .header-1 .header-left .category-wrapper {
-            display: none;
-          }
-
           .header-1 .header-left .header-logo img {
-            max-width: 130px;
+            width: 140px;
             height: auto;
           }
 
           /* full nav menu hidden on mobile, hamburger takes over */
           .header-1 .mean__menu-wrapper .main-menu {
-            display: none;
-          }
-
-          .header-1 .header-right-icon .main-header__signin {
             display: none;
           }
 
@@ -156,7 +156,7 @@ const handleLogout = async () => {
         /* ---------- Small tablet / large phone (max-width: 767px) ---------- */
         @media (max-width: 767px) {
           .header-1 .header-left .header-logo img {
-            max-width: 110px;
+            width: 124px;
           }
 
           .header-1 .header-right .theme-btn span,
@@ -175,7 +175,7 @@ const handleLogout = async () => {
           }
 
           .header-1 .header-left .header-logo img {
-            max-width: 95px;
+            width: 110px;
           }
 
           /* hide the text-heavy Start Learning button on very small
@@ -196,7 +196,7 @@ const handleLogout = async () => {
         /* ---------- Extra small phones (max-width: 380px) ---------- */
         @media (max-width: 380px) {
           .header-1 .header-left .header-logo img {
-            max-width: 80px;
+            width: 96px;
           }
 
           .header-1 .header-right .theme-btn {
@@ -241,10 +241,10 @@ const handleLogout = async () => {
         id="header-sticky"
         className={`header-1 ${isSticky ? 'sticky-active' : ''}`}
         animate={{
-          backgroundColor: isSticky ? '#ffffff' : 'rgba(255,255,255,0)',
+          backgroundColor: isSticky ? 'var(--color-surface)' : 'transparent',
           boxShadow: isSticky
-            ? '0 10px 35px rgba(0,0,0,0.12)'
-            : '0 0 0 rgba(0,0,0,0)',
+            ? '0 10px 35px var(--color-shadow)'
+            : '0 0 0 transparent',
           y: isSticky ? 0 : 0,
           paddingTop: isSticky ? 12 : 20,
           paddingBottom: isSticky ? 12 : 20,
@@ -263,54 +263,19 @@ const handleLogout = async () => {
           <div className="mega-menu-wrapper">
             <div className="header-main">
 
-              {/* Logo + Subjects */}
+              {/* Numora logo */}
               <div className="header-left">
                 <motion.a
                   href="/"
                   className="header-logo"
+                  aria-label="Numora home"
                   whileHover={{ scale: 1.05 }}
                   transition={{ duration: 0.3, ease: easeOut }}
                 >
-                  <img src={logo} alt="Logo" />
+                  <img src={logo} alt="Numora" width="143" height="47" />
                 </motion.a>
 
-                <div
-                  className="category-wrapper"
-                  onMouseEnter={() => setSubjectsOpen(true)}
-                  onMouseLeave={() => setSubjectsOpen(false)}
-                >
-                  <button className="category-btn">
-                    <span className="icon">
-                      <Calculator size={18} />
-                    </span>
-                    Subjects
-                    <motion.span
-                      className="arrow"
-                      animate={{ rotate: subjectsOpen ? 180 : 0 }}
-                      transition={{ duration: 0.25, ease: easeOut }}
-                    >
-                      <ChevronDown size={14} />
-                    </motion.span>
-                  </button>
 
-                  <AnimatePresence>
-                    {subjectsOpen && (
-                      <motion.div
-                        className="category-dropdown"
-                        variants={dropdownVariants}
-                        initial="hidden"
-                        animate="visible"
-                        exit="exit"
-                      >
-                        <ul>
-                          <li><a href="/subjects/algebra"><Sigma size={16} /> Algebra</a></li>
-                          <li><a href="/subjects/geometry"><Shapes size={16} /> Geometry</a></li>
-                          <li><a href="/subjects/calculus"><ChartSpline size={16} /> Calculus & Statistics</a></li>
-                        </ul>
-                      </motion.div>
-                    )}
-                  </AnimatePresence>
-                </div>
               </div>
 
               {/* Navigation */}
@@ -323,9 +288,9 @@ const handleLogout = async () => {
                       <li className="has-dropdown">
                         <a href="#">Practice<ChevronDown size={14} /></a>
                         <ul className="submenu">
-                          <li><a href="/practice">Practice Problems</a></li>
-                          <li><a href="/practice/tests">Mock Tests</a></li>
-                          <li><a href="/practice/progress">My Progress</a></li>
+                          <li><Link to="/practice">Practice Problems</Link></li>
+                          <li><Link to="/practice/tests">Mock Tests</Link></li>
+                          <li><Link to="/dashboard">My Progress</Link></li>
                         </ul>
                       </li>
 
@@ -353,23 +318,17 @@ const handleLogout = async () => {
               {/* Right Side */}
               <div className="header-right d-flex justify-content-end align-items-center">
                 <div className="header-right-icon">
-  {!isLoadingUser && (
-    user ? (
-      <span className="main-header__signin">
-        Hi, {user.name}
-      </span>
-    ) : (
-      <motion.a
-        href="/login"
-        className="main-header__signin"
-        whileHover={{ scale: 1.05 }}
-        transition={{ duration: 0.25, ease: easeOut }}
-      >
-        Sign In
-      </motion.a>
-    )
-  )}
-</div>
+                  {!isLoadingUser && (
+                    user ? (
+                      <button type="button" className="nav-auth-action" onClick={handleLogout} disabled={isLoggingOut}>
+                        {isLoggingOut ? 'Logging out…' : 'Logout'}
+                      </button>
+                    ) : (
+                      <Link to="/login" className="nav-auth-action">Login</Link>
+                    )
+                  )}
+                  {authError && <span className="nav-auth-error" role="alert">{authError}</span>}
+                </div>
 
                 <motion.a
                   href="/SelectFriend"
@@ -392,15 +351,7 @@ const handleLogout = async () => {
                   </motion.div>
                 </div>
                 
-{!isLoadingUser && user && (
-  <button
-    type="button"
-    className="main-header__signin"
-    onClick={handleLogout}
-  >
-    Logout
-  </button>
-)}
+
               </div>
 
             </div>

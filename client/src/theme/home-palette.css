@@ -1,0 +1,57 @@
+/* Values already used by Home. Brand values remain owned by main.css. */
+:root {
+  --home-pink: #FFDEE4; /* Home: Measurement & Geometry card */
+  --home-indigo: #E3E8FF; /* Home: Statistics & Probability card */
+  --home-mint: #DBFFF9; /* Home: Problem Solving card */
+  --home-success: #2ECC71; /* Home: newsletter confirmation */
+
+  --color-primary: var(--theme-color);
+  --color-accent: var(--theme-color-2);
+  --color-page: var(--white);
+  --color-surface: var(--white);
+  --color-surface-soft: var(--bg-2);
+  --color-primary-soft: var(--home-indigo);
+  --color-ink: var(--header);
+  --color-text: var(--text);
+  --color-link: var(--theme-color);
+  --color-border: var(--border);
+  --color-input-border: var(--text);
+  --color-on-primary: var(--white);
+  --color-on-accent: var(--header);
+  --color-on-soft: var(--bg-3);
+  --color-deep: var(--bg-3);
+  --color-success: var(--home-success);
+  --color-success-soft: var(--home-mint);
+  --color-success-text: var(--header);
+  --color-error: var(--theme-color-2);
+  --color-error-soft: var(--home-pink);
+  --color-error-text: var(--header);
+  --color-warning: var(--ratting);
+  --color-warning-soft: var(--bg-2);
+  --color-warning-text: var(--header);
+  --color-focus: var(--theme-color);
+  --color-shadow: rgba(0, 0, 0, 0.12);
+  --color-overlay: rgba(0, 0, 0, 0.2);
+  --shadow-card: 0 4px 25px rgba(0, 0, 0, 0.06);
+}
+
+/* Keep the existing dashboard theme toggle within Home's own dark colors. */
+[data-theme='dark'] {
+  --color-page: var(--bg-3);
+  --color-surface: var(--header);
+  --color-surface-soft: var(--bg-3);
+  --color-primary-soft: var(--bg-3);
+  --color-ink: var(--white);
+  --color-text: var(--border);
+  --color-link: var(--home-indigo);
+  --color-border: var(--text);
+  --color-input-border: var(--border);
+  --color-success-soft: var(--bg-3);
+  --color-success-text: var(--home-mint);
+  --color-error-soft: var(--bg-3);
+  --color-error-text: var(--home-pink);
+  --color-warning-soft: var(--bg-3);
+  --color-warning-text: var(--bg-2);
+  --color-focus: var(--home-indigo);
+  --color-on-soft: var(--white);
+}

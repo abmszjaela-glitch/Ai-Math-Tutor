@@ -1,3 +1,4 @@
+import { FaSearch as AppIconFaSearch } from 'react-icons/fa';
 const SearchPopup = () => {
   const handleSubmit = (e) => {
     e.preventDefault();
@@ -27,7 +28,7 @@ const SearchPopup = () => {
             className="search-btn"
           >
             <span>
-              <i className="far fa-search"></i>
+              <AppIconFaSearch aria-hidden="true" />
             </span>
           </button>
         </form>

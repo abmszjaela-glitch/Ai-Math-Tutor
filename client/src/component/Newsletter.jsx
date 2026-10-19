@@ -1,3 +1,4 @@
+import { FaArrowRight as AppIconFaArrowRight, FaHome as AppIconFaHome } from 'react-icons/fa';
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { CheckCircle } from 'lucide-react';
@@ -88,11 +89,11 @@ const Newsletter = () => {
                     name="email"
                     placeholder="Enter your email address"
                     required
-                    whileFocus={{ scale: 1.02, borderColor: '#ffcb00' }}
+                    whileFocus={{ scale: 1.02, borderColor: 'var(--color-border)' }}
                     transition={{ duration: 0.25, ease: easeOut }}
                   />
 
-                  <i className="far fa-house house-icon"></i>
+                  <AppIconFaHome aria-hidden="true" className="house-icon" />
 
                 </motion.div>
 
@@ -108,7 +109,7 @@ const Newsletter = () => {
                   whileTap={{ scale: 0.96 }}
                 >
                   Join Our Learning Community
-                  <i className="icon-arrow-icon"></i>
+                  <AppIconFaArrowRight aria-hidden="true" />
                 </motion.button>
 
               </motion.form>
@@ -135,7 +136,7 @@ const Newsletter = () => {
                   animate={{ scale: 1, rotate: 0 }}
                   transition={{ duration: 0.5, delay: 0.15, ease: easeOut }}
                 >
-                  <CheckCircle size={24} color="#2ecc71" />
+                  <CheckCircle size={24} color="var(--color-success)" />
                 </motion.div>
                 You're subscribed! Welcome to our learning community.
               </motion.div>

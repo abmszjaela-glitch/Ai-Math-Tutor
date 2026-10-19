@@ -1,3 +1,4 @@
+import { FaArrowLeft as AppIconFaArrowLeft, FaArrowRight as AppIconFaArrowRight, FaStar as AppIconFaStar } from 'react-icons/fa';
 import { Swiper, SwiperSlide } from 'swiper/react';
 import { Navigation, Autoplay } from 'swiper/modules';
 import { motion } from 'framer-motion';
@@ -323,7 +324,7 @@ const Testimonial = () => {
                             viewport={{ once: true, amount: 0.5 }}
                             transition={{ duration: 0.3, delay: i * 0.08, ease: easeOut }}
                           >
-                            <i className="fas fa-star"></i>
+                            <AppIconFaStar aria-hidden="true" />
                           </motion.li>
                         ))}
                       </ul>
@@ -380,7 +381,7 @@ const Testimonial = () => {
               whileTap={{ scale: 0.9 }}
               transition={{ duration: 0.25, ease: easeOut }}
             >
-              <i className="fal fa-arrow-left"></i>
+              <AppIconFaArrowLeft aria-hidden="true" />
             </motion.button>
 
             <motion.button
@@ -390,7 +391,7 @@ const Testimonial = () => {
               whileTap={{ scale: 0.9 }}
               transition={{ duration: 0.25, ease: easeOut }}
             >
-              <i className="fal fa-arrow-right"></i>
+              <AppIconFaArrowRight aria-hidden="true" />
             </motion.button>
 
           </div>

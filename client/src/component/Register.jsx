@@ -1,9 +1,30 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import graphicImage from '../assets/img/Login/graphic15.svg';
 import logoImage from '../assets/img/logo/NUMORA.png';
 import authStyles from '../assets/Hooks/Authstyles.js';
-import { FaFacebookF, FaGoogle, FaLinkedinIn } from "react-icons/fa";
+import { useNavigate } from 'react-router-dom';
+import { API_URL } from '../config/api';
 const Register = () => {
+  const navigate = useNavigate();
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState('');
+  const handleSubmit = async (event) => {
+    event.preventDefault();
+    if (isLoading) return;
+    const form = new FormData(event.currentTarget);
+    setError('');
+    setIsLoading(true);
+    try {
+      const response = await fetch(`${API_URL}/auth/register`, {
+        method: 'POST', credentials: 'include', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: form.get('name').trim(), email: form.get('email').trim(), password: form.get('password'), grade: Number(form.get('grade')) }),
+      });
+      const data = await response.json();
+      if (!response.ok || !data.success) throw new Error(Object.values(data.errors || {}).flat().join(' ') || data.message || 'Registration failed');
+      navigate('/dashboard', { replace: true });
+    } catch (error) { setError(error.message || 'Unable to register. Please try again.'); }
+    finally { setIsLoading(false); }
+  };
 
   // Inject the auth-page CSS only while this component is mounted,
   // and remove it again on unmount so it never leaks into other pages.
@@ -74,13 +95,15 @@ const Register = () => {
 
 
               {/* Register Form */}
-              <form>
+              <form onSubmit={handleSubmit}>
+                {error && <p role="alert" style={{ color: "var(--color-error-text)" }}>{error}</p>}
 
                 <input
                   className="form-control"
                   type="text"
                   name="name"
                   placeholder="Full Name"
+                  aria-label="Full name" minLength={2} maxLength={100}
                   required
                 />
 
@@ -88,7 +111,7 @@ const Register = () => {
                   className="form-control"
                   type="email"
                   name="email"
-                  placeholder="E-mail Address"
+                  placeholder="E-mail Address" aria-label="Email address" autoComplete="email"
                   required
                 />
 
@@ -96,20 +119,25 @@ const Register = () => {
                   className="form-control"
                   type="password"
                   name="password"
-                  placeholder="Password"
+                  placeholder="Password" aria-label="Password" minLength={6} maxLength={72} autoComplete="new-password"
                   required
                 />
 
 
+                <label htmlFor="grade">Grade</label>
+                <select id="grade" name="grade" className="form-control" required defaultValue="">
+                  <option value="" disabled>Select your grade</option>
+                  {[1, 2, 3, 4, 5, 6].map((grade) => <option key={grade} value={grade}>Grade {grade}</option>)}
+                </select>
                 {/* Buttons */}
                 <div className="form-button d-flex">
 
                   <button
                     id="submit"
-                    type="submit"
+                    type="submit" disabled={isLoading}
                     className="btn btn-primary"
                   >
-                    Register
+                    {isLoading ? "Registering…" : "Register"}
                   </button>
 
                   <a
@@ -125,25 +153,6 @@ const Register = () => {
 
 
               {/* Social Login */}
-              <div className="other-links">
-
-                <span>
-                  Or login with
-                </span>
-
-                <a href="#">
-                 <FaFacebookF/>
-                </a>
-
-                <a href="#">
-                 <FaGoogle/>
-                </a>
-
-                <a href="#">
-                 <FaLinkedinIn/>
-                </a>
-
-              </div>
 
             </div>
 

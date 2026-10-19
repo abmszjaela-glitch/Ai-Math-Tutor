@@ -76,7 +76,7 @@ const TutorAvatar = ({
 
         // White backdrop inside this element, so the video's
         // multiply blend below always has white to blend with.
-        background: '#FFFFFF',
+        background: 'var(--color-surface)',
         transform: 'translateZ(0)',
       }}
       aria-label={`${avatar.name} animated tutor`}
@@ -100,7 +100,6 @@ const TutorAvatar = ({
           width: '100%',
           height: '100%',
 
-          mixBlendMode: 'multiply',
           filter: 'brightness(1.08)',
 
           // contain prevents the ears/head from being cropped.

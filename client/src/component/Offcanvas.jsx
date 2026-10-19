@@ -1,21 +1,13 @@
+import { Link } from 'react-router-dom';
 import { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import logo from '../assets/img/logo/NUMORA.png';
 
 import {
   ChevronDown,
   X,
-  Phone,
-  Mail,
-  MapPin,
   ArrowRight,
 } from 'lucide-react';
-
-import {
-  FaFacebookF,
-  FaTwitter,
-  FaYoutube,
-  FaLinkedinIn,
-} from 'react-icons/fa';
 
 const easeOut = [0.25, 0.1, 0.25, 1];
 
@@ -78,41 +70,23 @@ const contentItem = {
   },
 };
 
-// Social media icons
-const socials = [
-  {
-    name: 'Facebook',
-    Icon: FaFacebookF,
-  },
-  {
-    name: 'Twitter',
-    Icon: FaTwitter,
-  },
-  {
-    name: 'YouTube',
-    Icon: FaYoutube,
-  },
-  {
-    name: 'LinkedIn',
-    Icon: FaLinkedinIn,
-  },
-];
-
 // Self-contained styles
 const css = `
 .oc-root {
-  --oc-accent: #4A5FE0;
-  --oc-accent-dark: #1E1A4A;
-  --oc-ink: #1b1a2e;
-  --oc-muted: #6b6a80;
-  --oc-line: #ececf3;
-  --oc-bg: #ffffff;
+  --oc-primary: #f8fae2;
+  --oc-secondary: #f15e24;
+  --oc-accent: var(--oc-secondary);
+  --oc-accent-dark: var(--color-deep);
+  --oc-ink: var(--color-deep);
+  --oc-muted: var(--color-text);
+  --oc-line: var(--color-border);
+  --oc-bg: var(--oc-primary);
 }
 
 .oc-overlay {
   position: fixed;
   inset: 0;
-  background: rgba(10, 8, 30, 0.55);
+  background: var(--color-overlay);
   z-index: 9998;
   cursor: pointer;
 }
@@ -126,7 +100,7 @@ const css = `
   background: var(--oc-bg);
   color: var(--oc-ink);
   z-index: 9999;
-  box-shadow: -12px 0 40px rgba(0, 0, 0, 0.25);
+  box-shadow: -12px 0 40px var(--color-shadow);
   overflow-y: auto;
   overscroll-behavior: contain;
   font-family: inherit;
@@ -141,12 +115,17 @@ const css = `
   align-items: center;
   justify-content: space-between;
   margin-bottom: 28px;
+  gap: 20px;
 }
 
+.oc-logo { min-width: 0; }
+.oc-logo a { display: block; }
 .oc-logo img {
   display: block;
-  max-height: 44px;
-  width: auto;
+  width: 160px;
+  max-width: 100%;
+  height: auto;
+  object-fit: contain;
 }
 
 .oc-close {
@@ -155,6 +134,7 @@ const css = `
   justify-content: center;
   width: 42px;
   height: 42px;
+  flex-shrink: 0;
   border-radius: 50%;
   border: 2px solid var(--oc-line);
   background: transparent;
@@ -243,14 +223,14 @@ const css = `
   width: 40px;
   height: 40px;
   border-radius: 50%;
-  background: #f3f3f9;
+  background: var(--color-surface-soft);
   color: var(--oc-ink);
   text-decoration: none;
 }
 
 .oc-social a:hover {
   background: var(--oc-accent);
-  color: #fff;
+  color: var(--color-on-primary);
 }
 
 .oc-contact h3 {
@@ -282,7 +262,7 @@ const css = `
   align-items: center;
   justify-content: center;
   background: var(--oc-accent);
-  color: #fff;
+  color: var(--color-on-primary);
 }
 
 .oc-contact p {
@@ -314,7 +294,7 @@ const css = `
   padding: 14px 28px;
   border-radius: 999px;
   background: var(--oc-accent);
-  color: #fff;
+  color: var(--color-on-primary);
   font-weight: 800;
   text-decoration: none;
   box-shadow: 0 5px 0 var(--oc-accent-dark);
@@ -464,12 +444,9 @@ const Offcanvas = ({
                 variants={contentItem}
               >
                 <div className="oc-logo">
-                  <a href="/">
-                    <img
-                      src="/assets/img/logo/black-logo.svg"
-                      alt="logo"
-                    />
-                  </a>
+                  <Link to="/" onClick={onClose} aria-label="Numora home">
+                    <img src={logo} alt="Numora" />
+                  </Link>
                 </div>
 
                 <motion.button
@@ -493,253 +470,36 @@ const Offcanvas = ({
                 </motion.button>
               </motion.div>
 
-              {/* Intro */}
-              <motion.h3
-                className="oc-title"
-                variants={contentItem}
-              >
-                Hello There!
-              </motion.h3>
-
-              <motion.p
-                className="oc-text"
-                variants={contentItem}
-              >
-                Lorem ipsum dolor sit amet consectetur
-                adipisicing elit. Animi natus quasi sunt eum
-                ducimus.
-              </motion.p>
-
               {/* Menu */}
               <motion.nav
                 className="oc-menu"
                 variants={contentItem}
               >
                 <ul>
-                  <SubmenuAccordion label="Home">
-                    <li>
-                      <a href="/">Home 01</a>
-                    </li>
+                  <li><Link to="/" onClick={onClose}>Home</Link></li>
 
+                  <SubmenuAccordion label="Practice">
+                    <li><Link to="/practice" onClick={onClose}>Practice Problems</Link></li>
+                    <li><Link to="/practice/tests" onClick={onClose}>Mock Tests</Link></li>
                     <li>
-                      <a href="/home-2">Home 02</a>
-                    </li>
-
-                    <li>
-                      <a href="/home-3">Home 03</a>
-                    </li>
-
-                    <li>
-                      <a href="/home-4">Home 04</a>
+                      <Link to="/dashboard" onClick={onClose}>My Progress</Link>
                     </li>
                   </SubmenuAccordion>
 
-                  <SubmenuAccordion label="Pages">
-                    <li>
-                      <a href="/about">About Us</a>
-                    </li>
-
-                    <SubmenuAccordion label="Teachers">
-                      <li>
-                        <a href="/team">
-                          Our Teachers
-                        </a>
-                      </li>
-
-                      <li>
-                        <a href="/team-details">
-                          Teacher Details
-                        </a>
-                      </li>
-                    </SubmenuAccordion>
-
-                    <SubmenuAccordion label="Event">
-                      <li>
-                        <a href="/event">
-                          Our Event
-                        </a>
-                      </li>
-
-                      <li>
-                        <a href="/event-details">
-                          Event Details
-                        </a>
-                      </li>
-                    </SubmenuAccordion>
-
-                    <li>
-                      <a href="/pricing">
-                        Pricing Plan
-                      </a>
-                    </li>
-
-                    <li>
-                      <a href="/testimonial">
-                        Testimonials
-                      </a>
-                    </li>
-
-                    <li>
-                      <a href="/history">
-                        Our History
-                      </a>
-                    </li>
-
-                    <li>
-                      <a href="/faq">
-                        FAQs
-                      </a>
-                    </li>
+                  <SubmenuAccordion label="Subjects">
+                    <li><Link to="/Algebra" onClick={onClose}>Algebra</Link></li>
+                    <li><Link to="/Measurement" onClick={onClose}>Measurement & Geometry</Link></li>
+                    <li><Link to="/Statistics" onClick={onClose}>Statistics & Probability</Link></li>
+                    <li><Link to="/ProblemSolving" onClick={onClose}>Problem Solving</Link></li>
                   </SubmenuAccordion>
-
-                  <SubmenuAccordion label="Programs">
-                    <li>
-                      <a href="/program">
-                        Our Programs
-                      </a>
-                    </li>
-
-                    <li>
-                      <a href="/program-details">
-                        Program Details
-                      </a>
-                    </li>
-                  </SubmenuAccordion>
-
-                  <SubmenuAccordion label="Blog">
-                    <li>
-                      <a href="/blog">
-                        Blog Grid
-                      </a>
-                    </li>
-
-                    <li>
-                      <a href="/blog-standard">
-                        Blog Standard
-                      </a>
-                    </li>
-
-                    <li>
-                      <a href="/blog-details">
-                        Blog Details
-                      </a>
-                    </li>
-                  </SubmenuAccordion>
-
-                  <SubmenuAccordion label="Shop">
-                    <li>
-                      <a href="/shop">
-                        Shop Page
-                      </a>
-                    </li>
-
-                    <li>
-                      <a href="/shop-details">
-                        Shop Details
-                      </a>
-                    </li>
-
-                    <li>
-                      <a href="/shop-cart">
-                        Shop Cart
-                      </a>
-                    </li>
-
-                    <li>
-                      <a href="/checkout">
-                        Checkout
-                      </a>
-                    </li>
-                  </SubmenuAccordion>
+                  <li><Link to="/login" onClick={onClose}>Login</Link></li>
                 </ul>
               </motion.nav>
 
-              {/* Social */}
-              <motion.div
-                className="oc-social"
-                variants={contentItem}
-              >
-                {socials.map(({ name, Icon }) => (
-                  <motion.a
-                    key={name}
-                    href="#"
-                    aria-label={name}
-                    whileHover={{
-                      scale: 1.15,
-                      y: -4,
-                    }}
-                    whileTap={{
-                      scale: 0.9,
-                    }}
-                    transition={{
-                      duration: 0.25,
-                      ease: easeOut,
-                    }}
-                  >
-                    <Icon size={18} />
-                  </motion.a>
-                ))}
-              </motion.div>
-
-              {/* Contact */}
-              <motion.div
-                className="oc-contact"
-                variants={contentItem}
-              >
-                <h3>Contact Us</h3>
-
-                <ul>
-                  <li>
-                    <span className="oc-icon">
-                      <Phone size={18} />
-                    </span>
-
-                    <div>
-                      <p>Call Us</p>
-
-                      <h4>
-                        <a href="tel:+4903983493999">
-                          +49 (03) 9834 939 99
-                        </a>
-                      </h4>
-                    </div>
-                  </li>
-
-                  <li>
-                    <span className="oc-icon">
-                      <Mail size={18} />
-                    </span>
-
-                    <div>
-                      <p>Send Email</p>
-
-                      <h4>
-                        <a href="mailto:yordomain@gmail.com">
-                          yordomain@gmail.com
-                        </a>
-                      </h4>
-                    </div>
-                  </li>
-
-                  <li>
-                    <span className="oc-icon">
-                      <MapPin size={18} />
-                    </span>
-
-                    <div>
-                      <p>Location</p>
-
-                      <h4>
-                        Chicago 53755 NY, USA
-                      </h4>
-                    </div>
-                  </li>
-                </ul>
-              </motion.div>
-
               {/* Button */}
               <motion.a
-                href="/contact"
+                href="/SelectFriend"
+                onClick={onClose}
                 className="oc-btn"
                 variants={contentItem}
                 whileHover={{

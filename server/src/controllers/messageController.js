@@ -1,23 +1,12 @@
+const { messageInput } = require("../utils/validation");
 const prisma = require("../config/prisma");
 
 const addMessage = async (req, res) => {
   try {
     const { id } = req.params;
-    const { role, content } = req.body;
-
-    if (!role || !content) {
-      return res.status(400).json({
-        success: false,
-        message: "Role and content are required",
-      });
-    }
-
-    if (!["user", "assistant"].includes(role)) {
-      return res.status(400).json({
-        success: false,
-        message: "Role must be user or assistant",
-      });
-    }
+    const validation = messageInput.safeParse(req.body);
+    if (!validation.success) return res.status(400).json({ success: false, message: "Invalid request data", errors: validation.error.flatten().fieldErrors });
+    const { role, content } = validation.data;
 
     const student = await prisma.student.findUnique({
       where: {
@@ -46,12 +35,17 @@ const addMessage = async (req, res) => {
       });
     }
 
-    const message = await prisma.message.create({
+    const message = await prisma.$transaction(async (tx) => {
+      const saved = await tx.message.create({
       data: {
         conversationId: conversation.id,
         role,
         content,
       },
+    });
+
+      await tx.conversation.update({ where: { id: conversation.id }, data: { updatedAt: new Date() } });
+      return saved;
     });
 
     return res.status(201).json({

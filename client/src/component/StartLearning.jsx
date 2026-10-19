@@ -36,30 +36,13 @@ const STORAGE_KEY = "selectedTutorId";
 const StartLearning = () => {
   const [videoEnded, setVideoEnded] = useState(false);
   const [currentClip, setCurrentClip] = useState("intro");
-  const [selectedTutor, setSelectedTutor] = useState(null);
+  const [selectedTutor] = useState(() => TUTORS.find((t) => t.id === localStorage.getItem(STORAGE_KEY)) || TUTORS[0]);
   const [isRecording, setIsRecording] = useState(false);
   const [transcript, setTranscript] = useState("");
 
   const videoRef = useRef(null);
   const recognitionRef = useRef(null);
 
-  /*
-   * Load selected tutor
-   */
-  useEffect(() => {
-    const savedTutorId = localStorage.getItem(STORAGE_KEY);
-
-    const tutor = TUTORS.find(
-      (t) => t.id === savedTutorId
-    );
-
-    if (tutor) {
-      setSelectedTutor(tutor);
-    } else {
-      // Fallback
-      setSelectedTutor(TUTORS[0]);
-    }
-  }, []);
 
   /*
    * Speech Recognition setup
@@ -101,7 +84,7 @@ const StartLearning = () => {
       }
 
       if (finalText) {
-        setTranscript((prev) => prev + finalText);
+        setTranscript((prev) => prev.replace(/\[\.\.\..*?\]$/, "") + finalText);
       }
 
       if (interimText) {
@@ -130,13 +113,7 @@ const StartLearning = () => {
        * Only change to after video if
        * the intro has already finished.
        */
-      setVideoEnded((wasEnded) => {
-        if (wasEnded) {
-          setCurrentClip("after");
-        }
-
-        return wasEnded;
-      });
+      setCurrentClip("after");
     };
 
     recognition.onerror = (event) => {
@@ -151,9 +128,12 @@ const StartLearning = () => {
     recognitionRef.current = recognition;
 
     return () => {
+      recognition.onresult = null;
+      recognition.onend = null;
+      recognition.onerror = null;
       try {
-        recognition.stop();
-      } catch (error) {
+        recognition.abort();
+      } catch {
         // Ignore stop errors during cleanup
       }
     };
@@ -248,7 +228,7 @@ const StartLearning = () => {
        * Make sure after video is not showing
        * while user is recording.
        */
-      setCurrentClip("intro");
+      videoRef.current?.pause();
 
       try {
         recognitionRef.current.start();
@@ -276,7 +256,7 @@ const StartLearning = () => {
       className="section-padding"
       style={{
         position: "relative",
-        backgroundColor: "#EAEAEA",
+        backgroundColor: "var(--color-surface-soft)",
       }}
     >
       <div className="container">
@@ -325,14 +305,14 @@ const StartLearning = () => {
               style={{
                 flex: 1,
                 minHeight: "280px",
-                backgroundColor: "#f9fafb",
-                border: "1px solid #e5e7eb",
+                backgroundColor: "var(--color-surface)",
+                border: "1px solid var(--color-border)",
                 borderRadius: "16px",
                 padding: "20px",
                 fontSize: "16px",
                 color: transcript
-                  ? "#111827"
-                  : "#9ca3af",
+                  ? "var(--color-deep)"
+                  : "var(--color-text)",
                 overflowY: "auto",
               }}
             >
@@ -376,15 +356,15 @@ const StartLearning = () => {
                     : "not-allowed",
 
                   backgroundColor: !videoEnded
-                    ? "#c7c7c7"
+                    ? "var(--color-surface-soft)"
                     : isRecording
-                    ? "#ef4444"
-                    : "#4f46e5",
+                    ? "var(--color-accent)"
+                    : "var(--color-primary)",
 
-                  color: "#fff",
+                  color: "var(--color-on-primary)",
 
                   boxShadow: videoEnded
-                    ? "0 8px 24px rgba(79, 70, 229, 0.35)"
+                    ? "0 8px 24px var(--color-shadow)"
                     : "none",
 
                   transition:
@@ -415,7 +395,7 @@ const StartLearning = () => {
               <p
                 style={{
                   fontSize: "13px",
-                  color: "#6b7280",
+                  color: "var(--color-text)",
                 }}
               >
                 {!videoEnded
@@ -462,11 +442,11 @@ const StartLearning = () => {
                   width: "100%",
                   aspectRatio: "16 / 9",
                   borderRadius: "16px",
-                  backgroundColor: "#111827",
+                  backgroundColor: "var(--color-deep)",
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "center",
-                  color: "#fff",
+                  color: "var(--color-on-primary)",
                 }}
               >
                 Loading tutor...

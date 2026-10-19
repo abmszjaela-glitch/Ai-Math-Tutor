@@ -1,3 +1,4 @@
+import { FaArrowRight as AppIconFaArrowRight } from 'react-icons/fa';
 import { motion } from 'framer-motion';
 
 import perasuteShape from '../assets/img/contact/perasute.png';
@@ -263,7 +264,7 @@ const Contact = () => {
                         name="name"
                         placeholder="Your Name"
                         className="inptFld"
-                        whileFocus={{ scale: 1.02, borderColor: '#ffcb00' }}
+                        whileFocus={{ scale: 1.02, borderColor: 'var(--color-border)' }}
                         transition={{ duration: 0.25, ease: easeOut }}
                       />
                     </motion.div>
@@ -276,7 +277,7 @@ const Contact = () => {
                         name="email"
                         placeholder="Parent or Student Email"
                         className="inptFld"
-                        whileFocus={{ scale: 1.02, borderColor: '#ffcb00' }}
+                        whileFocus={{ scale: 1.02, borderColor: 'var(--color-border)' }}
                         transition={{ duration: 0.25, ease: easeOut }}
                       />
                     </motion.div>
@@ -289,7 +290,7 @@ const Contact = () => {
                         name="phone"
                         placeholder="Phone Number"
                         className="inptFld"
-                        whileFocus={{ scale: 1.02, borderColor: '#ffcb00' }}
+                        whileFocus={{ scale: 1.02, borderColor: 'var(--color-border)' }}
                         transition={{ duration: 0.25, ease: easeOut }}
                       />
                     </motion.div>
@@ -302,7 +303,7 @@ const Contact = () => {
                         name="subject"
                         placeholder="What Can We Help With?"
                         className="inptFld"
-                        whileFocus={{ scale: 1.02, borderColor: '#ffcb00' }}
+                        whileFocus={{ scale: 1.02, borderColor: 'var(--color-border)' }}
                         transition={{ duration: 0.25, ease: easeOut }}
                       />
                     </motion.div>
@@ -314,7 +315,7 @@ const Contact = () => {
                         name="message"
                         className="inptFld mb-0"
                         placeholder="Tell us how we can help you with your maths learning journey..."
-                        whileFocus={{ scale: 1.01, borderColor: '#ffcb00' }}
+                        whileFocus={{ scale: 1.01, borderColor: 'var(--color-border)' }}
                         transition={{ duration: 0.25, ease: easeOut }}
                       ></motion.textarea>
                     </motion.div>
@@ -332,7 +333,7 @@ const Contact = () => {
                       transition={{ duration: 0.3, ease: easeOut }}
                     >
                       Send Your Message
-                      <i className="icon-arrow-icon"></i>
+                      <AppIconFaArrowRight aria-hidden="true" />
                     </motion.button>
                   </motion.div>
 

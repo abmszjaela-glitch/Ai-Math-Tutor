@@ -1,3 +1,4 @@
+const { progressInput } = require("../utils/validation");
 const prisma = require("../config/prisma");
 
 const getMyProgress = async (req, res) => {
@@ -51,34 +52,9 @@ const getMyProgress = async (req, res) => {
 
 const updateLessonProgress = async (req, res) => {
   try {
-    const { lessonId, completed, score } = req.body;
-
-    if (!lessonId) {
-      return res.status(400).json({
-        success: false,
-        message: "Lesson ID is required",
-      });
-    }
-
-    if (
-      completed !== undefined &&
-      typeof completed !== "boolean"
-    ) {
-      return res.status(400).json({
-        success: false,
-        message: "Completed must be true or false",
-      });
-    }
-
-    if (
-      score !== undefined &&
-      (typeof score !== "number" || score < 0 || score > 100)
-    ) {
-      return res.status(400).json({
-        success: false,
-        message: "Score must be a number between 0 and 100",
-      });
-    }
+    const validation = progressInput.safeParse(req.body);
+    if (!validation.success) return res.status(400).json({ success: false, message: "Invalid request data", errors: validation.error.flatten().fieldErrors });
+    const { lessonId, completed, score } = validation.data;
 
     const student = await prisma.student.findUnique({
       where: {
@@ -94,12 +70,13 @@ const updateLessonProgress = async (req, res) => {
     }
 
     const lesson = await prisma.lesson.findUnique({
+      include: { topic: true },
       where: {
         id: lessonId,
       },
     });
 
-    if (!lesson) {
+    if (!lesson || lesson.topic.gradeId !== student.gradeId) {
       return res.status(404).json({
         success: false,
         message: "Lesson not found",

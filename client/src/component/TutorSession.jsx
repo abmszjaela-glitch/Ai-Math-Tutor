@@ -1,35 +1,46 @@
+import { API_URL } from '../config/api';
 import { useEffect, useRef, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { AlertCircle, ArrowLeft, Mic, MicOff, Send, Sparkles, Volume2, VolumeX } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import TutorAvatar from './TutorAvatar';
+import { colors } from '../theme/colors';
 
 const easeOut = [0.25, 0.1, 0.25, 1];
+const AVATAR_NAMES = { kanga: 'Kangaroo', pandy: 'Panda', koala: 'Koala' };
 const STORAGE_KEY = 'selectedTutorId';
-const API_URL = 'http://localhost:5000/api';
 
 // ============================================================
 // DESIGN TOKENS (light theme)
 // ============================================================
 
 const palette = {
-  ink: '#1F1B2E', // main text
-  paper: '#FFFFFF', // page background
-  card: '#FFFFFF', // input bar
-  surface: '#F6F3FB', // tutor bubble background
-  mist: '#E6E1F0', // borders
-  slate: '#7A7394', // secondary text / idle status
-  faint: '#B9B3CC', // disabled
-  listening: '#E2483F',
+  ink: colors.ink,
+  paper: colors.page,
+  card: colors.surface,
+  surface: colors.soft,
+  mist: colors.border,
+  slate: colors.text,
+  faint: colors.text,
+  listening: colors.primary,
 };
 
 const fontDisplay = "'Baloo 2', 'Fredoka', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif";
 const fontBody = "'Nunito', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif";
 
 const shadow = {
-  sm: '0 3px 0 rgba(36,30,66,0.10)',
-  md: '0 4px 0 rgba(36,30,66,0.08)',
-  lg: '0 10px 24px rgba(36,30,66,0.18)',
+  sm: '0 3px 0 var(--color-shadow)',
+  md: '0 4px 0 var(--color-shadow)',
+  lg: 'var(--shadow-card)',
+};
+
+// Every tutor shares the Home identity; character art provides individuality.
+const tutorAppearance = {
+  color: colors.primary,
+  deep: colors.deep,
+  soft: colors.primarySoft,
+  gradient: colors.primary,
+  buttonGradient: colors.primary,
 };
 
 // ============================================================
@@ -42,31 +53,19 @@ const tutorProfiles = {
     label: 'Kanga',
     greeting:
       "G'day, I'm Kanga! I'm so excited to help you learn maths today. Tap the microphone and ask me anything, or type your question below.",
-    color: '#F0A23D',
-    deep: '#C4611A',
-    soft: '#FFF3E0',
-    gradient: 'linear-gradient(135deg, #FFCB82 0%, #F0A23D 55%, #E1791F 100%)',
-    buttonGradient: 'linear-gradient(135deg, #F0A23D 0%, #C4611A 100%)',
+    ...tutorAppearance,
   },
   pandy: {
     label: 'Pandy',
     greeting:
       "G'day, I'm Pandy! Ready to work through some maths together? Tap the microphone or type your question below.",
-    color: '#4A5FE0',
-    deep: '#1E1A4A',
-    soft: '#ECEFFF',
-    gradient: 'linear-gradient(135deg, #93A4FF 0%, #4A5FE0 55%, #3626B8 100%)',
-    buttonGradient: 'linear-gradient(135deg, #4A5FE0 0%, #1E1A4A 100%)',
+    ...tutorAppearance,
   },
   koala: {
     label: 'Koala',
     greeting:
       "G'day, I'm Koala! Let's take maths nice and easy together. Tap the microphone and ask me anything, or type your question below.",
-    color: '#6E96AA',
-    deep: '#3E5A68',
-    soft: '#E8F2F6',
-    gradient: 'linear-gradient(135deg, #A8CBDA 0%, #6E96AA 55%, #4A7385 100%)',
-    buttonGradient: 'linear-gradient(135deg, #6E96AA 0%, #3E5A68 100%)',
+    ...tutorAppearance,
   },
 };
 
@@ -177,7 +176,7 @@ const useAvatarSize = () => {
 // SOUND BARS
 // ============================================================
 
-const SoundBars = ({ active, reducedMotion, color = '#fff', count = 4, height = 15 }) => (
+const SoundBars = ({ active, reducedMotion, color = 'var(--color-surface)', count = 4, height = 15 }) => (
   <div style={{ display: 'flex', alignItems: 'flex-end', gap: '3px', height }}>
     {Array.from({ length: count }).map((_, i) =>
       reducedMotion ? (
@@ -277,7 +276,7 @@ const TutorSession = () => {
   const [interimText, setInterimText] = useState('');
   const [notice, setNotice] = useState(null);
   const [conversationId, setConversationId] = useState(null);
-  const [lessonId] = useState(null);
+  const [lessonId] = useState(() => new URLSearchParams(window.location.search).get('lesson'));
   const [isSessionReady, setIsSessionReady] = useState(false);
   const [textInput, setTextInput] = useState('');
   const [replayingId, setReplayingId] = useState(null); // message whose speaker icon was tapped
@@ -376,6 +375,19 @@ const TutorSession = () => {
 
     const createConversation = async () => {
       try {
+        const avatarsResponse = await fetch(`${API_URL}/avatars`, { credentials: 'include' });
+        if (avatarsResponse.status === 401) { navigate('/login', { replace: true }); return; }
+        const avatarsData = await avatarsResponse.json();
+        if (!avatarsResponse.ok || !avatarsData.success) throw new Error(avatarsData.message || 'Unable to load tutors');
+        const avatar = avatarsData.avatars.find((item) => item.name === AVATAR_NAMES[tutorId]);
+        if (!avatar) throw new Error('Selected tutor is unavailable. Please seed the database.');
+        if (cancelled) return;
+        const selection = await fetch(`${API_URL}/avatars/me`, {
+          method: 'PUT', credentials: 'include', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ avatarId: avatar.id }),
+        });
+        if (!selection.ok) throw new Error('Unable to select tutor');
+        if (cancelled) return;
         const response = await fetch(`${API_URL}/conversations`, {
           method: 'POST',
           credentials: 'include',
@@ -407,8 +419,7 @@ const TutorSession = () => {
     return () => {
       cancelled = true;
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [profile.label]);
+  }, [profile.label, tutorId, navigate]);
 
   // ==========================================================
   // TEXT TO SPEECH (basic browser voice, sentence queue)
@@ -491,6 +502,7 @@ const TutorSession = () => {
       { id: nextMessageId(), sender: 'tutor', text: profile.greeting },
     ]);
     speak(profile.greeting);
+    // Speech is triggered once for this greeting, not for each render.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [profile.greeting]);
 
@@ -511,7 +523,6 @@ const TutorSession = () => {
 
       if (noticeTimeoutRef.current) clearTimeout(noticeTimeoutRef.current);
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // ==========================================================
@@ -578,7 +589,7 @@ const TutorSession = () => {
   const handleStudentMessage = async (text) => {
     const cleanText = text?.trim();
 
-    if (!cleanText) return;
+    if (!cleanText || pendingRef.current) return;
 
     if (!conversationId || !isSessionReady) {
       showNotice('Your tutor is still getting ready. Please try again in a moment.');
@@ -646,6 +657,7 @@ const TutorSession = () => {
 
     try {
       const response = await fetch(`${API_URL}/tutor/message`, {
+        signal: requestRef.current.signal,
         method: 'POST',
         credentials: 'include',
         signal: controller.signal,
@@ -779,7 +791,7 @@ const TutorSession = () => {
 
     const value = textInput.trim();
 
-    if (!value) return;
+    if (!value || pendingRef.current) return;
 
     if (!isSessionReady) {
       showNotice('Your tutor is still getting ready. Please wait a moment.');
@@ -832,7 +844,7 @@ const TutorSession = () => {
     fontWeight: 700,
     lineHeight: 1.55,
     background: profile.buttonGradient,
-    color: '#fff',
+    color: 'var(--color-on-primary)',
     boxShadow: shadow.sm,
   };
 
@@ -867,7 +879,7 @@ const TutorSession = () => {
         }
 
         .focus-ring:focus-visible {
-          outline: 2px solid var(--accent, #4A5FE0);
+          outline: 2px solid var(--accent, var(--color-border));
           outline-offset: 2px;
         }
         .focus-ring:focus:not(:focus-visible) {
@@ -923,7 +935,7 @@ const TutorSession = () => {
           padding: '12px 20px',
           background: palette.paper,
           borderBottom: `4px solid ${profile.color}`,
-          boxShadow: '0 2px 10px rgba(36,30,66,0.08)',
+          boxShadow: '0 2px 10px var(--color-shadow)',
           zIndex: 20,
         }}
       >
@@ -973,7 +985,7 @@ const TutorSession = () => {
               gap: '6px',
               fontSize: '0.72rem',
               fontFamily: fontBody,
-              color: '#fff',
+              color: 'var(--color-on-primary)',
               fontWeight: 800,
               background: isSpeaking
                 ? profile.color
@@ -989,7 +1001,7 @@ const TutorSession = () => {
                 width: 7,
                 height: 7,
                 borderRadius: '50%',
-                background: '#fff',
+                background: 'var(--color-surface)',
               }}
             />
             {isSpeaking ? 'Speaking' : isListening ? 'Listening' : 'Ready'}
@@ -1248,7 +1260,7 @@ const TutorSession = () => {
               padding: '11px 18px',
               borderRadius: '14px',
               background: palette.ink,
-              color: '#fff',
+              color: 'var(--color-on-primary)',
               fontFamily: fontBody,
               fontSize: '0.85rem',
               fontWeight: 600,
@@ -1288,6 +1300,7 @@ const TutorSession = () => {
             <motion.button
               type="button"
               onClick={requestExample}
+              disabled={!isSessionReady || isThinking}
               whileHover={{ scale: 1.03, y: -1 }}
               whileTap={{ scale: 0.97 }}
               className="focus-ring"
@@ -1354,7 +1367,7 @@ const TutorSession = () => {
               />
               <motion.button
                 type="submit"
-                disabled={!textInput.trim()}
+                disabled={!textInput.trim() || !isSessionReady || isThinking}
                 whileHover={textInput.trim() ? { scale: 1.06 } : {}}
                 whileTap={textInput.trim() ? { scale: 0.94 } : {}}
                 aria-label="Send message"
@@ -1369,18 +1382,19 @@ const TutorSession = () => {
                   alignItems: 'center',
                   justifyContent: 'center',
                   background: textInput.trim() ? profile.buttonGradient : palette.mist,
-                  color: '#fff',
+                  color: 'var(--color-on-primary)',
                   cursor: textInput.trim() ? 'pointer' : 'not-allowed',
                   boxShadow: textInput.trim() ? `0 4px 0 ${profile.deep}` : 'none',
                 }}
               >
-                <Send size={18} color={textInput.trim() ? '#fff' : palette.faint} />
+                <Send size={18} color={textInput.trim() ? 'var(--color-surface)' : palette.faint} />
               </motion.button>
             </div>
 
             <motion.button
               type="button"
               onClick={toggleMic}
+              disabled={!isSessionReady || isThinking || !micSupported}
               whileHover={{ scale: 1.06 }}
               whileTap={{ scale: 0.94 }}
               className="focus-ring ts-mic-btn"
@@ -1405,18 +1419,18 @@ const TutorSession = () => {
                   : !micSupported
                   ? palette.slate
                   : isListening
-                  ? 'linear-gradient(135deg, #FF8A80, #E2483F)'
+                  ? 'var(--color-primary)'
                   : profile.buttonGradient,
-                color: '#fff',
+                color: 'var(--color-on-primary)',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
                 cursor: isSessionReady && micSupported ? 'pointer' : 'not-allowed',
                 opacity: isSessionReady ? 1 : 0.6,
-                boxShadow: isListening ? '0 5px 0 #B8332F' : `0 5px 0 ${profile.deep}`,
+                boxShadow: isListening ? '0 5px 0 var(--color-accent)' : `0 5px 0 ${profile.deep}`,
               }}
             >
-              {isListening ? <MicOff size={22} color="#fff" /> : <Mic size={22} color="#fff" />}
+              {isListening ? <MicOff size={22} color="var(--color-surface)" /> : <Mic size={22} color="var(--color-surface)" />}
 
               {isListening && !reducedMotion && (
                 <>
@@ -1427,7 +1441,7 @@ const TutorSession = () => {
                       position: 'absolute',
                       inset: 0,
                       borderRadius: '50%',
-                      border: '3px solid #E2483F',
+                      border: '3px solid var(--color-border)',
                     }}
                   />
                   <motion.span
@@ -1437,7 +1451,7 @@ const TutorSession = () => {
                       position: 'absolute',
                       inset: 0,
                       borderRadius: '50%',
-                      border: '3px solid #E2483F',
+                      border: '3px solid var(--color-border)',
                     }}
                   />
                 </>

@@ -1,9 +1,12 @@
-import React, { useState, useEffect, useRef } from "react";
+import PracticeProgress from '../Practice/PracticeProgress';
+import { colors } from '../../theme/colors';
+import { useState, useEffect } from "react";
+import { API_URL } from '../../config/api';
 import { useNavigate } from "react-router-dom";
 import {
-  Search, Bell, Settings, Sparkles, Brain, Play, MessageSquare,
+  Target as TargetIcon, Search, Bell, Settings, Sparkles, Brain, Play,
   Trophy, ChevronRight, Plus, Download, FolderOpen, Send, Sun, Moon,
-  Menu, X, Flame, CheckCircle2, Circle, Clock, Star, Zap, Target,
+  Menu, X, Flame, CheckCircle2, Circle, Clock,
   BookOpen, Calendar, Users, BarChart3, Share2, TrendingUp
 } from "lucide-react";
 
@@ -54,7 +57,7 @@ function RingStat({ value, max = 100, size = 56, stroke = 6, color, trigger }) {
 function Confetti({ x, y, active }) {
   if (!active) return null;
   const pieces = Array.from({ length: 14 });
-  const colors = ["#7c3aed", "#3b82f6", "#f59e0b", "#10b981", "#f43f5e"];
+  const colors = ["var(--color-primary)", "var(--color-primary)", "var(--color-accent)", "var(--color-success)", "var(--color-accent)"];
   return (
     <div style={{ position: "fixed", left: x, top: y, pointerEvents: "none", zIndex: 999 }}>
       {pieces.map((_, i) => (
@@ -62,11 +65,11 @@ function Confetti({ x, y, active }) {
           key={i}
           className="confetti-piece"
           style={{
-            "--dx": `${(Math.random() - 0.5) * 160}px`,
-            "--dy": `${-Math.random() * 140 - 40}px`,
-            "--rot": `${Math.random() * 360}deg`,
+            "--dx": `${Math.sin(i * 2.4) * 80}px`,
+            "--dy": `${-40 - (i * 37 % 140)}px`,
+            "--rot": `${i * 137.5}deg`,
             background: colors[i % colors.length],
-            animationDelay: `${Math.random() * 0.08}s`,
+            animationDelay: `${(i % 4) * 0.02}s`,
           }}
         />
       ))}
@@ -84,8 +87,8 @@ function TypingDots() {
 
 export default function StudentDashboard() {
   const navigate = useNavigate();
-  const API_URL = "http://localhost:5000/api";
 
+  const [quizStats, setQuizStats] = useState({ completed: 0, total: 8, attempted: 0, average: 0, attempts: 0 });
   const [dark, setDark] = useState(false);
   const [student, setStudent] = useState(null);
   const [loadingStudent, setLoadingStudent] = useState(true);
@@ -96,14 +99,14 @@ export default function StudentDashboard() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
   const [tasks, setTasks] = useState([
-    { title: "Complete Algebra Assignment", due: "Today, 11:59 PM", priority: "High", color: "#ef4444", bg: "#fee2e2", done: false },
-    { title: "Review Geometry Notes", due: "Tomorrow, 10:00 AM", priority: "Medium", color: "#f97316", bg: "#ffedd5", done: false },
-    { title: "Practice Fractions Quiz", due: "In 2 days, 8:00 PM", priority: "Low", color: "#3b82f6", bg: "#dbeafe", done: false },
+    { title: "Complete Algebra Assignment", due: "Today, 11:59 PM", priority: "High", color: "var(--color-error-text)", bg: "var(--color-surface-soft)", done: false },
+    { title: "Review Geometry Notes", due: "Tomorrow, 10:00 AM", priority: "Medium", color: "var(--color-error-text)", bg: "var(--color-error-soft)", done: false },
+    { title: "Practice Fractions Quiz", due: "In 2 days, 8:00 PM", priority: "Low", color: "var(--color-link)", bg: "var(--color-surface-soft)", done: false },
   ]);
   const [confetti, setConfetti] = useState({ active: false, x: 0, y: 0 });
   const [chatMessages, setChatMessages] = useState([]);
   const [chatInput, setChatInput] = useState("");
-  const [aiTyping, setAiTyping] = useState(false);
+  const aiTyping = false;
   const [unlockedPulse, setUnlockedPulse] = useState(null);
 
   useEffect(() => {
@@ -163,24 +166,24 @@ export default function StudentDashboard() {
   };
 
   const recentActivities = [
-    { title: "Completed Fractions Quiz", subject: "Mathematics", time: "15 minutes ago", icon: "✅", iconBg: "#d1fae5", iconColor: "#059669", score: "92%" },
-    { title: "Started Algebra Lesson", subject: "Mathematics", time: "1 hour ago", icon: "▶️", iconBg: "#dbeafe", iconColor: "#2563eb", progress: "25%" },
-    { title: "Asked AI Tutor a question", subject: "Geometry", time: "2 hours ago", icon: "💬", iconBg: "#ede9fe", iconColor: "#7c3aed", response: "Answered" },
-    { title: "Earned a new achievement", subject: "Learning", time: "Yesterday", icon: "🏆", iconBg: "#fef3c7", iconColor: "#d97706", achievement: "Math Master" },
+    { title: "Completed Fractions Quiz", subject: "Mathematics", time: "15 minutes ago", icon: "✅", iconBg: "var(--color-surface-soft)", iconColor: "var(--color-success-text)", score: "92%" },
+    { title: "Started Algebra Lesson", subject: "Mathematics", time: "1 hour ago", icon: "▶️", iconBg: "var(--color-surface-soft)", iconColor: "var(--color-link)", progress: "25%" },
+    { title: "Asked AI Tutor a question", subject: "Geometry", time: "2 hours ago", icon: "💬", iconBg: "var(--color-surface-soft)", iconColor: "var(--color-link)", response: "Answered" },
+    { title: "Earned a new achievement", subject: "Learning", time: "Yesterday", icon: "🏆", iconBg: "var(--color-error-soft)", iconColor: "var(--color-error-text)", achievement: "Math Master" },
   ];
 
   const allCourses = [
-    { name: "Mathematics", progress: 78, lessons: "18 / 24 lessons", bg: "#eff6ff", iconBg: "#3b82f6", instructor: "Dr. Sarah Johnson", nextLesson: "Quadratic Equations", dueDate: "Tomorrow" },
-    { name: "Fractions", progress: 64, lessons: "8 / 12 lessons", bg: "#f3e8ff", iconBg: "#8b5cf6", instructor: "Prof. Michael Chen", nextLesson: "Mixed Numbers", dueDate: "In 3 days" },
-    { name: "Geometry", progress: 42, lessons: "5 / 12 lessons", bg: "#fff7ed", iconBg: "#f97316", instructor: "Ms. Emily Davis", nextLesson: "Triangles", dueDate: "In 5 days" },
+    { name: "Mathematics", progress: 78, lessons: "18 / 24 lessons", bg: "var(--color-surface-soft)", iconBg: "var(--color-primary)", instructor: "Dr. Sarah Johnson", nextLesson: "Quadratic Equations", dueDate: "Tomorrow" },
+    { name: "Fractions", progress: 64, lessons: "8 / 12 lessons", bg: "var(--color-surface-soft)", iconBg: "var(--color-primary)", instructor: "Prof. Michael Chen", nextLesson: "Mixed Numbers", dueDate: "In 3 days" },
+    { name: "Geometry", progress: 42, lessons: "5 / 12 lessons", bg: "var(--color-surface-soft)", iconBg: "var(--color-accent)", instructor: "Ms. Emily Davis", nextLesson: "Triangles", dueDate: "In 5 days" },
   ];
   const courses = allCourses.filter((c) => c.name.toLowerCase().includes(searchQuery.toLowerCase()));
 
   const [achievements, setAchievements] = useState([
-    { name: "Math Wizard", icon: "⭐", bg: "#fef3c7", color: "#d97706", unlocked: true },
-    { name: "Quick Learner", icon: "⚡", bg: "#dbeafe", color: "#2563eb", unlocked: true },
-    { name: "Perfect Score", icon: "🎯", bg: "#f3e8ff", color: "#7c3aed", unlocked: false },
-    { name: "Study Streak", icon: "🔥", bg: "#d1fae5", color: "#059669", unlocked: false },
+    { name: "Math Wizard", icon: "⭐", bg: "var(--color-error-soft)", color: "var(--color-error-text)", unlocked: true },
+    { name: "Quick Learner", icon: "⚡", bg: "var(--color-surface-soft)", color: "var(--color-link)", unlocked: true },
+    { name: "Perfect Score", icon: "🎯", bg: "var(--color-surface-soft)", color: "var(--color-link)", unlocked: false },
+    { name: "Study Streak", icon: "🔥", bg: "var(--color-surface-soft)", color: "var(--color-success-text)", unlocked: false },
   ]);
 
   const notifications = [
@@ -190,29 +193,20 @@ export default function StudentDashboard() {
   ];
   const unreadCount = notifications.filter((n) => !n.read).length;
 
-  const toggleTask = (index, e) => {
-    const rect = e.currentTarget.getBoundingClientRect();
-    setTasks((prev) => {
-      const next = [...prev];
-      const wasDone = next[index].done;
-      next[index] = { ...next[index], done: !wasDone };
-      if (!wasDone) {
-        setConfetti({ active: true, x: rect.left, y: rect.top });
-        setTimeout(() => setConfetti((c) => ({ ...c, active: false })), 900);
-      }
-      return next;
-    });
+  const toggleTask = (index, event) => {
+    const rect = event.currentTarget.getBoundingClientRect();
+    if (!tasks[index].done) {
+      setConfetti({ active: true, x: rect.left, y: rect.top });
+      setTimeout(() => setConfetti((current) => ({ ...current, active: false })), 900);
+    }
+    setTasks((previous) => previous.map((task, i) => i === index ? { ...task, done: !task.done } : task));
   };
 
   const tryUnlock = (index) => {
-    setAchievements((prev) => {
-      if (prev[index].unlocked) return prev;
-      const next = [...prev];
-      next[index] = { ...next[index], unlocked: true };
-      setUnlockedPulse(index);
-      setTimeout(() => setUnlockedPulse(null), 1000);
-      return next;
-    });
+    if (achievements[index].unlocked) return;
+    setUnlockedPulse(index);
+    setTimeout(() => setUnlockedPulse(null), 1000);
+    setAchievements((previous) => previous.map((item, i) => i === index ? { ...item, unlocked: true } : item));
   };
 
   const sendChat = () => {
@@ -236,11 +230,13 @@ export default function StudentDashboard() {
     }, 500);
   };
 
-  const t = tokens(dark);
+  const t = dashboardTheme;
 
   const navItems = [
     { icon: TrendingUp, label: "Dashboard", id: "dashboard", route: "/dashboard" },
     { icon: BookOpen, label: "My Courses", id: "courses", route: "/start-learning" },
+    { icon: BookOpen, label: "Practice", id: "practice", route: "/practice" },
+    { icon: Clock, label: "Mock Tests", id: "mock-tests", route: "/practice/tests" },
     { icon: Brain, label: "AI Tutor", id: "tutor", route: "/SelectFriend", badge: "AI" },
     { icon: Calendar, label: "Schedule", id: "schedule" },
     { icon: Trophy, label: "Achievements", id: "achievements" },
@@ -249,9 +245,10 @@ export default function StudentDashboard() {
   ];
 
   return (
-    <div style={{ ...s.container, background: t.appBg, color: t.ink }}>
+    <div data-theme={dark ? "dark" : "light"} className="numora-dashboard" style={{ ...s.container, background: t.appBg, color: t.ink }}>
       <style>{css}</style>
       <Confetti {...confetti} />
+      {loadingStudent && <div role="status">Loading your profile…</div>}
 
       {/* Mobile overlay */}
       {sidebarOpen && <div style={s.overlay} onClick={() => setSidebarOpen(false)} />}
@@ -271,7 +268,7 @@ export default function StudentDashboard() {
             <div style={s.logo}>
               <div className="float-icon" style={s.logoIcon}><Brain size={22} /></div>
               <div>
-                <h1 style={{ ...s.logoText, color: t.ink }}>Math<span style={{ color: "#7c3aed" }}>Mate</span></h1>
+                <h1 style={{ ...s.logoText, color: t.ink }}>Math<span style={{ color: "var(--color-link)" }}>Mate</span></h1>
                 <p style={{ ...s.logoSub, color: t.muted }}>AI Learning Platform</p>
               </div>
             </div>
@@ -302,8 +299,8 @@ export default function StudentDashboard() {
                   className="nav-item"
                   style={{
                     ...s.navItem,
-                    color: active ? "#7c3aed" : t.muted,
-                    background: active ? (dark ? "rgba(124,58,237,0.18)" : "linear-gradient(to right, #f5f3ff, #eff6ff)") : "transparent",
+                    color: active ? "var(--color-on-soft)" : t.muted,
+                    background: active ? "var(--color-primary-soft)" : "transparent",
                   }}
                   onClick={(e) => {
                     e.preventDefault();
@@ -328,7 +325,7 @@ export default function StudentDashboard() {
               <Sparkles size={20} />
               <h3 style={{ fontWeight: "bold", margin: 0 }}>Need help?</h3>
             </div>
-            <p style={{ marginTop: "8px", fontSize: "14px", lineHeight: "20px", color: "#c7d2fe" }}>
+            <p style={{ marginTop: "8px", fontSize: "14px", lineHeight: "20px", color: "var(--color-text)" }}>
               Ask your AI Tutor anything about mathematics.
             </p>
             <button className="btn-press" style={s.bottomCardButton} onClick={() => goTo("/SelectFriend")}>
@@ -352,7 +349,7 @@ export default function StudentDashboard() {
                   year: "numeric",
                 })}
               </p>
-              <h2 className={mounted ? "fade-in-up" : ""} style={{ ...s.headerTitle, color: t.ink }}>Good morning, Alex 👋</h2>
+              <h2 className={mounted ? "fade-in-up" : ""} style={{ ...s.headerTitle, color: t.ink }}>Welcome back, {student?.name || "learner"} 👋</h2>
               <p style={{ ...s.headerSub, color: t.muted }}>Ready to continue your learning journey?</p>
             </div>
           </div>
@@ -376,11 +373,11 @@ export default function StudentDashboard() {
                 <div className="pop-in" style={{ ...s.notificationDropdown, background: t.cardBg, border: `1px solid ${t.border}` }}>
                   <div style={{ display: "flex", justifyContent: "space-between", borderBottom: `1px solid ${t.border}`, paddingBottom: "8px" }}>
                     <h4 style={{ fontWeight: "600", color: t.ink, margin: 0 }}>Notifications</h4>
-                    <button style={{ fontSize: "12px", color: "#7c3aed", background: "none", border: "none", cursor: "pointer" }}>Mark all read</button>
+                    <button style={{ fontSize: "12px", color: "var(--color-link)", background: "none", border: "none", cursor: "pointer" }}>Mark all read</button>
                   </div>
                   <div style={{ marginTop: "8px" }}>
                     {notifications.map((n, i) => (
-                      <div key={i} style={{ padding: "12px", borderRadius: "12px", marginBottom: "8px", background: n.read ? "transparent" : (dark ? "rgba(124,58,237,0.15)" : "#f5f3ff") }}>
+                      <div key={i} style={{ padding: "12px", borderRadius: "12px", marginBottom: "8px", background: n.read ? "transparent" : (dark ? "var(--color-primary-soft)" : "var(--color-surface-soft)") }}>
                         <p style={{ color: t.ink, fontSize: "14px", margin: 0 }}>{n.message}</p>
                         <p style={{ marginTop: "4px", fontSize: "12px", color: t.muted, margin: "4px 0 0" }}>{n.time}</p>
                       </div>
@@ -430,13 +427,14 @@ export default function StudentDashboard() {
         </header>
 
         <div style={{ padding: "28px 32px 48px" }} className="graph-paper">
+          <PracticeProgress onSummary={setQuizStats} />
           {/* Stats */}
           <div style={s.statsGrid} className="stats-grid-responsive">
             {[
-              { label: "Learning Time (Week)", value: "6.5h", badge: "+12%", icon: Clock, color: "#2563eb", bg: "#dbeafe", ring: 65, ringColor: "#2563eb" },
-              { label: "Lessons Completed", value: "24", badge: "+5", icon: CheckCircle2, color: "#059669", bg: "#d1fae5", ring: 80, ringColor: "#059669" },
-              { label: "Average Score", value: "92%", badge: "87%", icon: Trophy, color: "#7c3aed", bg: "#ede9fe", ring: 92, ringColor: "#7c3aed" },
-              { label: "Learning Streak", value: "7 Days", badge: "🔥", icon: Flame, color: "#f97316", bg: "#ffedd5", ring: 70, ringColor: "#f97316" },
+              { label: "Lessons Mastered", value: String(quizStats.completed), badge: `of ${quizStats.total}`, icon: CheckCircle2, color: "var(--color-success-text)", bg: "var(--color-surface-soft)", ring: quizStats.total ? quizStats.completed / quizStats.total * 100 : 0, ringColor: "var(--color-success)" },
+              { label: "Average Best Score", value: `${quizStats.average}%`, badge: "Saved scores", icon: Trophy, color: "var(--color-link)", bg: "var(--color-surface-soft)", ring: quizStats.average, ringColor: "var(--color-primary)" },
+              { label: "Lessons Practised", value: String(quizStats.attempted), badge: `of ${quizStats.total}`, icon: BookOpen, color: "var(--color-link)", bg: "var(--color-surface-soft)", ring: quizStats.total ? quizStats.attempted / quizStats.total * 100 : 0, ringColor: "var(--color-primary)" },
+              { label: "Lesson Attempts", value: String(quizStats.attempts), badge: "Keep growing", icon: TargetIcon, color: "var(--color-error-text)", bg: "var(--color-error-soft)", ring: Math.min(quizStats.attempts * 10, 100), ringColor: "var(--color-accent)" },
             ].map((stat, i) => (
               <div key={i} className={`stat-card ${mounted ? "fade-in-up" : ""}`} style={{ ...s.statCard, background: t.cardBg, boxShadow: t.cardShadow, animationDelay: `${i * 70}ms` }}>
                 <div style={s.statHeader}>
@@ -459,8 +457,8 @@ export default function StudentDashboard() {
           {/* AI Tutor + Tasks */}
           <div style={s.aiTutorGrid} className="ai-tutor-grid-responsive">
             <div className="ai-card-shine" style={s.aiTutorCard}>
-              <div style={{ position: "absolute", right: "-64px", top: "-64px", width: "192px", height: "192px", borderRadius: "50%", background: "rgba(255,255,255,0.1)" }} className="drift-blob" />
-              <div style={{ position: "absolute", bottom: "-96px", right: "96px", width: "224px", height: "224px", borderRadius: "50%", background: "rgba(255,255,255,0.05)" }} className="drift-blob-slow" />
+              <div style={{ position: "absolute", right: "-64px", top: "-64px", width: "192px", height: "192px", borderRadius: "50%", background: "var(--color-surface)" }} className="drift-blob" />
+              <div style={{ position: "absolute", bottom: "-96px", right: "96px", width: "224px", height: "224px", borderRadius: "50%", background: "var(--color-surface)" }} className="drift-blob-slow" />
 
               <div style={{ position: "relative", zIndex: 10 }}>
                 <div style={s.aiTutorHeader}>
@@ -476,13 +474,13 @@ export default function StudentDashboard() {
                 </p>
 
                 {chatMessages.length > 0 && (
-                  <div style={s.chatLog}>
+                  <div className="dashboard-tutor-chat" style={s.chatLog}>
                     {chatMessages.map((m, i) => (
-                      <div key={i} className="fade-in-up" style={{ ...s.chatBubble, alignSelf: m.role === "user" ? "flex-end" : "flex-start", background: m.role === "user" ? "rgba(255,255,255,0.25)" : "rgba(255,255,255,0.12)" }}>
+                      <div key={i} className="fade-in-up" style={{ ...s.chatBubble, alignSelf: m.role === "user" ? "flex-end" : "flex-start", background: m.role === "user" ? "var(--color-surface)" : "var(--color-surface)" }}>
                         {m.text}
                       </div>
                     ))}
-                    {aiTyping && <div style={{ ...s.chatBubble, alignSelf: "flex-start", background: "rgba(255,255,255,0.12)" }}><TypingDots /></div>}
+                    {aiTyping && <div style={{ ...s.chatBubble, alignSelf: "flex-start", background: "var(--color-surface)" }}><TypingDots /></div>}
                   </div>
                 )}
 
@@ -517,7 +515,7 @@ export default function StudentDashboard() {
               <div>
                 {tasks.map((task, index) => (
                   <div key={index} className="task-row" style={{ ...s.taskItem, border: `1px solid ${t.border}`, opacity: task.done ? 0.55 : 1 }}>
-                    <span onClick={(e) => toggleTask(index, e)} style={{ cursor: "pointer", marginTop: "2px", color: task.done ? "#10b981" : t.muted }} className="check-pop">
+                    <span onClick={(e) => toggleTask(index, e)} style={{ cursor: "pointer", marginTop: "2px", color: task.done ? "var(--color-success-text)" : t.muted }} className="check-pop">
                       {task.done ? <CheckCircle2 size={20} /> : <Circle size={20} />}
                     </span>
                     <div style={{ flex: 1 }}>
@@ -548,7 +546,7 @@ export default function StudentDashboard() {
                 <button className="dash-btn-hover" style={{ ...s.actionBtn, border: `1px solid ${t.border}`, background: t.cardBg, color: t.ink }}>
                   <Download size={14} /> Export
                 </button>
-                <button style={{ ...s.actionBtn, border: "none", color: "#7c3aed", background: "transparent" }}>
+                <button style={{ ...s.actionBtn, border: "none", color: "var(--color-link)", background: "transparent" }}>
                   View all <ChevronRight size={14} />
                 </button>
               </div>
@@ -637,8 +635,8 @@ export default function StudentDashboard() {
                   style={{
                     ...s.achievementItem,
                     cursor: "pointer",
-                    border: achievement.unlocked ? "1px solid #a7f3d0" : `1px solid ${t.border}`,
-                    background: achievement.unlocked ? "rgba(209, 250, 229, 0.5)" : (dark ? "rgba(255,255,255,0.03)" : "rgba(248, 250, 252, 0.5)"),
+                    border: achievement.unlocked ? "1px solid var(--color-border)" : `1px solid ${t.border}`,
+                    background: achievement.unlocked ? "var(--color-success-soft)" : "var(--color-surface)",
                     opacity: achievement.unlocked ? 1 : 0.6,
                   }}
                 >
@@ -647,7 +645,7 @@ export default function StudentDashboard() {
                     <p style={{ ...s.achievementName, color: t.ink }}>{achievement.name}</p>
                     <p style={{ fontSize: "12px", color: t.muted, margin: 0 }}>{achievement.unlocked ? "Unlocked" : "Tap to preview"}</p>
                   </div>
-                  {achievement.unlocked && <CheckCircle2 size={16} color="#10b981" style={{ marginLeft: "6px" }} />}
+                  {achievement.unlocked && <CheckCircle2 size={16} color="var(--color-success)" style={{ marginLeft: "6px" }} />}
                 </div>
               ))}
             </div>
@@ -680,29 +678,27 @@ export default function StudentDashboard() {
   );
 }
 
-function tokens(dark) {
-  return dark
-    ? {
-        appBg: "#0b1020", ink: "#e6e9f5", muted: "#8b93b0", border: "rgba(255,255,255,0.08)",
-        cardBg: "#131a30", sidebarBg: "rgba(19,26,48,0.85)", headerBg: "rgba(11,16,32,0.75)",
-        inputBg: "#0f1526", pillBg: "#1a2138", cardShadow: "0 1px 2px rgba(0,0,0,0.4)",
-        motivationBg: "linear-gradient(to right, rgba(124,58,237,0.15), rgba(59,130,246,0.15))",
-      }
-    : {
-        appBg: "#f8fafc", ink: "#0f172a", muted: "#64748b", border: "#e2e8f0",
-        cardBg: "#ffffff", sidebarBg: "rgba(255,255,255,0.8)", headerBg: "rgba(255,255,255,0.8)",
-        inputBg: "#f8fafc", pillBg: "#f1f5f9", cardShadow: "0 1px 2px 0 rgba(0,0,0,0.05)",
-        motivationBg: "linear-gradient(to right, #f5f3ff, #eff6ff)",
-      };
-}
+const dashboardTheme = {
+  appBg: colors.page,
+  ink: colors.ink,
+  muted: colors.text,
+  border: colors.border,
+  cardBg: colors.surface,
+  sidebarBg: colors.surface,
+  headerBg: colors.surface,
+  inputBg: colors.soft,
+  pillBg: colors.primarySoft,
+  cardShadow: 'var(--shadow-card)',
+  motivationBg: colors.primarySoft,
+};
 
 const css = `
   * { box-sizing: border-box; }
   ::-webkit-scrollbar { width: 10px; height: 10px; }
   ::-webkit-scrollbar-track { background: transparent; }
-  ::-webkit-scrollbar-thumb { background: #c4b5fd; border-radius: 8px; }
+  ::-webkit-scrollbar-thumb { background: var(--color-primary-soft); border-radius: 8px; }
   .graph-paper {
-    background-image: radial-gradient(circle, rgba(124,58,237,0.08) 1px, transparent 1px);
+    background-image: radial-gradient(circle, var(--color-primary-soft) 1px, transparent 1px);
     background-size: 22px 22px;
   }
   @keyframes fadeInUp { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: translateY(0); } }
@@ -721,19 +717,19 @@ const css = `
   .spin-hover:hover svg { transition: transform 0.4s ease; transform: rotate(90deg); }
   .rotate-swap { display:inline-flex; transition: transform 0.4s cubic-bezier(.22,1,.36,1); }
   .icon-btn:hover .rotate-swap { transform: rotate(20deg) scale(1.1); }
-  @keyframes ringPulse { 0%,100% { box-shadow: 0 0 0 0 rgba(255,255,255,0.35); } 50% { box-shadow: 0 0 0 8px rgba(255,255,255,0); } }
+  @keyframes ringPulse { 0%,100% { box-shadow: 0 0 0 0 var(--color-shadow); } 50% { box-shadow: 0 0 0 8px transparent; } }
   .pulse-ring { animation: ringPulse 2.4s ease-in-out infinite; }
-  @keyframes flamePulse { 0%,100% { transform: scale(1); filter: drop-shadow(0 0 0 rgba(249,115,22,0.5)); } 50% { transform: scale(1.15); filter: drop-shadow(0 0 6px rgba(249,115,22,0.6)); } }
+  @keyframes flamePulse { 0%,100% { transform: scale(1); filter: drop-shadow(0 0 0 var(--color-overlay)); } 50% { transform: scale(1.15); filter: drop-shadow(0 0 6px var(--color-overlay)); } }
   .flame-pulse { display:inline-flex; animation: flamePulse 1.8s ease-in-out infinite; }
   .flame-pulse-big { animation: flamePulse 2s ease-in-out infinite; }
   .stat-card { transition: transform 0.25s ease, box-shadow 0.25s ease; }
-  .stat-card:hover { transform: translateY(-4px); box-shadow: 0 12px 24px -8px rgba(124,58,237,0.25); }
-  .ai-card-shine { position: relative; overflow: hidden; padding: 28px; border-radius: 24px; background: linear-gradient(120deg, #7c3aed, #4f46e5, #2563eb); color: white; box-shadow: 0 20px 25px -5px rgba(99,102,241,0.3); }
+  .stat-card:hover { transform: translateY(-4px); box-shadow: 0 12px 24px -8px var(--color-shadow); }
+  .ai-card-shine { position: relative; overflow: hidden; padding: 28px; border-radius: 24px; background: var(--color-primary); color: var(--color-on-primary); box-shadow: 0 20px 25px -5px var(--color-shadow); }
   @keyframes driftBlob { 0%,100% { transform: translate(0,0); } 50% { transform: translate(-8px, 10px); } }
   .drift-blob { animation: driftBlob 7s ease-in-out infinite; }
   .drift-blob-slow { animation: driftBlob 11s ease-in-out infinite reverse; }
   .chip-hover { transition: all 0.2s ease; }
-  .chip-hover:hover { background: rgba(255,255,255,0.25) !important; transform: translateY(-2px); }
+  .chip-hover:hover { background: var(--color-surface) !important; transform: translateY(-2px); }
   .btn-press { transition: transform 0.15s ease, filter 0.2s ease; }
   .btn-press:hover { filter: brightness(1.08); transform: translateY(-1px); }
   .btn-press:active { transform: scale(0.96); }
@@ -742,22 +738,22 @@ const css = `
   @keyframes checkPop { 0% { transform: scale(1); } 50% { transform: scale(1.35); } 100% { transform: scale(1); } }
   .check-pop:active { animation: checkPop 0.3s ease; }
   .dash-btn-hover { transition: all 0.2s ease; }
-  .dash-btn-hover:hover { border-color: #a78bfa !important; color: #7c3aed !important; transform: translateY(-1px); }
+  .dash-btn-hover:hover { border-color: var(--color-border) !important; color: var(--color-link) !important; transform: translateY(-1px); }
   .activity-item-hover { transition: transform 0.22s ease, box-shadow 0.22s ease; }
-  .activity-item-hover:hover { transform: translateY(-3px); box-shadow: 0 14px 24px -10px rgba(15,23,42,0.18); }
+  .activity-item-hover:hover { transform: translateY(-3px); box-shadow: 0 14px 24px -10px var(--color-shadow); }
   .course-card-hover { transition: transform 0.25s ease, box-shadow 0.25s ease; }
-  .course-card-hover:hover { transform: translateY(-5px) scale(1.01); box-shadow: 0 18px 30px -12px rgba(15,23,42,0.22); }
+  .course-card-hover:hover { transform: translateY(-5px) scale(1.01); box-shadow: 0 18px 30px -12px var(--color-shadow); }
   @keyframes fillWidth { from { width: 0; } }
   .fill-anim { animation: fillWidth 1.3s cubic-bezier(.22,1,.36,1) both; width: var(--target-width); }
   .achievement-hover { transition: transform 0.2s ease, box-shadow 0.2s ease; }
   .achievement-hover:hover { transform: translateY(-3px) rotate(-1deg); }
-  @keyframes unlockPulse { 0% { box-shadow: 0 0 0 0 rgba(16,185,129,0.5); } 70% { box-shadow: 0 0 0 16px rgba(16,185,129,0); } 100% { box-shadow: 0 0 0 0 rgba(16,185,129,0); } }
+  @keyframes unlockPulse { 0% { box-shadow: 0 0 0 0 var(--color-shadow); } 70% { box-shadow: 0 0 0 16px transparent; } 100% { box-shadow: 0 0 0 0 transparent; } }
   .unlock-pulse { animation: unlockPulse 0.9s ease; }
   .motivation-shine { position: relative; overflow: hidden; }
-  .motivation-shine::after { content:""; position:absolute; top:0; left:-60%; width:40%; height:100%; background: linear-gradient(120deg, transparent, rgba(255,255,255,0.35), transparent); animation: shine 5s ease-in-out infinite; }
+  .motivation-shine::after { content:""; position:absolute; top:0; left:-60%; width:40%; height:100%; background: transparent; animation: shine 5s ease-in-out infinite; }
   @keyframes shine { 0% { left: -60%; } 40%,100% { left: 130%; } }
   .avatar-ring { transition: box-shadow 0.25s ease; }
-  .avatar-ring:hover { box-shadow: 0 0 0 4px rgba(124,58,237,0.25); }
+  .avatar-ring:hover { box-shadow: 0 0 0 4px var(--color-shadow); }
   @keyframes confettiFall { to { transform: translate(var(--dx), var(--dy)) rotate(var(--rot)); opacity: 0; } }
   .confetti-piece { position:absolute; width:7px; height:7px; border-radius: 2px; animation: confettiFall 0.85s ease-out forwards; }
   @keyframes typingBounce { 0%,80%,100% { transform: translateY(0); opacity: 0.5; } 40% { transform: translateY(-4px); opacity: 1; } }
@@ -776,20 +772,20 @@ const css = `
     .activity-grid-responsive { grid-template-columns: 1fr !important; }
     .courses-grid-responsive { grid-template-columns: 1fr !important; }
   }
-  .focus-ring:focus { outline: none; box-shadow: 0 0 0 3px rgba(124,58,237,0.25); border-color: #a78bfa !important; }
+  .focus-ring:focus { outline: none; box-shadow: 0 0 0 3px var(--color-shadow); border-color: var(--color-border) !important; }
   .logout-btn {
     border: none;
     border-radius: 12px;
     padding: 10px 13px;
-    background: #fee2e2;
-    color: #dc2626;
+    background: var(--color-surface-soft);
+    color: var(--color-error-text);
     font-size: 13px;
     font-weight: 600;
     cursor: pointer;
     transition: all 0.2s ease;
   }
   .logout-btn:hover {
-    background: #fecaca;
+    background: var(--color-error-soft);
     transform: translateY(-1px);
   }
   .logout-btn:disabled {
@@ -803,17 +799,17 @@ const css = `
 
 const s = {
   container: { minHeight: "100vh", transition: "background 0.3s ease, color 0.3s ease" },
-  overlay: { position: "fixed", inset: 0, background: "rgba(0,0,0,0.4)", zIndex: 40 },
+  overlay: { position: "fixed", inset: 0, background: "var(--color-primary-soft)", zIndex: 40 },
   sidebar: { position: "fixed", left: 0, top: 0, height: "100vh", width: "260px", backdropFilter: "blur(20px)", zIndex: 45 },
   logo: { display: "flex", alignItems: "center", gap: "12px" },
-  logoIcon: { display: "flex", alignItems: "center", justifyContent: "center", width: "44px", height: "44px", borderRadius: "16px", background: "linear-gradient(to bottom right, #7c3aed, #3b82f6)", color: "white", boxShadow: "0 10px 15px -3px rgba(124,58,237,0.3)" },
+  logoIcon: { display: "flex", alignItems: "center", justifyContent: "center", width: "44px", height: "44px", borderRadius: "16px", background: "var(--color-primary)", color: "var(--color-on-primary)", boxShadow: "0 10px 15px -3px var(--color-shadow)" },
   logoText: { fontSize: "18px", fontWeight: "bold", margin: 0 },
   logoSub: { fontSize: "12px", margin: 0 },
   searchInput: { width: "100%", padding: "9px 16px 9px 38px", borderRadius: "12px", fontSize: "14px", outline: "none" },
   navItem: { display: "flex", alignItems: "center", gap: "12px", padding: "11px 16px", borderRadius: "12px", fontSize: "14px", fontWeight: "500", cursor: "pointer", textDecoration: "none" },
-  navBadge: { marginLeft: "auto", padding: "2px 8px", borderRadius: "9999px", background: "#ede9fe", fontSize: "11px", fontWeight: "600", color: "#7c3aed" },
-  bottomCard: { padding: "20px", borderRadius: "16px", background: "linear-gradient(to bottom right, #7c3aed, #3b82f6)", color: "white", boxShadow: "0 10px 15px -3px rgba(124,58,237,0.3)" },
-  bottomCardButton: { width: "100%", padding: "10px", borderRadius: "12px", background: "rgba(255,255,255,0.2)", color: "white", border: "none", fontSize: "14px", fontWeight: "600", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: "8px", marginTop: "12px" },
+  navBadge: { marginLeft: "auto", padding: "2px 8px", borderRadius: "9999px", background: "var(--color-surface-soft)", fontSize: "11px", fontWeight: "600", color: "var(--color-link)" },
+  bottomCard: { padding: "20px", borderRadius: "16px", background: "var(--color-primary)", color: "var(--color-on-primary)", boxShadow: "0 10px 15px -3px var(--color-shadow)" },
+  bottomCardButton: { width: "100%", padding: "10px", borderRadius: "12px", background: "var(--color-deep)", color: "var(--color-on-primary)", border: "none", fontSize: "14px", fontWeight: "600", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: "8px", marginTop: "12px" },
   main: { marginLeft: "260px" },
   header: { position: "sticky", top: 0, zIndex: 20, backdropFilter: "blur(20px)", padding: "16px 32px", display: "flex", alignItems: "center", justifyContent: "space-between" },
   headerDate: { fontSize: "14px", fontWeight: "500", display: "flex", alignItems: "center", gap: "6px", margin: 0 },
@@ -821,10 +817,10 @@ const s = {
   headerSub: { marginTop: "2px", fontSize: "14px", margin: "2px 0 0" },
   headerActions: { display: "flex", alignItems: "center", gap: "10px" },
   iconBtn: { position: "relative", width: "44px", height: "44px", borderRadius: "50%", border: "none", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" },
-  notificationDot: { position: "absolute", top: "6px", right: "8px", width: "10px", height: "10px", borderRadius: "50%", background: "#ef4444", border: "2px solid white" },
-  notificationDropdown: { position: "absolute", right: 0, top: "calc(100% + 12px)", width: "300px", borderRadius: "16px", padding: "12px", boxShadow: "0 20px 25px -5px rgba(0,0,0,0.15)", zIndex: 30 },
+  notificationDot: { position: "absolute", top: "6px", right: "8px", width: "10px", height: "10px", borderRadius: "50%", background: "var(--color-accent)", border: "2px solid var(--color-on-primary)" },
+  notificationDropdown: { position: "absolute", right: 0, top: "calc(100% + 12px)", width: "300px", borderRadius: "16px", padding: "12px", boxShadow: "0 20px 25px -5px var(--color-shadow)", zIndex: 30 },
   profile: { display: "flex", alignItems: "center", gap: "10px" },
-  profileAvatar: { width: "44px", height: "44px", borderRadius: "50%", background: "linear-gradient(to bottom right, #fb923c, #ec4899)", display: "flex", alignItems: "center", justifyContent: "center", fontWeight: "bold", color: "white", boxShadow: "0 4px 6px -1px rgba(0,0,0,0.1)" },
+  profileAvatar: { width: "44px", height: "44px", borderRadius: "50%", background: "var(--color-primary)", display: "flex", alignItems: "center", justifyContent: "center", fontWeight: "bold", color: "var(--color-on-primary)", boxShadow: "0 4px 6px -1px var(--color-shadow)" },
   statsGrid: { display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "16px" },
   statCard: { padding: "18px", borderRadius: "18px" },
   statHeader: { display: "flex", alignItems: "center", justifyContent: "space-between" },
@@ -834,21 +830,21 @@ const s = {
   statLabel: { fontSize: "12px", margin: "2px 0 0" },
   aiTutorGrid: { display: "grid", gridTemplateColumns: "2fr 1fr", gap: "24px", marginTop: "24px" },
   aiTutorHeader: { display: "flex", alignItems: "center", gap: "12px", marginBottom: "18px" },
-  aiTutorIcon: { display: "flex", alignItems: "center", justifyContent: "center", width: "48px", height: "48px", borderRadius: "16px", background: "rgba(255,255,255,0.15)", backdropFilter: "blur(4px)" },
-  aiTutorTitle: { fontSize: "20px", fontWeight: "bold", margin: 0 },
-  aiTutorSub: { fontSize: "14px", fontWeight: "500", color: "#c7d2fe", margin: 0 },
-  aiTutorDesc: { maxWidth: "500px", fontSize: "14px", lineHeight: "22px", color: "#c7d2fe" },
+  aiTutorIcon: { display: "flex", alignItems: "center", justifyContent: "center", width: "48px", height: "48px", borderRadius: "16px", background: "var(--color-surface)", backdropFilter: "blur(4px)" },
+  aiTutorTitle: { color: colors.onPrimary, fontSize: "20px", fontWeight: "bold", margin: 0 },
+  aiTutorSub: { fontSize: "14px", fontWeight: "500", color: "var(--color-on-primary)", margin: 0 },
+  aiTutorDesc: { maxWidth: "500px", fontSize: "14px", lineHeight: "22px", color: "var(--color-on-primary)" },
   chatLog: { display: "flex", flexDirection: "column", gap: "8px", marginTop: "16px", maxHeight: "160px", overflowY: "auto" },
   chatBubble: { padding: "8px 14px", borderRadius: "14px", fontSize: "13px", maxWidth: "80%", lineHeight: "18px" },
-  chatInput: { display: "flex", alignItems: "center", gap: "8px", marginTop: "18px", padding: "8px", borderRadius: "16px", background: "white", boxShadow: "0 10px 15px -3px rgba(0,0,0,0.1)" },
-  chatInputField: { flex: 1, padding: "0 12px", border: "none", background: "transparent", fontSize: "14px", color: "#334155", outline: "none" },
-  chatSendBtn: { display: "flex", alignItems: "center", justifyContent: "center", width: "42px", height: "42px", borderRadius: "12px", background: "#7c3aed", color: "white", border: "none", cursor: "pointer" },
+  chatInput: { display: "flex", alignItems: "center", gap: "8px", marginTop: "18px", padding: "8px", borderRadius: "16px", background: "var(--color-surface)", boxShadow: "0 10px 15px -3px var(--color-shadow)" },
+  chatInputField: { flex: 1, padding: "0 12px", border: "none", background: "transparent", fontSize: "14px", color: "var(--color-ink)", outline: "none" },
+  chatSendBtn: { display: "flex", alignItems: "center", justifyContent: "center", width: "42px", height: "42px", borderRadius: "12px", background: "var(--color-primary)", color: "var(--color-on-primary)", border: "none", cursor: "pointer" },
   suggestions: { display: "flex", flexWrap: "wrap", gap: "8px", marginTop: "14px" },
-  suggestionBtn: { padding: "6px 12px", borderRadius: "9999px", background: "rgba(255,255,255,0.1)", color: "white", border: "none", fontSize: "12px", cursor: "pointer", backdropFilter: "blur(4px)" },
+  suggestionBtn: { padding: "6px 12px", borderRadius: "9999px", background: "var(--color-deep)", color: "var(--color-on-primary)", border: "none", fontSize: "12px", cursor: "pointer", backdropFilter: "blur(4px)" },
   tasksCard: { padding: "22px", borderRadius: "22px" },
   tasksHeader: { display: "flex", alignItems: "center", justifyContent: "space-between" },
   tasksTitle: { fontWeight: "bold", margin: 0 },
-  tasksViewAll: { fontSize: "12px", fontWeight: "600", color: "#7c3aed", background: "none", border: "none", cursor: "pointer" },
+  tasksViewAll: { fontSize: "12px", fontWeight: "600", color: "var(--color-link)", background: "none", border: "none", cursor: "pointer" },
   taskItem: { display: "flex", alignItems: "flex-start", gap: "12px", padding: "12px", borderRadius: "12px", marginTop: "12px" },
   taskTitle: { fontSize: "14px", fontWeight: "500", margin: 0 },
   taskPriority: { padding: "2px 8px", borderRadius: "9999px", fontSize: "11px", fontWeight: "500" },
@@ -863,30 +859,30 @@ const s = {
   activityIcon: { display: "flex", alignItems: "center", justifyContent: "center", width: "46px", height: "46px", borderRadius: "16px", fontSize: "20px", flexShrink: 0 },
   activityTitle: { fontSize: "14px", fontWeight: "600", margin: 0 },
   activityMeta: { marginTop: "4px", fontSize: "12px", margin: "4px 0 0" },
-  activityScore: { display: "inline-block", padding: "2px 8px", borderRadius: "9999px", fontSize: "11px", fontWeight: "600", color: "#059669", background: "#d1fae5", marginTop: "4px" },
+  activityScore: { display: "inline-block", padding: "2px 8px", borderRadius: "9999px", fontSize: "11px", fontWeight: "600", color: "var(--color-success-text)", background: "var(--color-surface-soft)", marginTop: "4px" },
   coursesGrid: { display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "20px" },
   courseCard: { padding: "20px", borderRadius: "22px", cursor: "pointer" },
   courseHeader: { display: "flex", alignItems: "center", justifyContent: "space-between" },
-  courseIcon: { display: "flex", alignItems: "center", justifyContent: "center", width: "44px", height: "44px", borderRadius: "16px", color: "white" },
-  courseProgress: { padding: "4px 12px", borderRadius: "9999px", background: "rgba(255,255,255,0.7)", fontSize: "12px", fontWeight: "bold", color: "#475569" },
-  courseName: { marginTop: "16px", fontSize: "18px", fontWeight: "bold", color: "#0f172a" },
-  courseInstructor: { marginTop: "4px", fontSize: "12px", color: "#64748b" },
-  courseDetails: { display: "flex", alignItems: "center", justifyContent: "space-between", marginTop: "16px", fontSize: "12px", color: "#64748b" },
-  progressBar: { marginTop: "12px", height: "8px", borderRadius: "9999px", background: "rgba(255,255,255,0.7)", overflow: "hidden" },
+  courseIcon: { display: "flex", alignItems: "center", justifyContent: "center", width: "44px", height: "44px", borderRadius: "16px", color: "var(--color-on-primary)" },
+  courseProgress: { padding: "4px 12px", borderRadius: "9999px", background: "var(--color-surface)", fontSize: "12px", fontWeight: "bold", color: "var(--color-text)" },
+  courseName: { marginTop: "16px", fontSize: "18px", fontWeight: "bold", color: "var(--color-ink)" },
+  courseInstructor: { marginTop: "4px", fontSize: "12px", color: "var(--color-text)" },
+  courseDetails: { display: "flex", alignItems: "center", justifyContent: "space-between", marginTop: "16px", fontSize: "12px", color: "var(--color-text)" },
+  progressBar: { marginTop: "12px", height: "8px", borderRadius: "9999px", background: "var(--color-surface)", overflow: "hidden" },
   progressFill: { height: "100%", borderRadius: "9999px" },
   courseFooter: { display: "flex", alignItems: "center", justifyContent: "space-between", marginTop: "16px" },
-  courseDue: { fontSize: "12px", color: "#64748b" },
-  courseContinue: { padding: "8px 16px", borderRadius: "12px", background: "rgba(255,255,255,0.85)", border: "none", fontSize: "14px", fontWeight: "600", color: "#334155", cursor: "pointer", display: "flex", alignItems: "center", gap: "6px" },
+  courseDue: { fontSize: "12px", color: "var(--color-text)" },
+  courseContinue: { padding: "8px 16px", borderRadius: "12px", background: "var(--color-surface)", border: "none", fontSize: "14px", fontWeight: "600", color: "var(--color-ink)", cursor: "pointer", display: "flex", alignItems: "center", gap: "6px" },
   achievementItem: { display: "flex", alignItems: "center", gap: "12px", padding: "12px", borderRadius: "16px" },
   achievementIconBox: { display: "flex", alignItems: "center", justifyContent: "center", width: "46px", height: "46px", borderRadius: "12px", fontSize: "21px" },
   achievementName: { fontSize: "14px", fontWeight: "500", margin: 0 },
   motivationCard: { marginTop: "28px", overflow: "hidden", padding: "26px", borderRadius: "22px" },
   motivationContent: { display: "flex", alignItems: "center", justifyContent: "space-between", gap: "20px", flexWrap: "wrap" },
   motivationLeft: { display: "flex", alignItems: "center", gap: "16px" },
-  motivationEmoji: { display: "flex", alignItems: "center", justifyContent: "center", width: "54px", height: "54px", borderRadius: "16px", background: "#fef3c7", color: "#d97706", boxShadow: "0 10px 15px -3px rgba(251,191,36,0.3)" },
+  motivationEmoji: { display: "flex", alignItems: "center", justifyContent: "center", width: "54px", height: "54px", borderRadius: "16px", background: "var(--color-error-soft)", color: "var(--color-error-text)", boxShadow: "0 10px 15px -3px var(--color-shadow)" },
   motivationTitle: { fontWeight: "bold", margin: 0 },
   motivationDesc: { marginTop: "4px", fontSize: "14px", margin: "4px 0 0" },
-  motivationHighlight: { fontWeight: "600", color: "#7c3aed" },
-  primaryBtn: { padding: "12px 20px", borderRadius: "12px", background: "#0f172a", color: "white", border: "none", fontSize: "14px", fontWeight: "600", cursor: "pointer", display: "flex", alignItems: "center", gap: "8px" },
+  motivationHighlight: { fontWeight: "600", color: "var(--color-on-soft)" },
+  primaryBtn: { padding: "12px 20px", borderRadius: "12px", background: "var(--color-deep)", color: "var(--color-on-primary)", border: "none", fontSize: "14px", fontWeight: "600", cursor: "pointer", display: "flex", alignItems: "center", gap: "8px" },
   secondaryBtn: { padding: "12px 20px", borderRadius: "12px", fontSize: "14px", fontWeight: "600", cursor: "pointer", display: "flex", alignItems: "center", gap: "8px" },
 };

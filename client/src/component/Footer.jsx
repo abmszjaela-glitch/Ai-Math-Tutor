@@ -1,3 +1,4 @@
+import { FaFacebookF as AppIconFaFacebookF, FaLinkedinIn as AppIconFaLinkedinIn, FaTwitter as AppIconFaTwitter, FaYoutube as AppIconFaYoutube } from 'react-icons/fa';
 import { motion } from 'framer-motion';
 
 import bottomShape from '../assets/img/footer/bg-bottom.png';
@@ -126,7 +127,7 @@ const Footer = () => {
                         whileTap={{ scale: 0.9 }}
                         transition={{ duration: 0.25, ease: easeOut }}
                       >
-                        <i className="fab fa-facebook-f"></i>
+                        <AppIconFaFacebookF aria-hidden="true" />
                       </motion.a>
                     </motion.li>
 
@@ -137,7 +138,7 @@ const Footer = () => {
                         whileTap={{ scale: 0.9 }}
                         transition={{ duration: 0.25, ease: easeOut }}
                       >
-                        <i className="fab fa-twitter"></i>
+                        <AppIconFaTwitter aria-hidden="true" />
                       </motion.a>
                     </motion.li>
 
@@ -148,7 +149,7 @@ const Footer = () => {
                         whileTap={{ scale: 0.9 }}
                         transition={{ duration: 0.25, ease: easeOut }}
                       >
-                        <i className="fab fa-youtube"></i>
+                        <AppIconFaYoutube aria-hidden="true" />
                       </motion.a>
                     </motion.li>
 
@@ -159,7 +160,7 @@ const Footer = () => {
                         whileTap={{ scale: 0.9 }}
                         transition={{ duration: 0.25, ease: easeOut }}
                       >
-                        <i className="fab fa-linkedin-in"></i>
+                        <AppIconFaLinkedinIn aria-hidden="true" />
                       </motion.a>
                     </motion.li>
 

@@ -319,7 +319,6 @@ const sendTutorMessage = async (req, res) => {
     // =====================================================
 
     let lesson = null;
-
     if (lessonId) {
       lesson =
         await prisma.lesson.findUnique({
@@ -969,8 +968,4 @@ passing these checks.
     });
   }
 };
-
-
-module.exports = {
-  sendTutorMessage,
-};
+module.exports = { sendTutorMessage };
