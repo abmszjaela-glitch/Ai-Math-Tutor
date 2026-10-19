@@ -1,10 +1,13 @@
 import { API_URL } from '../config/api';
 import { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
+import Swal from '../vendor/sweetalert2/sweetalert2.esm.js';
+import '../vendor/sweetalert2/sweetalert2.min.css';
 
 import graphicImage from '../assets/img/Login/graphic15.svg';
 import logoImage from '../assets/img/logo/NUMORA.png';
 import authStyles from '../assets/Hooks/Authstyles.js';
+import './Login.css';
 
 
 
@@ -29,6 +32,7 @@ const Login = () => {
   // =====================================================
 
   useEffect(() => {
+    window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
 
     const styleTag =
       document.createElement('style');
@@ -131,6 +135,23 @@ const Login = () => {
       const tutorIds = { Kangaroo: 'kanga', Panda: 'pandy', Koala: 'koala' };
       const tutorId = tutorIds[data.user?.student?.avatar?.name] || 'kanga';
       localStorage.setItem('selectedTutorId', tutorId);
+      await Swal.fire({
+        icon: 'success',
+        title: "You're in! 🎉",
+        text: 'Login successful! Your math adventure awaits.',
+        confirmButtonText: "Let's learn! ✨",
+        buttonsStyling: false,
+        timer: 3000,
+        timerProgressBar: true,
+        allowOutsideClick: false,
+        heightAuto: false,
+        returnFocus: false,
+        customClass: {
+          container: 'numora-login-alert-container',
+          popup: 'numora-login-alert',
+          confirmButton: 'numora-login-alert-button',
+        },
+      });
       navigate('/', { replace: true });
     } catch (error) {
 
@@ -159,19 +180,19 @@ const Login = () => {
 
   return (
 
-    <div className="form-body form-left">
+    <div className="form-body login-page">
 
-      <div className="iofrm-layout flex min-h-screen w-full">
+      <div className="iofrm-layout">
 
         {/* =================================================
             LEFT IMAGE
         ================================================= */}
 
-        <div className="img-holder text-start w-1/2 flex items-center justify-center">
+        <div className="img-holder">
 
           <div className="bg"></div>
 
-          <div className="info-holder flex items-center justify-center">
+          <div className="info-holder">
 
             <img
               src={graphicImage}
@@ -188,9 +209,9 @@ const Login = () => {
             LOGIN FORM
         ================================================= */}
 
-        <div className="form-holder w-1/2 flex items-center justify-center">
+        <div className="form-holder">
 
-          <div className="form-content justify-content-end flex flex-col items-center">
+          <div className="form-content">
 
             <div className="form-items">
 
@@ -201,18 +222,18 @@ const Login = () => {
 
               <div className="website-logo-inside logo-normal">
 
-                <a href="/">
+                <Link to="/" aria-label="Numora home">
 
                   <div className="logo">
 
                     <img
                       src={logoImage}
-                      alt="Logo"
+                      alt="Numora"
                     />
 
                   </div>
 
-                </a>
+                </Link>
 
               </div>
 
@@ -313,12 +334,12 @@ const Login = () => {
                   </button>
 
 
-                  <a
-                    href="/register"
+                  <Link
+                    to="/register"
                     className="btn btn-outline-primary"
                   >
                     Create account
-                  </a>
+                  </Link>
 
                 </div>
 
