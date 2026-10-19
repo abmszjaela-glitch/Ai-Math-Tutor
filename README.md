@@ -34,3 +34,8 @@ Open **Practice → Mock Tests** (`/practice/tests`) for 12-question/12-minute o
 Grading runs on the server, using signed attempts bound to the authenticated account and grade. Correct answers are returned after submission. Best scores and attempt counts use the existing curriculum/progress tables and appear in the dashboard’s **Practice & mock test progress** section. Full lesson practice at 70% or higher marks that lesson as mastered; a short mock-test sample does not. Lessons are added to the existing curriculum when a result is saved; no schema migration or extra dependency is required.
 
 This is a learning tool, not a proctored examination system. In-flight duplicate-submission protection is scoped to one server process; production deployment across multiple processes needs persistent attempt/idempotency storage. Detailed answer reviews are shown for the current result, while the database stores lesson summaries rather than a complete attempt history. Automated tests use database fixtures; they do not connect to the live database.
+
+main color
+
+#f15e24=secandary
+#f8fae2=primary
