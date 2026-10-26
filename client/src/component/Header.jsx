@@ -153,6 +153,25 @@ const handleLogout = async () => {
           }
         }
 
+        
+.header-section .nav-user-name {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--color-text);
+  white-space: nowrap;
+  max-width: 150px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+@media (max-width: 575px) {
+  .header-section .nav-user-name {
+    font-size: 12px;
+    max-width: 90px;
+  }
+}
+
+
         /* ---------- Small tablet / large phone (max-width: 767px) ---------- */
         @media (max-width: 767px) {
           .header-1 .header-left .header-logo img {
@@ -315,44 +334,65 @@ const handleLogout = async () => {
                 </div>
               </div>
 
-              {/* Right Side */}
-              <div className="header-right d-flex justify-content-end align-items-center">
-                <div className="header-right-icon">
-                  {!isLoadingUser && (
-                    user ? (
-                      <button type="button" className="nav-auth-action" onClick={handleLogout} disabled={isLoggingOut}>
-                        {isLoggingOut ? 'Logging out…' : 'Logout'}
-                      </button>
-                    ) : (
-                      <Link to="/login" className="nav-auth-action">Login</Link>
-                    )
-                  )}
-                  {authError && <span className="nav-auth-error" role="alert">{authError}</span>}
-                </div>
+            
+{/* Right Side */}
+<div className="header-right d-flex justify-content-end align-items-center">
+  <div className="header-right-icon d-flex align-items-center" style={{ gap: '14px' }}>
+    {!isLoadingUser && (
+      user ? (
+        <>
+          <span
+            className="nav-user-name"
+            title={user.name || user.username || user.email}
+          >
+            Hi, {user.name || user.username || user.email?.split('@')[0] || 'User'}
+          </span>
 
-                <motion.a
-                  href="/SelectFriend"
-                  className="theme-btn"
-                  whileHover={{ scale: 1.06, y: -3 }}
-                  whileTap={{ scale: 0.96 }}
-                  transition={{ duration: 0.3, ease: easeOut }}
-                >
-                  Start Learning
-                  <ArrowRight />
-                </motion.a>
+          <button
+            type="button"
+            className="nav-auth-action"
+            onClick={handleLogout}
+            disabled={isLoggingOut}
+          >
+            {isLoggingOut ? 'Logging out...' : 'Logout'}
+          </button>
+        </>
+      ) : (
+        <Link to="/login" className="nav-auth-action">
+          Login
+        </Link>
+      )
+    )}
 
-                <div className="header__hamburger my-auto d-xl-none">
-                  <motion.div
-                    className="sidebar__toggle"
-                    onClick={onMenuClick}
-                    whileTap={{ scale: 0.85 }}
-                  >
-                    <Menu size={22} />
-                  </motion.div>
-                </div>
-                
+    {authError && (
+      <span className="nav-auth-error" role="alert">
+        {authError}
+      </span>
+    )}
+  </div>
 
-              </div>
+  <motion.a
+    href="/SelectFriend"
+    className="theme-btn"
+    whileHover={{ scale: 1.06, y: -3 }}
+    whileTap={{ scale: 0.96 }}
+    transition={{ duration: 0.3, ease: easeOut }}
+  >
+    Start Learning
+    <ArrowRight />
+  </motion.a>
+
+  <div className="header__hamburger my-auto d-xl-none">
+    <motion.div
+      className="sidebar__toggle"
+      onClick={onMenuClick}
+      whileTap={{ scale: 0.85 }}
+    >
+      <Menu size={22} />
+    </motion.div>
+  </div>
+</div>
+
 
             </div>
           </div>
