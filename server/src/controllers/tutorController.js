@@ -666,7 +666,7 @@ passing these checks.
     // errors such as 401 or 429 can still be returned as normal JSON.
 
     const stream =
-      await openai.chat.completions.create({
+      await openai().chat.completions.create({
         // "openrouter/free" is OpenRouter's Free Models Router.
         // It randomly picks a currently-available free model,
         // filtering for ones that support the features this

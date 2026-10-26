@@ -70,6 +70,11 @@ const tutorProfiles = {
 };
 
 const DEFAULT_TUTOR_ID = 'kanga';
+const LOG_PREFIX = '[TutorSession]';
+
+const logTutorEvent = (event, details = {}) => {
+  console.info(LOG_PREFIX, event, details);
+};
 
 // ============================================================
 // STREAMING HELPERS
@@ -297,6 +302,7 @@ const TutorSession = () => {
   };
 
   const showNotice = (text) => {
+    logTutorEvent('notice', { text });
     setNotice(text);
     if (noticeTimeoutRef.current) clearTimeout(noticeTimeoutRef.current);
     noticeTimeoutRef.current = setTimeout(() => setNotice(null), 4000);
@@ -308,7 +314,10 @@ const TutorSession = () => {
 
   useEffect(() => {
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-    if (!SpeechRecognition) return;
+    if (!SpeechRecognition) {
+      logTutorEvent('speech recognition unavailable');
+      return;
+    }
 
     const recognition = new SpeechRecognition();
     recognition.continuous = false;
@@ -326,6 +335,10 @@ const TutorSession = () => {
       }
 
       setInterimText(interim);
+      logTutorEvent('speech recognition result', {
+        hasFinalTranscript: Boolean(finalTranscript.trim()),
+        interimLength: interim.length,
+      });
 
       if (finalTranscript.trim()) {
         handleStudentMessageRef.current?.(finalTranscript.trim());
@@ -333,16 +346,18 @@ const TutorSession = () => {
     };
 
     recognition.onend = () => {
+      logTutorEvent('speech recognition ended');
       setIsListening(false);
       setInterimText('');
     };
 
     recognition.onerror = (event) => {
-      console.warn('Speech recognition error:', event.error);
+      console.warn(LOG_PREFIX, 'speech recognition error', { error: event.error });
       setIsListening(false);
       setInterimText('');
     };
 
+    logTutorEvent('speech recognition ready', { language: recognition.lang });
     recognitionRef.current = recognition;
 
     return () => {
@@ -375,17 +390,29 @@ const TutorSession = () => {
 
     const createConversation = async () => {
       try {
+        logTutorEvent('session setup started', {
+          apiUrl: API_URL,
+          tutor: profile.label,
+          lessonId: lessonId || null,
+        });
         const avatarsResponse = await fetch(`${API_URL}/avatars`, { credentials: 'include' });
-        if (avatarsResponse.status === 401) { navigate('/login', { replace: true }); return; }
+        logTutorEvent('avatars request completed', { status: avatarsResponse.status });
+        if (avatarsResponse.status === 401) {
+          console.warn(LOG_PREFIX, 'session setup requires login');
+          navigate('/login', { replace: true });
+          return;
+        }
         const avatarsData = await avatarsResponse.json();
         if (!avatarsResponse.ok || !avatarsData.success) throw new Error(avatarsData.message || 'Unable to load tutors');
         const avatar = avatarsData.avatars.find((item) => item.name === AVATAR_NAMES[tutorId]);
         if (!avatar) throw new Error('Selected tutor is unavailable. Please seed the database.');
+        logTutorEvent('tutor avatar selected', { avatarId: avatar.id, tutor: avatar.name });
         if (cancelled) return;
         const selection = await fetch(`${API_URL}/avatars/me`, {
           method: 'PUT', credentials: 'include', headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ avatarId: avatar.id }),
         });
+        logTutorEvent('avatar selection completed', { status: selection.status });
         if (!selection.ok) throw new Error('Unable to select tutor');
         if (cancelled) return;
         const response = await fetch(`${API_URL}/conversations`, {
@@ -396,6 +423,7 @@ const TutorSession = () => {
         });
 
         const data = await response.json();
+        logTutorEvent('conversation request completed', { status: response.status });
 
         if (!response.ok || !data.success) {
           throw new Error(data.message || 'Failed to create conversation');
@@ -405,10 +433,11 @@ const TutorSession = () => {
 
         setConversationId(data.conversation.id);
         setIsSessionReady(true);
+        logTutorEvent('session ready', { conversationId: data.conversation.id });
       } catch (error) {
         if (cancelled) return;
 
-        console.error('Conversation creation error:', error);
+        console.error(LOG_PREFIX, 'session setup failed', error);
         setIsSessionReady(false);
         showNotice('I could not start the math session. Please try again.');
       }
@@ -419,13 +448,14 @@ const TutorSession = () => {
     return () => {
       cancelled = true;
     };
-  }, [profile.label, tutorId, navigate]);
+  }, [lessonId, profile.label, tutorId, navigate]);
 
   // ==========================================================
   // TEXT TO SPEECH (basic browser voice, sentence queue)
   // ==========================================================
 
   const stopSpeaking = () => {
+    logTutorEvent('speech stopped');
     speakTokenRef.current += 1;
     pendingSpeechRef.current = 0;
 
@@ -443,11 +473,20 @@ const TutorSession = () => {
   // speaking sooner and avoids Chrome cutting off long utterances.
   const enqueueSpeech = (text) => {
     const speechText = text?.trim();
-    if (!speechText || !('speechSynthesis' in window)) return;
+    if (!speechText) {
+      logTutorEvent('speech skipped', { reason: 'empty text' });
+      return;
+    }
+    if (!('speechSynthesis' in window)) {
+      console.warn(LOG_PREFIX, 'speech synthesis unavailable');
+      return;
+    }
 
     const token = speakTokenRef.current;
+    const sentences = splitSentences(speechText);
+    logTutorEvent('speech queued', { sentenceCount: sentences.length });
 
-    splitSentences(speechText).forEach((sentence) => {
+    sentences.forEach((sentence) => {
       const utterance = new SpeechSynthesisUtterance(sentence);
       utterance.lang = 'en-AU';
       utterance.rate = 1;
@@ -458,6 +497,7 @@ const TutorSession = () => {
 
       utterance.onstart = () => {
         if (token !== speakTokenRef.current) return;
+        logTutorEvent('speech started');
         setIsSpeaking(true);
       };
 
@@ -465,6 +505,7 @@ const TutorSession = () => {
         if (token !== speakTokenRef.current) return;
         pendingSpeechRef.current = Math.max(0, pendingSpeechRef.current - 1);
         if (pendingSpeechRef.current === 0) {
+          logTutorEvent('speech finished');
           setIsSpeaking(false);
           setReplayingId(null);
         }
@@ -474,7 +515,7 @@ const TutorSession = () => {
 
       utterance.onerror = (event) => {
         if (event.error !== 'canceled' && event.error !== 'interrupted') {
-          console.warn('Speech error:', event.error);
+          console.warn(LOG_PREFIX, 'speech synthesis error', { error: event.error });
         }
         finish();
       };
@@ -540,6 +581,9 @@ const TutorSession = () => {
 
   // Stops the current answer: cancels the network stream and the voice.
   const cancelTutorResponse = () => {
+    logTutorEvent('tutor response cancelled', {
+      hadActiveRequest: Boolean(abortRef.current),
+    });
     abortRef.current?.abort();
     abortRef.current = null;
     setIsThinking(false);
@@ -589,13 +633,18 @@ const TutorSession = () => {
   const handleStudentMessage = async (text) => {
     const cleanText = text?.trim();
 
-    if (!cleanText || pendingRef.current) return;
+    if (!cleanText) {
+      logTutorEvent('student message ignored', { reason: 'empty text' });
+      return;
+    }
 
     if (!conversationId || !isSessionReady) {
+      logTutorEvent('student message blocked', { reason: 'session not ready' });
       showNotice('Your tutor is still getting ready. Please try again in a moment.');
       return;
     }
 
+    logTutorEvent('student message submitted', { characterCount: cleanText.length });
     // A new question replaces any answer that is still streaming or speaking.
     cancelTutorResponse();
     setInterimText('');
@@ -608,6 +657,7 @@ const TutorSession = () => {
 
     // Id of the tutor bubble for this answer. Created on the first part.
     let tutorMessageId = null;
+    let partCount = 0;
     let receivedAnyPart = false;
 
     // Renders a part in the bubble and queues it for speech right away.
@@ -623,6 +673,11 @@ const TutorSession = () => {
       }
 
       receivedAnyPart = true;
+      partCount += 1;
+      logTutorEvent('tutor response part received', {
+        type: part.type,
+        partNumber: partCount,
+      });
 
       if (tutorMessageId === null) {
         tutorMessageId = nextMessageId();
@@ -657,7 +712,6 @@ const TutorSession = () => {
 
     try {
       const response = await fetch(`${API_URL}/tutor/message`, {
-        signal: requestRef.current.signal,
         method: 'POST',
         credentials: 'include',
         signal: controller.signal,
@@ -673,6 +727,11 @@ const TutorSession = () => {
       });
 
       const contentType = response.headers.get('content-type') || '';
+      logTutorEvent('tutor request completed', {
+        status: response.status,
+        contentType,
+        streaming: !contentType.includes('application/json'),
+      });
 
       // ---- Fallback: backend still returns one complete JSON object ----
       if (!response.ok || contentType.includes('application/json')) {
@@ -685,8 +744,10 @@ const TutorSession = () => {
         const tutor = data.response?.tutor;
         if (!tutor) throw new Error('Tutor returned an invalid response');
 
-        tutorToParts(tutor).forEach(handlePart);
+        const parts = tutorToParts(tutor);
+        parts.forEach(handlePart);
         setIsThinking(false);
+        logTutorEvent('tutor response completed', { mode: 'json', partCount: parts.length });
         return;
       }
 
@@ -696,6 +757,7 @@ const TutorSession = () => {
       const reader = response.body.getReader();
       const decoder = new TextDecoder();
       let buffer = '';
+      let chunkCount = 0;
 
       const processLine = (line) => {
         const trimmed = line.trim();
@@ -707,6 +769,7 @@ const TutorSession = () => {
         const { value, done } = await reader.read();
         if (done) break;
 
+        chunkCount += 1;
         buffer += decoder.decode(value, { stream: true });
 
         const lines = buffer.split('\n');
@@ -721,10 +784,19 @@ const TutorSession = () => {
       if (!receivedAnyPart) throw new Error('Tutor returned an empty response');
 
       setIsThinking(false);
+      logTutorEvent('tutor response completed', {
+        mode: 'stream',
+        chunkCount,
+        partCount,
+        receivedAnyPart,
+      });
     } catch (error) {
-      if (error.name === 'AbortError' || controller.signal.aborted) return;
+      if (error.name === 'AbortError' || controller.signal.aborted) {
+        logTutorEvent('tutor request aborted');
+        return;
+      }
 
-      console.error('Tutor request error:', error);
+      console.error(LOG_PREFIX, 'tutor request failed', error);
 
       setIsThinking(false);
 
@@ -752,16 +824,19 @@ const TutorSession = () => {
 
   const toggleMic = () => {
     if (!isSessionReady) {
+      logTutorEvent('microphone action blocked', { reason: 'session not ready' });
       showNotice('Your tutor is still getting ready. Please wait a moment.');
       return;
     }
 
     if (!micSupported) {
+      logTutorEvent('microphone action blocked', { reason: 'browser unsupported' });
       showNotice("Voice input isn't available in this browser. Try Chrome on desktop or Android.");
       return;
     }
 
     if (isListening) {
+      logTutorEvent('microphone stopping');
       try {
         recognitionRef.current?.stop();
       } catch {
@@ -769,14 +844,16 @@ const TutorSession = () => {
       }
       setIsListening(false);
     } else {
+      logTutorEvent('microphone starting');
       // Student wants to talk: stop the tutor's voice and any answer still streaming.
       cancelTutorResponse();
 
       try {
         recognitionRef.current?.start();
         setIsListening(true);
+        logTutorEvent('microphone listening');
       } catch (error) {
-        console.warn('Could not start speech recognition:', error);
+        console.warn(LOG_PREFIX, 'could not start speech recognition', error);
         setIsListening(false);
       }
     }
@@ -791,9 +868,13 @@ const TutorSession = () => {
 
     const value = textInput.trim();
 
-    if (!value || pendingRef.current) return;
+    if (!value) {
+      logTutorEvent('text message ignored', { reason: 'empty text' });
+      return;
+    }
 
     if (!isSessionReady) {
+      logTutorEvent('text message blocked', { reason: 'session not ready' });
       showNotice('Your tutor is still getting ready. Please wait a moment.');
       return;
     }
