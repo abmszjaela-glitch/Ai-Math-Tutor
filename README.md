@@ -35,7 +35,7 @@ Grading runs on the server, using signed attempts bound to the authenticated acc
 
 This is a learning tool, not a proctored examination system. In-flight duplicate-submission protection is scoped to one server process; production deployment across multiple processes needs persistent attempt/idempotency storage. Detailed answer reviews are shown for the current result, while the database stores lesson summaries rather than a complete attempt history. Automated tests use database fixtures; they do not connect to the live database.
 
-main color
+main color...
 
 #f15e24=secandary
 #f8fae2=primary
