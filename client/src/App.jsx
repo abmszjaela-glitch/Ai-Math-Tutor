@@ -16,7 +16,6 @@ const TutorSession = lazy(() => import('./component/TutorSession'));
 
 
 import MainLayout from "./component/MainLayout";
-const StartLearning = lazy(() => import('./component/StartLearning'));
 
 const Stdashboard = lazy(() => import('./component/admin/StudentDashboard'));
 const PracticeProblems = lazy(() => import('./component/Practice/PracticeProblems'));
@@ -34,10 +33,7 @@ const App = () => {
 
   <Route element={<MainLayout />}>
     <Route path="/" element={<Home />} />
-    <Route
-      path="/start-learning"
-      element={<StartLearning />}
-    />
+    
   </Route>
 
   <Route
