@@ -1,4 +1,4 @@
-# Numora — AI Math Tutor 
+# Numora — AI Math Tutor -
 
 React/Vite client with an Express, Prisma/PostgreSQL backend and an OpenRouter tutor.
 
