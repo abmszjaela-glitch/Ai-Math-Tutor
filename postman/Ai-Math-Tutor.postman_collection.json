@@ -1,0 +1,279 @@
+{
+  "info": {
+    "_postman_id": "8d6b7b2c-2a14-4d3e-9b1d-7a8e8a4c0f1b",
+    "name": "AI Math Tutor API",
+    "description": "Postman collection for the deployed AI Math Tutor backend. Authentication uses the httpOnly token cookie; Postman stores it automatically after Register or Login.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "baseUrl", "value": "https://ai-math-tutor-kappa.vercel.app" },
+    { "key": "email", "value": "postman-test@example.com" },
+    { "key": "password", "value": "Password123!" },
+    { "key": "grade", "value": "1" },
+    { "key": "gradeId", "value": "" },
+    { "key": "topicId", "value": "" },
+    { "key": "lessonId", "value": "" },
+    { "key": "avatarId", "value": "" },
+    { "key": "conversationId", "value": "" },
+    { "key": "practiceToken", "value": "" }
+  ],
+  "item": [
+    {
+      "name": "Health",
+      "item": [
+        {
+          "name": "Health check",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/health"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Authentication",
+      "item": [
+        {
+          "name": "Register",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Postman Student\",\n  \"email\": \"{{email}}\",\n  \"password\": \"{{password}}\",\n  \"grade\": {{grade}}\n}"
+            },
+            "url": "{{baseUrl}}/api/auth/register"
+          }
+        },
+        {
+          "name": "Login",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{email}}\",\n  \"password\": \"{{password}}\"\n}"
+            },
+            "url": "{{baseUrl}}/api/auth/login"
+          }
+        },
+        {
+          "name": "Current user",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/auth/me"
+          }
+        },
+        {
+          "name": "Logout",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": "{{baseUrl}}/api/auth/logout"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Student and Avatar",
+      "item": [
+        {
+          "name": "Get my profile",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/students/me"
+          }
+        },
+        {
+          "name": "Update my profile",
+          "request": {
+            "method": "PUT",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"name\": \"Updated Student Name\"\n}" },
+            "url": "{{baseUrl}}/api/students/me"
+          }
+        },
+        {
+          "name": "List avatars",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/avatars"
+          }
+        },
+        {
+          "name": "Select avatar",
+          "request": {
+            "method": "PUT",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"avatarId\": \"{{avatarId}}\"\n}" },
+            "url": "{{baseUrl}}/api/avatars/me"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Curriculum",
+      "item": [
+        {
+          "name": "List grades",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/curriculum/grades"
+          }
+        },
+        {
+          "name": "Topics by grade",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/curriculum/grades/{{gradeId}}/topics"
+          }
+        },
+        {
+          "name": "Lessons by topic",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/curriculum/topics/{{topicId}}/lessons"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Progress",
+      "item": [
+        {
+          "name": "My progress",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/progress/me"
+          }
+        },
+        {
+          "name": "Progress summary",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/progress/summary"
+          }
+        },
+        {
+          "name": "Update lesson progress",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"lessonId\": \"{{lessonId}}\",\n  \"completed\": true,\n  \"score\": 80\n}" },
+            "url": "{{baseUrl}}/api/progress/lesson"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Conversations and Messages",
+      "item": [
+        {
+          "name": "Create conversation",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"title\": \"Postman test session\"\n}" },
+            "url": "{{baseUrl}}/api/conversations"
+          }
+        },
+        {
+          "name": "List conversations",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/conversations"
+          }
+        },
+        {
+          "name": "Get conversation",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/conversations/{{conversationId}}"
+          }
+        },
+        {
+          "name": "Add message",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"role\": \"user\",\n  \"content\": \"What is 2 + 2?\"\n}" },
+            "url": "{{baseUrl}}/api/conversations/{{conversationId}}/messages"
+          }
+        },
+        {
+          "name": "List messages",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/conversations/{{conversationId}}/messages"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Tutor",
+      "item": [
+        {
+          "name": "Send tutor message",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"conversationId\": \"{{conversationId}}\",\n  \"lessonId\": \"{{lessonId}}\",\n  \"message\": \"Explain how to add 2 + 3 step by step.\"\n}" },
+            "url": "{{baseUrl}}/api/tutor/message"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Practice",
+      "item": [
+        {
+          "name": "Practice catalog",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/practice/catalog"
+          }
+        },
+        {
+          "name": "Start practice lesson",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"mode\": \"practice\",\n  \"lessonId\": \"{{lessonId}}\"\n}" },
+            "url": "{{baseUrl}}/api/practice/attempts"
+          }
+        },
+        {
+          "name": "Start 12-question mock test",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"mode\": \"mock\",\n  \"count\": 12\n}" },
+            "url": "{{baseUrl}}/api/practice/attempts"
+          }
+        },
+        {
+          "name": "Submit practice or mock test",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"token\": \"{{practiceToken}}\",\n  \"answers\": {\n    \"question-id-from-start-response\": \"answer\"\n  }\n}" },
+            "url": "{{baseUrl}}/api/practice/submit"
+          }
+        }
+      ]
+    }
+  ]
+}
