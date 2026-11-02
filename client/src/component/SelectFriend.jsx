@@ -217,15 +217,297 @@ const SelectFriend = ({
 
   return (
     <section
-      className="team-section section-padding pt-0 fix"
+      className="team-section section-padding pt-0 fix select-friend-section"
       style={{
-        marginTop: '38px',
         position: 'relative',
       }}
     >
+      {/* Responsive avatar selection styles */}
+      <style>{`
+        .select-friend-section {
+          padding: 100px 0 50px;
+          overflow: hidden;
+        }
+
+        .select-friend-section .container {
+          width: 100%;
+          max-width: 1200px;
+          margin: 0 auto;
+          padding-left: 16px;
+          padding-right: 16px;
+        }
+
+        .select-friend-heading {
+          width: 100%;
+          max-width: 600px;
+          margin: 0 auto 40px;
+          padding: 0 12px;
+          text-align: center;
+        }
+
+        .select-friend-heading h2 {
+          font-size: clamp(24px, 4vw, 38px);
+          line-height: 1.3;
+          margin-bottom: 0;
+        }
+
+        .avatar-grid {
+          display: grid;
+          grid-template-columns: repeat(3, minmax(0, 1fr));
+          gap: 24px;
+          align-items: stretch;
+          max-width: 1050px;
+          margin: 0 auto;
+        }
+
+        .avatar-grid-item {
+          min-width: 0;
+          width: 100%;
+        }
+
+        .avatar-select-card {
+          width: 100%;
+          height: 100%;
+          min-height: 300px;
+          padding: 16px;
+          border-radius: 20px;
+          background: var(--color-surface);
+          border: 2px solid var(--color-border);
+          box-shadow: 0 8px 24px var(--color-shadow);
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          justify-content: space-between;
+          -webkit-tap-highlight-color: transparent;
+          touch-action: manipulation;
+          user-select: none;
+        }
+
+        .avatar-select-card:focus-visible {
+          outline: 3px solid var(--color-accent);
+          outline-offset: 4px;
+        }
+
+        .avatar-select-card.is-selected {
+          border-color: var(--color-accent);
+          background: var(--color-surface);
+        }
+
+        .avatar-select-image {
+          width: 100%;
+          height: 250px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          overflow: hidden;
+          border-radius: 14px;
+        }
+
+        .avatar-select-image img {
+          width: 100%;
+          height: 100%;
+          object-fit: contain;
+          object-position: center;
+          pointer-events: none;
+        }
+
+        .avatar-select-content {
+          width: 100%;
+          text-align: center;
+          padding-top: 12px;
+        }
+
+        .avatar-select-content h3 {
+          font-size: 22px;
+          font-weight: 700;
+          margin-bottom: 6px;
+        }
+
+        .avatar-select-content p {
+          font-size: 14px;
+          margin-bottom: 0;
+        }
+
+        .avatar-selected-badge {
+          position: absolute;
+          top: 12px;
+          right: 12px;
+          z-index: 2;
+          width: 36px;
+          height: 36px;
+          border-radius: 50%;
+          background: var(--color-accent);
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          box-shadow: 0 4px 10px var(--color-shadow);
+        }
+
+        .avatar-continue-button {
+          width: auto;
+          max-width: 100%;
+          min-height: 52px;
+          padding: 14px 32px;
+          border-radius: 14px;
+          font-size: 16px;
+          font-weight: 700;
+          border: none;
+          white-space: normal;
+          line-height: 1.4;
+        }
+
+        @media (max-width: 991px) {
+          .select-friend-section {
+            padding-top: 90px;
+          }
+
+          .avatar-grid {
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 20px;
+            max-width: 760px;
+          }
+
+          .avatar-select-card {
+            min-height: 290px;
+          }
+
+          .avatar-select-image {
+            height: 230px;
+          }
+
+          .avatar-grid-item:last-child:nth-child(odd) {
+            grid-column: 1 / -1;
+            width: calc(50% - 10px);
+            justify-self: center;
+          }
+        }
+
+        @media (max-width: 575px) {
+          .select-friend-section {
+            padding-top: 78px;
+            padding-bottom: 35px;
+          }
+
+          .select-friend-section .container {
+            padding-left: 12px;
+            padding-right: 12px;
+          }
+
+          .select-friend-heading {
+            margin-bottom: 24px;
+          }
+
+          .select-friend-heading h2 {
+            font-size: 26px;
+          }
+
+          .avatar-grid {
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 12px;
+          }
+
+          .avatar-select-card {
+            min-height: 230px;
+            padding: 10px;
+            border-radius: 16px;
+          }
+
+          .avatar-select-image {
+            height: 160px;
+          }
+
+          .avatar-select-content {
+            padding-top: 8px;
+          }
+
+          .avatar-select-content h3 {
+            font-size: 18px;
+            margin-bottom: 4px;
+          }
+
+          .avatar-select-content p {
+            font-size: 12px;
+            line-height: 1.4;
+          }
+
+          .avatar-selected-badge {
+            width: 28px;
+            height: 28px;
+            top: 8px;
+            right: 8px;
+          }
+
+          .avatar-selected-badge svg {
+            width: 14px;
+            height: 14px;
+          }
+
+          .avatar-grid-item:last-child:nth-child(odd) {
+            grid-column: 1 / -1;
+            width: calc(50% - 6px);
+            justify-self: center;
+          }
+
+          .avatar-continue-button {
+            width: 100%;
+            min-height: 52px;
+            padding: 12px 16px;
+            font-size: 15px;
+          }
+
+          .avatar-back-button {
+            left: 12px !important;
+            top: 8px !important;
+            padding: 8px 12px !important;
+            font-size: 13px !important;
+          }
+
+          .avatar-sound-button {
+            right: 12px !important;
+            top: 8px !important;
+            width: 38px !important;
+            height: 38px !important;
+          }
+        }
+
+        @media (max-width: 360px) {
+          .avatar-grid {
+            gap: 8px;
+          }
+
+          .avatar-select-card {
+            min-height: 210px;
+            padding: 8px;
+          }
+
+          .avatar-select-image {
+            height: 140px;
+          }
+
+          .avatar-select-content h3 {
+            font-size: 16px;
+          }
+
+          .avatar-select-content p {
+            font-size: 11px;
+          }
+
+          .select-friend-heading h2 {
+            font-size: 23px;
+          }
+        }
+
+        @media (hover: none) {
+          .avatar-select-card {
+            transition: border-color 0.2s ease;
+          }
+        }
+      `}</style>
+
     {/* Back Button */}
 <motion.button
   type="button"
+  className="avatar-back-button"
   onClick={() => navigate(-1)}
   whileHover={{ scale: 1.06, x: -3 }}
   whileTap={{ scale: 0.94 }}
@@ -269,6 +551,7 @@ const SelectFriend = ({
       {/* Sound toggle button */}
       <motion.button
         type="button"
+        className="avatar-sound-button"
         onClick={toggleSound}
         aria-label={
           isMuted
@@ -349,7 +632,7 @@ const SelectFriend = ({
 
         {/* Section Heading */}
         <motion.h2
-          className="text-center"
+          className="text-center select-friend-heading"
           initial={{
             opacity: 0,
             y: 30,
@@ -376,7 +659,7 @@ const SelectFriend = ({
         </motion.h2>
 
         {/* AI Math Tutors */}
-        <div className="row text-center justify-content-center">
+        <div className="avatar-grid">
 
           {teachers.map((teacher) => {
             const isSelected =
@@ -385,10 +668,10 @@ const SelectFriend = ({
             return (
               <div
                 key={teacher.id}
-                className="col-lg-4 col-md-6 col-sm-6"
+                className="avatar-grid-item"
               >
                 <motion.div
-                  className={`team-card-item${
+                  className={`team-card-item avatar-select-card${
                     isSelected
                       ? ' is-selected'
                       : ''
@@ -447,6 +730,7 @@ const SelectFriend = ({
                   {/* Selected badge */}
                   {isSelected && (
                     <motion.div
+                      className="avatar-selected-badge"
                       initial={{
                         opacity: 0,
                         scale: 0.5,
@@ -484,17 +768,7 @@ const SelectFriend = ({
                   )}
 
                   {/* AI Tutor Character Image */}
-                  <div
-                    className="team-image"
-                    style={{
-                      width: '100%',
-                      height: '300px',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      overflow: 'hidden',
-                    }}
-                  >
+                  <div className="team-image avatar-select-image">
                     <motion.img
                       src={teacher.image}
                       alt={`${teacher.name} - AI Math Tutor`}
@@ -503,6 +777,7 @@ const SelectFriend = ({
                         height: '100%',
                         objectFit: 'contain',
                         objectPosition: 'center',
+                        pointerEvents: 'none',
                       }}
                       whileHover={{
                         scale: 1.1,
@@ -516,7 +791,7 @@ const SelectFriend = ({
 
                   {/* AI Tutor Details */}
                   <motion.div
-                    className="team-content"
+                    className="team-content avatar-select-content"
                     initial={{
                       opacity: 0,
                     }}
@@ -560,6 +835,7 @@ const SelectFriend = ({
         >
           <motion.button
             type="button"
+            className="avatar-continue-button"
             disabled={!selectedId}
             onClick={handleContinue}
             whileHover={
