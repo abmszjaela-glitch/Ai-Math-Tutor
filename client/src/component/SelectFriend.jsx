@@ -216,9 +216,14 @@ const SelectFriend = ({
   );
 
   const trackRef = useRef(null);
-const [activeIndex, setActiveIndex] = useState(0);
+const [activeIndex, setActiveIndex] = useState(() => {
+  const savedId = localStorage.getItem(STORAGE_KEY);
+  const savedIndex = teachers.findIndex((teacher) => teacher.id === savedId);
+  return savedIndex >= 0 ? savedIndex : 0;
+});
 
 const handleTrackScroll = () => {
+  if (window.innerWidth > 575) return;
   const track = trackRef.current;
   if (!track || !track.firstElementChild) return;
 
@@ -252,7 +257,6 @@ useEffect(() => {
     const item = track.children[index];
     track.scrollLeft =
       item.offsetLeft - (track.clientWidth - item.offsetWidth) / 2;
-    setActiveIndex(index);
   }
   // eslint-disable-next-line react-hooks/exhaustive-deps
 }, []);
@@ -294,35 +298,22 @@ useEffect(() => {
         }
 
        .avatar-grid {
-  display: flex;
-  grid-template-columns: none;
-  gap: 14px;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 24px;
   max-width: 100%;
-  overflow-x: auto;
-  overflow-y: hidden;
-  scroll-snap-type: x mandatory;
-  -webkit-overflow-scrolling: touch;
-  overscroll-behavior-x: contain;
-  padding: 20px 12% 24px;   /* room for hover lift/shadow + peek of neighbours */
-  scrollbar-width: none;
-}
-
-.avatar-grid::-webkit-scrollbar {
-  display: none;
+  overflow: visible;
+  padding: 20px 0 24px;
 }
 
 .avatar-grid-item {
-  flex: 0 0 76%;
-  width: 76%;
-  scroll-snap-align: center;
-  scroll-snap-stop: always;   /* one card per swipe */
+  width: 100%;
 }
 
-/* remove the old "center the odd last item" rule on mobile */
 .avatar-grid-item:last-child:nth-child(odd) {
   grid-column: auto;
-  width: 76%;
-  justify-self: auto;
+  width: 100%;
+  justify-self: stretch;
 }
 
 .avatar-select-card {
@@ -335,10 +326,7 @@ useEffect(() => {
 }
 
 .avatar-dots {
-  display: flex;
-  justify-content: center;
-  gap: 8px;
-  margin-top: 4px;
+  display: none;
 }
 
 .avatar-dot {
@@ -376,8 +364,34 @@ useEffect(() => {
           }
 
           .avatar-grid {
-            grid-template-columns: repeat(2, minmax(0, 1fr));
-            gap: 12px;
+            display: flex;
+            grid-template-columns: none;
+            gap: 14px;
+            overflow-x: auto;
+            overflow-y: hidden;
+            scroll-snap-type: x mandatory;
+            -webkit-overflow-scrolling: touch;
+            overscroll-behavior-x: contain;
+            padding: 20px 12% 24px;
+            scrollbar-width: none;
+          }
+
+          .avatar-grid::-webkit-scrollbar {
+            display: none;
+          }
+
+          .avatar-grid-item {
+            flex: 0 0 76%;
+            width: 76%;
+            scroll-snap-align: center;
+            scroll-snap-stop: always;
+          }
+
+          .avatar-dots {
+            display: flex;
+            justify-content: center;
+            gap: 8px;
+            margin-top: 4px;
           }
 
           .avatar-select-card {
@@ -417,9 +431,9 @@ useEffect(() => {
           }
 
           .avatar-grid-item:last-child:nth-child(odd) {
-            grid-column: 1 / -1;
-            width: calc(50% - 6px);
-            justify-self: center;
+            grid-column: auto;
+            width: 76%;
+            justify-self: auto;
           }
 
           .avatar-continue-button {
