@@ -215,6 +215,48 @@ const SelectFriend = ({
     (teacher) => teacher.id === selectedId
   );
 
+  const trackRef = useRef(null);
+const [activeIndex, setActiveIndex] = useState(0);
+
+const handleTrackScroll = () => {
+  const track = trackRef.current;
+  if (!track || !track.firstElementChild) return;
+
+  const item = track.firstElementChild;
+  const gap = parseFloat(getComputedStyle(track).columnGap) || 0;
+  const index = Math.round(track.scrollLeft / (item.offsetWidth + gap));
+
+  setActiveIndex(Math.min(Math.max(index, 0), teachers.length - 1));
+};
+
+const scrollToIndex = (index) => {
+  const track = trackRef.current;
+  if (!track || !track.children[index]) return;
+
+  const item = track.children[index];
+  track.scrollTo({
+    left: item.offsetLeft - (track.clientWidth - item.offsetWidth) / 2,
+    behavior: 'smooth',
+  });
+};
+
+/*
+ * On mobile, start on the previously selected tutor
+ */
+useEffect(() => {
+  const track = trackRef.current;
+  if (!track || window.innerWidth > 575) return;
+
+  const index = teachers.findIndex((t) => t.id === selectedId);
+  if (index > 0) {
+    const item = track.children[index];
+    track.scrollLeft =
+      item.offsetLeft - (track.clientWidth - item.offsetWidth) / 2;
+    setActiveIndex(index);
+  }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+}, []);
+
   return (
     <section
       className="team-section section-padding pt-0 fix select-friend-section"
@@ -251,137 +293,69 @@ const SelectFriend = ({
           margin-bottom: 0;
         }
 
-        .avatar-grid {
-          display: grid;
-          grid-template-columns: repeat(3, minmax(0, 1fr));
-          gap: 24px;
-          align-items: stretch;
-          max-width: 1050px;
-          margin: 0 auto;
-        }
+       .avatar-grid {
+  display: flex;
+  grid-template-columns: none;
+  gap: 14px;
+  max-width: 100%;
+  overflow-x: auto;
+  overflow-y: hidden;
+  scroll-snap-type: x mandatory;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior-x: contain;
+  padding: 20px 12% 24px;   /* room for hover lift/shadow + peek of neighbours */
+  scrollbar-width: none;
+}
 
-        .avatar-grid-item {
-          min-width: 0;
-          width: 100%;
-        }
+.avatar-grid::-webkit-scrollbar {
+  display: none;
+}
 
-        .avatar-select-card {
-          width: 100%;
-          height: 100%;
-          min-height: 300px;
-          padding: 16px;
-          border-radius: 20px;
-          background: var(--color-surface);
-          border: 2px solid var(--color-border);
-          box-shadow: 0 8px 24px var(--color-shadow);
-          display: flex;
-          flex-direction: column;
-          align-items: center;
-          justify-content: space-between;
-          -webkit-tap-highlight-color: transparent;
-          touch-action: manipulation;
-          user-select: none;
-        }
+.avatar-grid-item {
+  flex: 0 0 76%;
+  width: 76%;
+  scroll-snap-align: center;
+  scroll-snap-stop: always;   /* one card per swipe */
+}
 
-        .avatar-select-card:focus-visible {
-          outline: 3px solid var(--color-accent);
-          outline-offset: 4px;
-        }
+/* remove the old "center the odd last item" rule on mobile */
+.avatar-grid-item:last-child:nth-child(odd) {
+  grid-column: auto;
+  width: 76%;
+  justify-self: auto;
+}
 
-        .avatar-select-card.is-selected {
-          border-color: var(--color-accent);
-          background: var(--color-surface);
-        }
+.avatar-select-card {
+  min-height: 280px;
+  padding: 14px;
+}
 
-        .avatar-select-image {
-          width: 100%;
-          height: 250px;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          overflow: hidden;
-          border-radius: 14px;
-        }
+.avatar-select-image {
+  height: 200px;
+}
 
-        .avatar-select-image img {
-          width: 100%;
-          height: 100%;
-          object-fit: contain;
-          object-position: center;
-          pointer-events: none;
-        }
+.avatar-dots {
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+  margin-top: 4px;
+}
 
-        .avatar-select-content {
-          width: 100%;
-          text-align: center;
-          padding-top: 12px;
-        }
+.avatar-dot {
+  width: 8px;
+  height: 8px;
+  padding: 0;
+  border: none;
+  border-radius: 50%;
+  background: var(--color-border);
+  transition: width 0.25s ease, background 0.25s ease;
+}
 
-        .avatar-select-content h3 {
-          font-size: 22px;
-          font-weight: 700;
-          margin-bottom: 6px;
-        }
-
-        .avatar-select-content p {
-          font-size: 14px;
-          margin-bottom: 0;
-        }
-
-        .avatar-selected-badge {
-          position: absolute;
-          top: 12px;
-          right: 12px;
-          z-index: 2;
-          width: 36px;
-          height: 36px;
-          border-radius: 50%;
-          background: var(--color-accent);
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          box-shadow: 0 4px 10px var(--color-shadow);
-        }
-
-        .avatar-continue-button {
-          width: auto;
-          max-width: 100%;
-          min-height: 52px;
-          padding: 14px 32px;
-          border-radius: 14px;
-          font-size: 16px;
-          font-weight: 700;
-          border: none;
-          white-space: normal;
-          line-height: 1.4;
-        }
-
-        @media (max-width: 991px) {
-          .select-friend-section {
-            padding-top: 90px;
-          }
-
-          .avatar-grid {
-            grid-template-columns: repeat(2, minmax(0, 1fr));
-            gap: 20px;
-            max-width: 760px;
-          }
-
-          .avatar-select-card {
-            min-height: 290px;
-          }
-
-          .avatar-select-image {
-            height: 230px;
-          }
-
-          .avatar-grid-item:last-child:nth-child(odd) {
-            grid-column: 1 / -1;
-            width: calc(50% - 10px);
-            justify-self: center;
-          }
-        }
-
+.avatar-dot.is-active {
+  width: 22px;
+  border-radius: 8px;
+  background: var(--color-accent);
+      }}
         @media (max-width: 575px) {
           .select-friend-section {
             padding-top: 78px;
@@ -659,7 +633,11 @@ const SelectFriend = ({
         </motion.h2>
 
         {/* AI Math Tutors */}
-        <div className="avatar-grid">
+        <div
+  className="avatar-grid"
+  ref={trackRef}
+  onScroll={handleTrackScroll}
+>
 
           {teachers.map((teacher) => {
             const isSelected =
@@ -825,6 +803,17 @@ const SelectFriend = ({
           })}
 
         </div>
+        <div className="avatar-dots" aria-hidden="true">
+  {teachers.map((teacher, i) => (
+    <button
+      key={teacher.id}
+      type="button"
+      tabIndex={-1}
+      className={`avatar-dot${i === activeIndex ? ' is-active' : ''}`}
+      onClick={() => scrollToIndex(i)}
+    />
+  ))}
+</div>
 
         {/* Continue Button */}
         <div
