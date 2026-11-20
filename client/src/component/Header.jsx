@@ -105,6 +105,7 @@ const Header = ({ onMenuClick }) => {
     if (!user) return 'User';
 
     return (
+      user.student?.name ||
       user.name ||
       user.username ||
       user.email?.split('@')[0] ||
@@ -456,12 +457,14 @@ const Header = ({ onMenuClick }) => {
                     user ? (
                       <>
                         {/* Logged-in User */}
-                        <span
+                        <Link
+                          to="/profile"
                           className="nav-user-name"
                           title={getUserDisplayName()}
+                          style={{ textDecoration: 'none', cursor: 'pointer' }}
                         >
-                          Hi, {getUserDisplayName()}
-                        </span>
+                          {getUserDisplayName()}
+                        </Link>
 
                         {/* Logout Button */}
                         <button

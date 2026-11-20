@@ -409,8 +409,8 @@ export default function StudentDashboard() {
             <button
               className="icon-btn spin-hover"
               style={{ ...s.iconBtn, background: t.pillBg, color: t.ink }}
-              onClick={() => setActiveTab("settings")}
-              title="Settings"
+              onClick={() => navigate("/profile")}
+              title="Profile settings"
             >
               <Settings size={18} />
             </button>

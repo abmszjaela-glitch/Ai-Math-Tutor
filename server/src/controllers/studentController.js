@@ -7,7 +7,17 @@ const updateStudentSchema = z.object({
     .string()
     .trim()
     .min(2, "Name must be at least 2 characters")
-    .max(100, "Name is too long"),
+    .max(100, "Name is too long")
+    .optional(),
+  email: z
+    .string()
+    .trim()
+    .toLowerCase()
+    .max(254)
+    .email("Please enter a valid email")
+    .optional(),
+  grade: z.number().int().min(1).max(6).optional(),
+  avatarId: z.string().trim().min(1).nullable().optional(),
 });
 
 const getMyProfile = async (req, res) => {
@@ -78,19 +88,73 @@ const updateMyProfile = async (req, res) => {
       });
     }
 
-    const { name } = validation.data;
+    const { name, email, grade, avatarId } = validation.data;
 
-    const student = await prisma.student.update({
-      where: {
-        userId: req.userId,
-      },
-      data: {
-        name,
-      },
-      include: {
-        grade: true,
-        avatar: true,
-      },
+    let gradeRecord;
+    if (grade !== undefined) {
+      gradeRecord = await prisma.grade.findUnique({
+        where: { number: grade },
+      });
+
+      if (!gradeRecord) {
+        return res.status(400).json({
+          success: false,
+          message: "Selected grade does not exist",
+        });
+      }
+    }
+
+    if (avatarId !== undefined && avatarId !== null) {
+      const avatar = await prisma.avatar.findUnique({
+        where: { id: avatarId },
+      });
+
+      if (!avatar) {
+        return res.status(404).json({
+          success: false,
+          message: "Avatar not found",
+        });
+      }
+    }
+
+    if (email !== undefined) {
+      const existingUser = await prisma.user.findUnique({
+        where: { email },
+      });
+
+      if (existingUser && existingUser.id !== req.userId) {
+        return res.status(409).json({
+          success: false,
+          message: "An account with this email already exists",
+        });
+      }
+    }
+
+    const student = await prisma.$transaction(async (tx) => {
+      if (email !== undefined) {
+        await tx.user.update({
+          where: { id: req.userId },
+          data: { email },
+        });
+      }
+
+      return tx.student.update({
+        where: { userId: req.userId },
+        data: {
+          ...(name !== undefined ? { name } : {}),
+          ...(gradeRecord ? { gradeId: gradeRecord.id } : {}),
+          ...(avatarId !== undefined ? { avatarId } : {}),
+        },
+        include: {
+          user: {
+            select: {
+              email: true,
+            },
+          },
+          grade: true,
+          avatar: true,
+        },
+      });
     });
 
     return res.status(200).json({
@@ -99,6 +163,7 @@ const updateMyProfile = async (req, res) => {
       student: {
         id: student.id,
         name: student.name,
+        email: student.user.email,
         grade: {
           id: student.grade.id,
           number: student.grade.number,
