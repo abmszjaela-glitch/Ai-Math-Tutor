@@ -6,6 +6,7 @@ import RouteLoading from './component/RouteLoading';
 const Login = lazy(() => import('./component/Login'));
 const Register = lazy(() => import('./component/Register'));
 const Profile = lazy(() => import('./component/Profile'));
+const LearningHub = lazy(() => import('./component/Learning/LearningHub'));
 
 const Algebra = lazy(() => import('./component/Learning/Algebra'));
 const Measurement = lazy(() => import('./component/Learning/Measurement'));
@@ -49,6 +50,10 @@ const App = () => {
   <Route
     path="/profile"
     element={<Profile />}
+  />
+  <Route
+    path="/start-learning"
+    element={<LearningHub />}
   />
   <Route
     path="/dashboard"

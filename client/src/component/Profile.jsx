@@ -83,14 +83,38 @@ export default function Profile() {
     }
   };
 
+  const deleteProfile = async () => {
+    if (!window.confirm("Delete your student account? This permanently removes your profile and learning progress.")) return;
+
+    setSaving(true);
+    setError("");
+    setMessage("");
+
+    try {
+      const response = await fetch(`${API_URL}/students/me`, {
+        method: "DELETE",
+        credentials: "include",
+      });
+      const data = await response.json();
+      if (!response.ok || !data.success) {
+        throw new Error(data.message || "Unable to delete account");
+      }
+
+      navigate("/register", { replace: true });
+    } catch (deleteError) {
+      setError(deleteError.message);
+      setSaving(false);
+    }
+  };
+
   if (loading) return <main style={{ padding: "48px", textAlign: "center" }}>Loading profile...</main>;
 
   return (
-    <main style={{ minHeight: "100vh", background: "var(--color-app-bg)", color: "var(--color-text)", padding: "48px 20px" }}>
+    <main style={{ minHeight: "100vh", background: "var(--color-page)", color: "var(--color-text)", padding: "48px 20px" }}>
       <div style={{ maxWidth: "760px", margin: "0 auto", background: "var(--color-surface)", border: "1px solid var(--color-border)", borderRadius: "20px", padding: "28px" }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: "16px", marginBottom: "24px" }}>
           <div>
-            <p style={{ margin: "0 0 4px", color: "var(--color-muted)" }}>Student profile</p>
+            <p style={{ margin: "0 0 4px", color: "var(--color-text)" }}>Student profile</p>
             <h1 style={{ margin: 0 }}>{profile?.name || "My Profile"}</h1>
           </div>
           <Link to="/dashboard" style={{ color: "var(--color-link)", fontWeight: 700 }}>Back to dashboard</Link>
@@ -131,13 +155,16 @@ export default function Profile() {
           </label>
 
           {profile?.createdAt && (
-            <p style={{ color: "var(--color-muted)", margin: 0 }}>
+            <p style={{ color: "var(--color-text)", margin: 0 }}>
               Account created: {new Date(profile.createdAt).toLocaleDateString()}
             </p>
           )}
 
           <button type="submit" disabled={saving} style={{ border: 0, borderRadius: "10px", padding: "13px 18px", background: "var(--color-primary)", color: "var(--color-on-primary)", fontWeight: 700, cursor: saving ? "wait" : "pointer" }}>
             {saving ? "Saving..." : "Save profile"}
+          </button>
+          <button type="button" disabled={saving} onClick={deleteProfile} style={{ border: "1px solid var(--color-error)", borderRadius: "10px", padding: "13px 18px", background: "transparent", color: "var(--color-error-text)", fontWeight: 700, cursor: saving ? "wait" : "pointer" }}>
+            Delete account
           </button>
         </form>
       </div>

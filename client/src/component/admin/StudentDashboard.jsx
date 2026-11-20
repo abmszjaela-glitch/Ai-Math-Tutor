@@ -98,10 +98,23 @@ export default function StudentDashboard() {
   const [activeTab, setActiveTab] = useState("dashboard");
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
-  const [tasks, setTasks] = useState([
-    { title: "Complete Algebra Assignment", due: "Today, 11:59 PM", priority: "High", color: "var(--color-error-text)", bg: "var(--color-surface-soft)", done: false },
-    { title: "Review Geometry Notes", due: "Tomorrow, 10:00 AM", priority: "Medium", color: "var(--color-error-text)", bg: "var(--color-error-soft)", done: false },
-    { title: "Practice Fractions Quiz", due: "In 2 days, 8:00 PM", priority: "Low", color: "var(--color-link)", bg: "var(--color-surface-soft)", done: false },
+  const [tasks, setTasks] = useState(() => {
+    try {
+      const saved = JSON.parse(localStorage.getItem("numora:dashboardTasks"));
+      if (Array.isArray(saved)) return saved;
+    } catch (error) {
+      console.warn("Unable to restore dashboard tasks:", error);
+    }
+    return [
+      { title: "Complete Algebra Assignment", due: "Today, 11:59 PM", priority: "High", color: "var(--color-error-text)", bg: "var(--color-surface-soft)", done: false },
+      { title: "Review Geometry Notes", due: "Tomorrow, 10:00 AM", priority: "Medium", color: "var(--color-error-text)", bg: "var(--color-error-soft)", done: false },
+      { title: "Practice Fractions Quiz", due: "In 2 days, 8:00 PM", priority: "Low", color: "var(--color-link)", bg: "var(--color-surface-soft)", done: false },
+    ];
+  });
+  const [notifications, setNotifications] = useState([
+    { message: "New lesson available: Algebra II", time: "5 min ago", read: false },
+    { message: "Your quiz result is ready", time: "1 hour ago", read: false },
+    { message: "Weekly report generated", time: "3 hours ago", read: true },
   ]);
   const [confetti, setConfetti] = useState({ active: false, x: 0, y: 0 });
   const [chatMessages, setChatMessages] = useState([]);
@@ -113,6 +126,10 @@ export default function StudentDashboard() {
     const t = setTimeout(() => setMounted(true), 60);
     return () => clearTimeout(t);
   }, []);
+
+  useEffect(() => {
+    localStorage.setItem("numora:dashboardTasks", JSON.stringify(tasks));
+  }, [tasks]);
 
   useEffect(() => {
     const loadStudent = async () => {
@@ -145,6 +162,13 @@ export default function StudentDashboard() {
 
   const goTo = (path) => {
     setSidebarOpen(false);
+    if (path.startsWith("/dashboard#")) {
+      navigate("/dashboard");
+      window.setTimeout(() => {
+        document.querySelector(path.slice(path.indexOf("#")))?.scrollIntoView({ behavior: "smooth" });
+      }, 100);
+      return;
+    }
     navigate(path);
   };
 
@@ -186,11 +210,6 @@ export default function StudentDashboard() {
     { name: "Study Streak", icon: "🔥", bg: "var(--color-surface-soft)", color: "var(--color-success-text)", unlocked: false },
   ]);
 
-  const notifications = [
-    { message: "New lesson available: Algebra II", time: "5 min ago", read: false },
-    { message: "Your quiz result is ready", time: "1 hour ago", read: false },
-    { message: "Weekly report generated", time: "3 hours ago", read: true },
-  ];
   const unreadCount = notifications.filter((n) => !n.read).length;
 
   const toggleTask = (index, event) => {
@@ -200,6 +219,48 @@ export default function StudentDashboard() {
       setTimeout(() => setConfetti((current) => ({ ...current, active: false })), 900);
     }
     setTasks((previous) => previous.map((task, i) => i === index ? { ...task, done: !task.done } : task));
+  };
+
+  const addTask = () => {
+    const title = window.prompt("Task title");
+    if (!title?.trim()) return;
+    setTasks((previous) => [
+      ...previous,
+      {
+        title: title.trim(),
+        due: "No due date",
+        priority: "Medium",
+        color: "var(--color-link)",
+        bg: "var(--color-surface-soft)",
+        done: false,
+      },
+    ]);
+  };
+
+  const exportProgress = () => {
+    const rows = [
+      ["Statistic", "Value"],
+      ["Lessons mastered", quizStats.completed],
+      ["Average best score", `${quizStats.average}%`],
+      ["Lessons practised", quizStats.attempted],
+      ["Lesson attempts", quizStats.attempts],
+    ];
+    const csv = rows.map((row) => row.map((value) => `"${String(value).replaceAll('"', '""')}"`).join(",")).join("\n");
+    const url = URL.createObjectURL(new Blob([csv], { type: "text/csv;charset=utf-8" }));
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = "numora-progress.csv";
+    link.click();
+    URL.revokeObjectURL(url);
+  };
+
+  const shareProgress = async () => {
+    const text = `I mastered ${quizStats.completed} lessons and have a ${quizStats.average}% average best score on Numora!`;
+    if (navigator.share) {
+      await navigator.share({ title: "My Numora progress", text });
+    } else {
+      await navigator.clipboard?.writeText(text);
+    }
   };
 
   const tryUnlock = (index) => {
@@ -238,10 +299,10 @@ export default function StudentDashboard() {
     { icon: BookOpen, label: "Practice", id: "practice", route: "/practice" },
     { icon: Clock, label: "Mock Tests", id: "mock-tests", route: "/practice/tests" },
     { icon: Brain, label: "AI Tutor", id: "tutor", route: "/SelectFriend", badge: "AI" },
-    { icon: Calendar, label: "Schedule", id: "schedule" },
-    { icon: Trophy, label: "Achievements", id: "achievements" },
-    { icon: Users, label: "Study Groups", id: "groups" },
-    { icon: BarChart3, label: "Analytics", id: "analytics" },
+    { icon: Calendar, label: "Schedule", id: "schedule", route: "/dashboard#schedule" },
+    { icon: Trophy, label: "Achievements", id: "achievements", route: "/dashboard#achievements" },
+    { icon: Users, label: "Profile", id: "profile", route: "/profile" },
+    { icon: BarChart3, label: "Analytics", id: "analytics", route: "/dashboard#analytics" },
   ];
 
   return (
@@ -373,7 +434,7 @@ export default function StudentDashboard() {
                 <div className="pop-in" style={{ ...s.notificationDropdown, background: t.cardBg, border: `1px solid ${t.border}` }}>
                   <div style={{ display: "flex", justifyContent: "space-between", borderBottom: `1px solid ${t.border}`, paddingBottom: "8px" }}>
                     <h4 style={{ fontWeight: "600", color: t.ink, margin: 0 }}>Notifications</h4>
-                    <button style={{ fontSize: "12px", color: "var(--color-link)", background: "none", border: "none", cursor: "pointer" }}>Mark all read</button>
+                    <button onClick={() => setNotifications((items) => items.map((item) => ({ ...item, read: true })))} style={{ fontSize: "12px", color: "var(--color-link)", background: "none", border: "none", cursor: "pointer" }}>Mark all read</button>
                   </div>
                   <div style={{ marginTop: "8px" }}>
                     {notifications.map((n, i) => (
@@ -427,7 +488,7 @@ export default function StudentDashboard() {
         </header>
 
         <div style={{ padding: "28px 32px 48px" }} className="graph-paper">
-          <PracticeProgress onSummary={setQuizStats} />
+          <div id="analytics"><PracticeProgress onSummary={setQuizStats} /></div>
           {/* Stats */}
           <div style={s.statsGrid} className="stats-grid-responsive">
             {[
@@ -506,10 +567,10 @@ export default function StudentDashboard() {
               </div>
             </div>
 
-            <div style={{ ...s.tasksCard, background: t.cardBg, boxShadow: t.cardShadow }}>
+            <div id="schedule" style={{ ...s.tasksCard, background: t.cardBg, boxShadow: t.cardShadow }}>
               <div style={s.tasksHeader}>
                 <h3 style={{ ...s.tasksTitle, color: t.ink }}>Upcoming Tasks</h3>
-                <button style={{ ...s.tasksViewAll }}>View all</button>
+                <button onClick={() => document.querySelector("#schedule")?.scrollIntoView({ behavior: "smooth" })} style={{ ...s.tasksViewAll }}>View all</button>
               </div>
 
               <div>
@@ -529,7 +590,7 @@ export default function StudentDashboard() {
                 ))}
               </div>
 
-              <button className="dash-btn-hover" style={{ ...s.addTaskBtn, border: `2px dashed ${t.border}`, color: t.muted }}>
+              <button onClick={addTask} className="dash-btn-hover" style={{ ...s.addTaskBtn, border: `2px dashed ${t.border}`, color: t.muted }}>
                 <Plus size={16} /> Add Task
               </button>
             </div>
@@ -543,10 +604,10 @@ export default function StudentDashboard() {
                 <p style={{ ...s.sectionSub, color: t.muted }}>Keep track of your latest learning activities</p>
               </div>
               <div style={s.sectionActions}>
-                <button className="dash-btn-hover" style={{ ...s.actionBtn, border: `1px solid ${t.border}`, background: t.cardBg, color: t.ink }}>
+                <button onClick={exportProgress} className="dash-btn-hover" style={{ ...s.actionBtn, border: `1px solid ${t.border}`, background: t.cardBg, color: t.ink }}>
                   <Download size={14} /> Export
                 </button>
-                <button style={{ ...s.actionBtn, border: "none", color: "var(--color-link)", background: "transparent" }}>
+                <button onClick={() => goTo("/practice")} style={{ ...s.actionBtn, border: "none", color: "var(--color-link)", background: "transparent" }}>
                   View all <ChevronRight size={14} />
                 </button>
               </div>
@@ -618,7 +679,7 @@ export default function StudentDashboard() {
           </section>
 
           {/* Achievements */}
-          <section style={{ marginTop: "28px", padding: "24px", borderRadius: "24px", background: t.cardBg, boxShadow: t.cardShadow }}>
+          <section id="achievements" style={{ marginTop: "28px", padding: "24px", borderRadius: "24px", background: t.cardBg, boxShadow: t.cardShadow }}>
             <div style={s.sectionHeader}>
               <div>
                 <h3 style={{ ...s.sectionTitle, color: t.ink }}>Achievements</h3>
@@ -668,7 +729,7 @@ export default function StudentDashboard() {
                 <button className="btn-press" style={s.primaryBtn} onClick={() => goTo("/start-learning")}>
                   <Play size={16} /> Start Learning
                 </button>
-                <button className="btn-press" style={{ ...s.secondaryBtn, background: t.cardBg, color: t.ink, border: `1px solid ${t.border}` }}><Share2 size={16} /> Share</button>
+                <button onClick={shareProgress} className="btn-press" style={{ ...s.secondaryBtn, background: t.cardBg, color: t.ink, border: `1px solid ${t.border}` }}><Share2 size={16} /> Share</button>
               </div>
             </div>
           </section>

@@ -188,7 +188,38 @@ const updateMyProfile = async (req, res) => {
   }
 };
 
+const deleteMyProfile = async (req, res) => {
+  try {
+    const deleted = await prisma.user.delete({
+      where: { id: req.userId },
+      select: { id: true },
+    });
+
+    res.clearCookie("token");
+
+    return res.status(200).json({
+      success: true,
+      message: "Student account deleted successfully",
+      deletedUserId: deleted.id,
+    });
+  } catch (error) {
+    if (error.code === "P2025") {
+      return res.status(404).json({
+        success: false,
+        message: "Student account not found",
+      });
+    }
+
+    console.error("Delete student profile error:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Unable to delete student account",
+    });
+  }
+};
+
 module.exports = {
   getMyProfile,
   updateMyProfile,
+  deleteMyProfile,
 };
