@@ -5,6 +5,7 @@ import { AlertCircle, ArrowLeft, Mic, MicOff, Send, Sparkles, Volume2, VolumeX }
 import { useNavigate } from 'react-router-dom';
 import TutorAvatar from './TutorAvatar';
 import { colors } from '../theme/colors';
+import practiceBackground from '../assets/img/tutor-session/Practice_ Learn and Explore.png';
 
 const easeOut = [0.25, 0.1, 0.25, 1];
 const AVATAR_NAMES = { kanga: 'Kangaroo', pandy: 'Panda', koala: 'Koala' };
@@ -939,6 +940,10 @@ const TutorSession = () => {
       style={{
         '--accent': profile.color,
         background: palette.paper,
+        backgroundImage: `url("${practiceBackground}")`,
+        backgroundPosition: 'center',
+        backgroundRepeat: 'no-repeat',
+        backgroundSize: 'cover',
         display: 'flex',
         flexDirection: 'column',
         fontFamily: fontBody,
@@ -986,6 +991,9 @@ const TutorSession = () => {
           .ts-header-label { font-size: 0.95rem !important; }
           .ts-header-status { font-size: 0.66rem !important; }
           .ts-status-text { font-size: 0.85rem !important; }
+          .ts-avatar-area { height: auto !important; justify-content: center !important; }
+          .ts-avatar-stage { position: relative !important; right: auto !important; top: auto !important; }
+          .ts-status-text { position: relative !important; left: auto !important; bottom: auto !important; transform: none !important; margin-top: 8px !important; }
           .ts-conversation { padding: 8px 12px !important; }
           .ts-bubble {
             max-width: 90% !important;
@@ -1014,7 +1022,8 @@ const TutorSession = () => {
           alignItems: 'center',
           justifyContent: 'space-between',
           padding: '12px 20px',
-          background: palette.paper,
+          background: 'rgba(255, 255, 255, 0.72)',
+          backdropFilter: 'blur(6px)',
           borderBottom: `4px solid ${profile.color}`,
           boxShadow: '0 2px 10px var(--color-shadow)',
           zIndex: 20,
@@ -1092,25 +1101,40 @@ const TutorSession = () => {
 
       {/* Tutor avatar and status */}
       <div
+        className="ts-avatar-area"
         style={{
           flex: 'none',
+          position: 'relative',
+          height: `${avatarSize + 50}px`,
           display: 'flex',
           flexDirection: 'column',
           alignItems: 'center',
           padding: '14px 20px 8px',
         }}
       >
-        <TutorAvatar
-          tutorId={tutorId}
-          speaking={isSpeaking}
-          size={avatarSize}
-          reducedMotion={reducedMotion}
-        />
+        <div
+          className="ts-avatar-stage"
+          style={{
+            position: 'absolute',
+            right: '18%',
+            top: '14px',
+          }}
+        >
+          <TutorAvatar
+            tutorId={tutorId}
+            speaking={isSpeaking}
+            size={avatarSize}
+            reducedMotion={reducedMotion}
+          />
+        </div>
 
         <div
           className="ts-status-text"
           style={{
-            marginTop: '8px',
+            position: 'absolute',
+            left: '50%',
+            bottom: '8px',
+            transform: 'translateX(-50%)',
             fontFamily: fontDisplay,
             fontSize: '1rem',
             fontWeight: 700,

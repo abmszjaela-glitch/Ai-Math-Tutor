@@ -74,9 +74,9 @@ const TutorAvatar = ({
         // Do not clip the ears or head.
         overflow: 'visible',
 
-        // White backdrop inside this element, so the video's
-        // multiply blend below always has white to blend with.
-        background: 'var(--color-surface)',
+        // Let the page artwork show through instead of adding a
+        // solid square behind the video.
+        background: 'transparent',
         transform: 'translateZ(0)',
       }}
       aria-label={`${avatar.name} animated tutor`}
