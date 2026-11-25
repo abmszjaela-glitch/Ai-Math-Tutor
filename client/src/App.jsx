@@ -2,6 +2,7 @@ import { lazy } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 
 import RouteLoading from './component/RouteLoading';
+import FloatingTutorButton from './component/FloatingTutorButton';
 
 const Login = lazy(() => import('./component/Login'));
 const Register = lazy(() => import('./component/Register'));
@@ -15,6 +16,7 @@ const Statistics = lazy(() => import('./component/Learning/Statistics'));
 
 const SelectFriend = lazy(() => import('./component/SelectFriend'));
 const TutorSession = lazy(() => import('./component/TutorSession'));
+const Map = lazy(() => import('./component/map'));
 
 
 import MainLayout from "./component/MainLayout";
@@ -30,6 +32,8 @@ const App = () => {
   return (
 
     <BrowserRouter>
+
+      <FloatingTutorButton />
 
       <RouteLoading><Routes>
 
@@ -89,6 +93,8 @@ const App = () => {
     path="/tutor-session"
     element={<TutorSession />}
   />
+
+<Route path="/map" element={<Map />} />
 
 <Route path="/practice" element={<PracticeProblems />} />
 <Route path="/practice/tests" element={<MockTests />} />

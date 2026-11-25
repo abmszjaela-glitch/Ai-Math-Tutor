@@ -97,6 +97,13 @@ const Footer = () => {
                     <img
                       src={NUMORA}
                       alt="AI Math Tutor Logo"
+                      style={{
+                        display: 'block',
+                        width: '220px',
+                        maxWidth: '100%',
+                        height: 'auto',
+                        objectFit: 'contain',
+                      }}
                     />
                   </a>
                 </div>
