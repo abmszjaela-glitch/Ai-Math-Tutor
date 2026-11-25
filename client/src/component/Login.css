@@ -13,6 +13,7 @@
 .form-body.login-page .img-holder {
   position: relative;
   inset: auto;
+  z-index: 0;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -39,6 +40,8 @@
 }
 
 .form-body.login-page .form-holder {
+  position: relative;
+  z-index: 1;
   display: flex;
   width: 100%;
   min-width: 0;
