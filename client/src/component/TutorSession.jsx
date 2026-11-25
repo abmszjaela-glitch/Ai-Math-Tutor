@@ -992,7 +992,7 @@ const TutorSession = () => {
           .ts-header-status { font-size: 0.66rem !important; }
           .ts-status-text { font-size: 0.85rem !important; }
           .ts-avatar-area { height: auto !important; justify-content: center !important; }
-          .ts-avatar-stage { position: relative !important; right: auto !important; top: auto !important; }
+          .ts-avatar-stage { display: none !important; }
           .ts-status-text { position: relative !important; left: auto !important; bottom: auto !important; transform: none !important; margin-top: 8px !important; }
           .ts-conversation { padding: 8px 12px !important; }
           .ts-bubble {
@@ -1117,7 +1117,7 @@ const TutorSession = () => {
           style={{
             position: 'absolute',
             right: '18%',
-            top: '14px',
+            top: '110px',
           }}
         >
           <TutorAvatar
