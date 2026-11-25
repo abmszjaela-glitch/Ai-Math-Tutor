@@ -3,16 +3,19 @@ import { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import Swal from '../vendor/sweetalert2/sweetalert2.esm.js';
 import '../vendor/sweetalert2/sweetalert2.min.css';
+import { motion } from 'framer-motion';
 
 import graphicImage from '../assets/img/Login/graphic15.svg';
 import logoImage from '../assets/img/logo/NUMORA.png';
 import authStyles from '../assets/Hooks/Authstyles.js';
 import './Login.css';
+import { Check, Volume2, VolumeX, ArrowLeft } from 'lucide-react';
 
 
 
 
 const Login = () => {
+const easeOut = [0.25, 0.1, 0.25, 1];
 
   const navigate = useNavigate();
 
@@ -204,7 +207,36 @@ const Login = () => {
 
         </div>
 
-
+    {/* Back Button */}
+<motion.button
+  type="button"
+  className="avatar-back-button"
+  onClick={() => navigate(-1)}
+  whileHover={{ scale: 1.06, x: -3 }}
+  whileTap={{ scale: 0.94 }}
+  transition={{ duration: 0.2, ease: easeOut }}
+  style={{
+    position: 'absolute',
+    top: '40px',
+    left: '20px',
+    zIndex: 5,
+    display: 'flex',
+    alignItems: 'center',
+    gap: '8px',
+    padding: '10px 16px',
+    borderRadius: '24px',
+    border: '1.5px solid #E6E4DD',
+    background: '#fff',
+    color: '#14213D',
+    fontWeight: 600,
+    fontSize: '14px',
+    boxShadow: '0 4px 12px rgba(0,0,0,0.08)',
+    cursor: 'pointer',
+  }}
+>
+  <ArrowLeft size={18} />
+  Back
+</motion.button>
         {/* =================================================
             LOGIN FORM
         ================================================= */}

@@ -52,6 +52,11 @@
   width: 100%;
   min-height: 100%;
   padding: clamp(24px, 5vw, 72px);
+  background-image: radial-gradient(
+    circle at 88% 18%,
+    rgba(241, 95, 37, 0.1),
+    transparent 34%
+  );
 }
 
 .form-body.login-page .form-items {
@@ -70,6 +75,16 @@
 .form-body.login-page .form-items h3 {
   font-size: clamp(26px, 2.2vw, 30px);
   line-height: 1.35;
+}
+
+.form-body.login-page .form-items h3::after {
+  display: block;
+  width: 44px;
+  height: 4px;
+  margin: 10px auto 0;
+  border-radius: 999px;
+  background: var(--color-accent);
+  content: '';
 }
 
 .form-body.login-page .form-items p {

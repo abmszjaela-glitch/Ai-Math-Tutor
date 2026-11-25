@@ -445,14 +445,14 @@ useEffect(() => {
 
           .avatar-back-button {
             left: 12px !important;
-            top: 8px !important;
-            padding: 8px 12px !important;
+            top: 40px !important;
+            padding: 20px 12px !important;
             font-size: 13px !important;
           }
 
           .avatar-sound-button {
             right: 12px !important;
-            top: 8px !important;
+            top: 40px !important;
             width: 38px !important;
             height: 38px !important;
           }
@@ -502,7 +502,7 @@ useEffect(() => {
   transition={{ duration: 0.2, ease: easeOut }}
   style={{
     position: 'absolute',
-    top: '0px',
+    top: '40px',
     left: '20px',
     zIndex: 5,
     display: 'flex',
@@ -558,7 +558,7 @@ useEffect(() => {
         }}
         style={{
           position: 'absolute',
-          top: '0px',
+          top: '40px',
           right: '20px',
           zIndex: 5,
           width: '42px',
@@ -639,7 +639,7 @@ useEffect(() => {
           }}
           style={{
             maxWidth: '600px',
-            margin: '0 auto 48px auto',
+            margin: '40px auto 8px auto',
             textAlign: 'center',
           }}
         >

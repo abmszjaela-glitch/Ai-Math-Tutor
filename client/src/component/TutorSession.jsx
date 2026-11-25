@@ -1175,6 +1175,9 @@ const TutorSession = () => {
         style={{
           flex: 1,
           minHeight: 0,
+          display: 'flex',
+          flexDirection: 'column',
+          justifyContent: 'safe center',
           overflowY: 'auto',
           padding: '8px 20px',
           maxWidth: '680px',
