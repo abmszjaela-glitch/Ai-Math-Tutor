@@ -273,6 +273,8 @@ const TutorSession = () => {
   const profile = tutorProfiles[tutorId] || tutorProfiles[DEFAULT_TUTOR_ID];
 
   const [messages, setMessages] = useState([]);
+  const [studentName, setStudentName] = useState('');
+  const [isLoadingStudentName, setIsLoadingStudentName] = useState(true);
   const [isListening, setIsListening] = useState(false);
   const [isSpeaking, setIsSpeaking] = useState(false);
   const [isThinking, setIsThinking] = useState(false);
@@ -308,6 +310,45 @@ const TutorSession = () => {
     if (noticeTimeoutRef.current) clearTimeout(noticeTimeoutRef.current);
     noticeTimeoutRef.current = setTimeout(() => setNotice(null), 4000);
   };
+
+  useEffect(() => {
+    const controller = new AbortController();
+    let active = true;
+
+    const loadStudentName = async () => {
+      try {
+        const response = await fetch(`${API_URL}/students/me`, {
+          credentials: 'include',
+          signal: controller.signal,
+        });
+
+        if (response.status === 401) {
+          navigate('/login', { replace: true });
+          return;
+        }
+
+        const data = await response.json();
+        if (!response.ok || !data.success) {
+          throw new Error(data.message || 'Unable to load student profile');
+        }
+
+        if (active) setStudentName(data.student?.name?.trim() || '');
+      } catch (error) {
+        if (error.name !== 'AbortError') {
+          console.error(LOG_PREFIX, 'student name unavailable', error);
+          if (active) setStudentName('');
+        }
+      } finally {
+        if (active) setIsLoadingStudentName(false);
+      }
+    };
+
+    loadStudentName();
+    return () => {
+      active = false;
+      controller.abort();
+    };
+  }, [navigate]);
 
   // ==========================================================
   // SPEECH RECOGNITION (microphone input)
@@ -535,18 +576,22 @@ const TutorSession = () => {
   // INITIAL GREETING
   // ==========================================================
 
+  const greeting = studentName
+    ? profile.greeting.replace("G'day, I'm", `G'day, ${studentName}! I'm`)
+    : profile.greeting;
+
   useEffect(() => {
-    if (hasGreetedRef.current) return;
+    if (isLoadingStudentName || hasGreetedRef.current) return;
     hasGreetedRef.current = true;
 
     setMessages((prev) => [
       ...prev,
-      { id: nextMessageId(), sender: 'tutor', text: profile.greeting },
+      { id: nextMessageId(), sender: 'tutor', text: greeting },
     ]);
-    speak(profile.greeting);
+    speak(greeting);
     // Speech is triggered once for this greeting, not for each render.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [profile.greeting]);
+  }, [greeting, isLoadingStudentName]);
 
   // ==========================================================
   // CLEANUP
