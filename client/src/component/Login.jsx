@@ -51,11 +51,17 @@ const Login = () => {
   const [error, setError] = useState('');
 
   // =====================================================
-  // AUTH PAGE STYLES
+  // AUTH PAGE STYLES + FIXED (NON-SCROLLABLE) PAGE
   // =====================================================
 
   useEffect(() => {
     window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
+
+    // 🔒 Lock page scroll while on the login page
+    const prevHtmlOverflow = document.documentElement.style.overflow;
+    const prevBodyOverflow = document.body.style.overflow;
+    document.documentElement.style.overflow = 'hidden';
+    document.body.style.overflow = 'hidden';
 
     const styleTag = document.createElement('style');
     styleTag.id = 'auth-inline-styles';
@@ -63,6 +69,10 @@ const Login = () => {
     document.head.appendChild(styleTag);
 
     return () => {
+      // Restore scrolling for other pages
+      document.documentElement.style.overflow = prevHtmlOverflow;
+      document.body.style.overflow = prevBodyOverflow;
+
       const existingStyle = document.getElementById('auth-inline-styles');
       if (existingStyle) {
         existingStyle.remove();

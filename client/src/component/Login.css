@@ -242,3 +242,44 @@
 .numora-login-alert .swal2-timer-progress-bar {
   background: var(--color-primary);
 }
+/* ===== Add this at the END of Login.css ===== */
+/* Fixed, non-scrollable login page */
+
+.login-page {
+  height: 100vh;
+  height: 100dvh; /* correct on mobile browsers */
+  overflow: hidden;
+}
+
+.login-page .iofrm-layout {
+  height: 100%;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.login-page .img-holder,
+.login-page .form-holder {
+  height: 100%;
+  min-height: 0;
+  overflow: hidden;
+}
+
+/* Keep the form vertically centred inside the fixed area */
+.login-page .form-holder .form-content {
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Short screens: scale content so nothing is cut off */
+@media (max-height: 700px) {
+  .login-page .form-items {
+    transform: scale(0.88);
+    transform-origin: center;
+  }
+  .login-page .info-holder {
+    transform: scale(0.8);
+    transform-origin: center;
+  }
+}
