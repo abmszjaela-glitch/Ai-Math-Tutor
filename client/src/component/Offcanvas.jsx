@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom';
 import { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { API_URL } from '../config/api';
 import logo from '../assets/img/logo/NUMORA.png';
 
 import {
@@ -383,6 +384,44 @@ const Offcanvas = ({
   isOpen = false,
   onClose = () => {},
 }) => {
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [isCheckingAuth, setIsCheckingAuth] = useState(true);
+
+  useEffect(() => {
+    const controller = new AbortController();
+    let active = true;
+
+    const checkAuthentication = async () => {
+      try {
+        const response = await fetch(`${API_URL}/auth/me`, {
+          credentials: 'include',
+          signal: controller.signal,
+        });
+
+        if (!response.ok) {
+          if (active) setIsAuthenticated(false);
+          return;
+        }
+
+        const data = await response.json();
+        if (active) setIsAuthenticated(Boolean(data.success && data.user));
+      } catch (error) {
+        if (error.name !== 'AbortError') {
+          console.error('Get current user error:', error);
+          if (active) setIsAuthenticated(false);
+        }
+      } finally {
+        if (active) setIsCheckingAuth(false);
+      }
+    };
+
+    checkAuthentication();
+    return () => {
+      active = false;
+      controller.abort();
+    };
+  }, []);
+
   // Lock page scroll while open + close on Escape
   useEffect(() => {
     if (!isOpen) return;
@@ -492,7 +531,11 @@ const Offcanvas = ({
                     <li><Link to="/Statistics" onClick={onClose}>Statistics & Probability</Link></li>
                     <li><Link to="/ProblemSolving" onClick={onClose}>Problem Solving</Link></li>
                   </SubmenuAccordion>
-                  <li><Link to="/login" onClick={onClose}>Login</Link></li>
+                  {!isCheckingAuth && (
+                    isAuthenticated
+                      ? <li><Link to="/profile" onClick={onClose}>My Profile</Link></li>
+                      : <li><Link to="/login" onClick={onClose}>Login</Link></li>
+                  )}
                 </ul>
               </motion.nav>
 
