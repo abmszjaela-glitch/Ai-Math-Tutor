@@ -3,6 +3,7 @@ const express = require("express");
 const {
   createConversation,
   getMyConversations,
+  getMyConversationHistory,
   getConversationById,
 } = require("../controllers/conversationController");
 
@@ -20,6 +21,12 @@ router.get(
   "/",
   authenticate,
   getMyConversations
+);
+
+router.get(
+  "/history",
+  authenticate,
+  getMyConversationHistory
 );
 
 router.get(

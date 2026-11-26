@@ -11,6 +11,10 @@ const createConversation = async (req, res) => {
       where: {
         userId: req.userId,
       },
+      select: {
+        id: true,
+        avatarId: true,
+      },
     });
 
     if (!student) {
@@ -23,6 +27,7 @@ const createConversation = async (req, res) => {
     const conversation = await prisma.conversation.create({
       data: {
         studentId: student.id,
+        avatarId: student.avatarId,
         title: title || "Math Tutor Session",
       },
     });
@@ -87,6 +92,83 @@ const getMyConversations = async (req, res) => {
   }
 };
 
+const getMyConversationHistory = async (req, res) => {
+  try {
+    const student = await prisma.student.findUnique({
+      where: {
+        userId: req.userId,
+      },
+      include: {
+        user: {
+          select: {
+            email: true,
+          },
+        },
+        grade: true,
+        avatar: true,
+      },
+    });
+
+    if (!student) {
+      return res.status(404).json({
+        success: false,
+        message: "Student not found",
+      });
+    }
+
+    const [avatarSelections, conversations] = await Promise.all([
+      prisma.avatarSelection.findMany({
+        where: {
+          studentId: student.id,
+        },
+        orderBy: [
+          { selectedAt: "asc" },
+          { id: "asc" },
+        ],
+        include: {
+          avatar: true,
+        },
+      }),
+      prisma.conversation.findMany({
+        where: {
+          studentId: student.id,
+        },
+        orderBy: {
+          updatedAt: "desc",
+        },
+        include: {
+          avatar: true,
+          messages: {
+            orderBy: {
+              createdAt: "asc",
+            },
+          },
+        },
+      }),
+    ]);
+
+    return res.status(200).json({
+      success: true,
+      student: {
+        id: student.id,
+        name: student.name,
+        email: student.user.email,
+        grade: student.grade,
+        currentAvatar: student.avatar,
+      },
+      avatarSelections,
+      conversations,
+    });
+  } catch (error) {
+    console.error("Get conversation history error:", error);
+
+    return res.status(500).json({
+      success: false,
+      message: "Unable to get conversation history",
+    });
+  }
+};
+
 
 const getConversationById = async (req, res) => {
   try {
@@ -144,5 +226,6 @@ const getConversationById = async (req, res) => {
 module.exports = {
   createConversation,
   getMyConversations,
+  getMyConversationHistory,
   getConversationById,
 };

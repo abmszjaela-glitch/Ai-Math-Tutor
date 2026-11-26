@@ -138,7 +138,12 @@ const updateMyProfile = async (req, res) => {
         });
       }
 
-      return tx.student.update({
+      const currentStudent = await tx.student.findUnique({
+        where: { userId: req.userId },
+        select: { id: true, avatarId: true },
+      });
+
+      const updatedStudent = await tx.student.update({
         where: { userId: req.userId },
         data: {
           ...(name !== undefined ? { name } : {}),
@@ -155,6 +160,21 @@ const updateMyProfile = async (req, res) => {
           avatar: true,
         },
       });
+
+      if (
+        avatarId &&
+        currentStudent &&
+        currentStudent.avatarId !== avatarId
+      ) {
+        await tx.avatarSelection.create({
+          data: {
+            studentId: updatedStudent.id,
+            avatarId,
+          },
+        });
+      }
+
+      return updatedStudent;
     });
 
     return res.status(200).json({

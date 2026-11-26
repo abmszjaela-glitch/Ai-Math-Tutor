@@ -34,6 +34,7 @@ model Student {
   updatedAt DateTime @updatedAt
 
   conversations Conversation[]
+  avatarSelections AvatarSelection[]
   progress      StudentProgress[]
 }
 
@@ -54,6 +55,8 @@ model Avatar {
   voiceId     String?
 
   students    Student[]
+  conversations Conversation[]
+  selections  AvatarSelection[]
 }
 
 model Topic {
@@ -85,11 +88,25 @@ model Conversation {
   studentId String
   student   Student  @relation(fields: [studentId], references: [id], onDelete: Cascade)
 
+  avatarId  String?
+  avatar    Avatar?  @relation(fields: [avatarId], references: [id], onDelete: SetNull)
+
   title     String?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   messages Message[]
+}
+
+model AvatarSelection {
+  id         String   @id @default(cuid())
+  studentId  String
+  student    Student  @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  avatarId   String
+  avatar     Avatar   @relation(fields: [avatarId], references: [id], onDelete: Restrict)
+  selectedAt DateTime @default(now())
+
+  @@index([studentId, selectedAt])
 }
 
 model Message {

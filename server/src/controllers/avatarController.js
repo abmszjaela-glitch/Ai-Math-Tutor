@@ -49,18 +49,49 @@ const selectAvatar = async (req, res) => {
       });
     }
 
-    const student = await prisma.student.update({
-      where: {
-        userId: req.userId,
-      },
-      data: {
-        avatarId: avatar.id,
-      },
-      include: {
-        grade: true,
-        avatar: true,
-      },
+    const student = await prisma.$transaction(async (tx) => {
+      const currentStudent = await tx.student.findUnique({
+        where: {
+          userId: req.userId,
+        },
+        select: {
+          avatarId: true,
+        },
+      });
+
+      if (!currentStudent) return null;
+
+      const updatedStudent = await tx.student.update({
+        where: {
+          userId: req.userId,
+        },
+        data: {
+          avatarId: avatar.id,
+        },
+        include: {
+          grade: true,
+          avatar: true,
+        },
+      });
+
+      if (currentStudent.avatarId !== avatar.id) {
+        await tx.avatarSelection.create({
+          data: {
+            studentId: updatedStudent.id,
+            avatarId: avatar.id,
+          },
+        });
+      }
+
+      return updatedStudent;
     });
+
+    if (!student) {
+      return res.status(404).json({
+        success: false,
+        message: "Student not found",
+      });
+    }
 
     return res.status(200).json({
       success: true,
