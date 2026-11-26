@@ -482,7 +482,7 @@ const Offcanvas = ({
                     <li><Link to="/practice" onClick={onClose}>Practice Problems</Link></li>
                     <li><Link to="/practice/tests" onClick={onClose}>Mock Tests</Link></li>
                     <li>
-                      <Link to="/dashboard" onClick={onClose}>My Progress</Link>
+                      <Link to="/practice/progress" onClick={onClose}>My Progress</Link>
                     </li>
                   </SubmenuAccordion>
 

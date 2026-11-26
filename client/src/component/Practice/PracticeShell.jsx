@@ -9,7 +9,7 @@ export default function PracticeShell({ children, student }) {
       <nav aria-label="Practice navigation">
         <NavLink to="/practice" end><BookOpen size={17} /> Practice</NavLink>
         <NavLink to="/practice/tests"><Timer size={17} /> Mock tests</NavLink>
-        <NavLink to="/dashboard"><ChartNoAxesCombined size={17} /> My Progress</NavLink>
+        <NavLink to="/practice/progress"><ChartNoAxesCombined size={17} /> My Progress</NavLink>
       </nav>
       <div className="practice-user">{student ? <><span>{student.name.charAt(0).toUpperCase()}</span><div>{student.name}<small>Grade {student.grade} learner</small></div></> : <Link to="/login">Sign in</Link>}</div>
     </header>

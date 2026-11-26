@@ -12,7 +12,7 @@ export default function LearningHub() {
   return (
     <main style={{ minHeight: "100vh", padding: "48px 20px", background: "var(--color-page)", color: "var(--color-ink)" }}>
       <div style={{ maxWidth: "980px", margin: "0 auto" }}>
-        <Link to="/dashboard" style={{ color: "var(--color-link)", fontWeight: 700 }}>← Dashboard</Link>
+        <Link to="/" style={{ color: "var(--color-link)", fontWeight: 700 }}>← Home</Link>
         <h1 style={{ margin: "18px 0 8px" }}>Choose a subject</h1>
         <p style={{ margin: "0 0 28px", color: "var(--color-text)" }}>Open lessons for your grade and learn with the AI tutor.</p>
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: "18px" }}>

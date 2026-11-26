@@ -37,10 +37,10 @@ export default function SubjectLessons({ subject }) {
   return (
     <main className="container section-padding mx-auto max-w-5xl px-4 py-8 app-text sm:px-6 ">
       <Link
-        to="/dashboard"
+        to="/start-learning"
         className={`inline-flex items-center gap-1.5 rounded-xl px-3.5 py-2 text-sm font-semibold app-muted transition app-hover-soft app-hover-link ${focusRing}`}
       >
-        ← Dashboard
+        ← All subjects
       </Link>
 
       {/* ---------- Header ---------- */}

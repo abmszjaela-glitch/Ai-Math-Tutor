@@ -299,7 +299,6 @@ const Login = () => {
                     <h2 style={{ margin: 0, fontSize: '32px', fontWeight: 700 }}>6</h2>
                     <span style={{ fontSize: '24px', fontWeight: 700 }}>+</span>
                   </div>
-                  <p style={{ margin: 0, fontSize: '12px', fontWeight: 600 }}>Grade Levels</p>
                 </div>
               </motion.div>
             </div>

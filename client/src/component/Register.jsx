@@ -21,7 +21,7 @@ const Register = () => {
       });
       const data = await response.json();
       if (!response.ok || !data.success) throw new Error(Object.values(data.errors || {}).flat().join(' ') || data.message || 'Registration failed');
-      navigate('/dashboard', { replace: true });
+      navigate('/start-learning', { replace: true });
     } catch (error) { setError(error.message || 'Unable to register. Please try again.'); }
     finally { setIsLoading(false); }
   };

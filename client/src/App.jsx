@@ -17,11 +17,11 @@ const Statistics = lazy(() => import('./component/Learning/Statistics'));
 const SelectFriend = lazy(() => import('./component/SelectFriend'));
 const TutorSession = lazy(() => import('./component/TutorSession'));
 const Map = lazy(() => import('./component/map'));
+const PracticeProgress = lazy(() => import('./component/Practice/PracticeProgress'));
 
 
 import MainLayout from "./component/MainLayout";
 
-const Stdashboard = lazy(() => import('./component/admin/StudentDashboard'));
 const PracticeProblems = lazy(() => import('./component/Practice/PracticeProblems'));
 const MockTests = lazy(() => import('./component/Practice/MockTests'));
 const Home = lazy(() => import('./component/Home'));
@@ -60,11 +60,6 @@ const App = () => {
     element={<LearningHub />}
   />
   <Route
-    path="/dashboard"
-    element={<Stdashboard />}
-  />
-
-  <Route
     path="/Algebra"
     element={<Algebra />}
   />
@@ -98,7 +93,7 @@ const App = () => {
 
 <Route path="/practice" element={<PracticeProblems />} />
 <Route path="/practice/tests" element={<MockTests />} />
-<Route path="/practice/progress" element={<Navigate to="/dashboard" replace />} />
+<Route path="/practice/progress" element={<PracticeProgress />} />
 <Route path="*" element={<Navigate to="/" replace />} />
 </Routes></RouteLoading>
 

@@ -391,7 +391,7 @@ const Header = ({ onMenuClick }) => {
                           </li>
 
                           <li>
-                            <Link to="/dashboard">
+                            <Link to="/practice/progress">
                               My Progress
                             </Link>
                           </li>

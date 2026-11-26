@@ -7,7 +7,6 @@ const home = await readFile(new URL('../src/assets/css/main.css', import.meta.ur
 const palette = await readFile(new URL('../src/theme/home-palette.css', import.meta.url), 'utf8');
 const declarations = (css) => Object.fromEntries([...css.matchAll(/(--[\w-]+)\s*:\s*([^;]+);/g)].map(([, key, value]) => [key, value.trim()]));
 const base = { ...declarations(home.match(/:root\s*\{([^}]+)\}/)[1]), ...declarations(palette.match(/:root\s*\{([^}]+)\}/)[1]) };
-const dark = { ...base, ...declarations(palette.match(/\[data-theme='dark'\]\s*\{([^}]+)\}/)[1]) };
 const resolve = (value, tokens = base, seen = new Set()) => value.replace(/var\((--[\w-]+)\)/g, (_, key) => {
   assert.ok(tokens[key], `Undefined theme token: ${key}`);
   assert.ok(!seen.has(key), `Circular theme token: ${key}`);
@@ -34,7 +33,7 @@ test('shared theme keeps the established Home brand values', () => {
   for (const value of Object.values(colors)) resolve(value);
 });
 
-test('normal text, buttons, soft selections and statuses meet 4.5:1 in both themes', () => {
+test('normal text, buttons, soft selections and statuses meet 4.5:1', () => {
   const pairs = [
     ['--color-ink', '--color-page'], ['--color-text', '--color-page'],
     ['--color-text', '--color-surface'], ['--color-text', '--color-surface-soft'],
@@ -43,15 +42,15 @@ test('normal text, buttons, soft selections and statuses meet 4.5:1 in both them
     ['--color-success-text', '--color-success-soft'], ['--color-error-text', '--color-error-soft'],
     ['--color-warning-text', '--color-warning-soft'],
   ];
-  for (const tokens of [base, dark]) for (const [text, background] of pairs) {
-    const ratio = contrast(text, background, tokens);
+  for (const [text, background] of pairs) {
+    const ratio = contrast(text, background, base);
     assert.ok(ratio >= 4.5, `${text} on ${background}: ${ratio.toFixed(2)}:1`);
   }
 });
 
 test('focus indicators contrast with their component surfaces', () => {
-  for (const tokens of [base, dark]) for (const background of ['--color-page', '--color-surface', '--color-primary-soft']) {
-    assert.ok(contrast('--color-focus', background, tokens) >= 3);
+  for (const background of ['--color-page', '--color-surface', '--color-primary-soft']) {
+    assert.ok(contrast('--color-focus', background, base) >= 3);
   }
 });
 

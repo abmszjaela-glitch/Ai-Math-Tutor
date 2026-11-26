@@ -287,9 +287,9 @@ export default function Profile() {
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.6, ease: easeOut }}
       >
-        <Link to="/dashboard" className="pf-back">
+        <Link to="/start-learning" className="pf-back">
           <ArrowLeft size={18} />
-          Back to dashboard
+          Back to learning
         </Link>
 
         {/* Hero */}

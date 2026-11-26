@@ -197,7 +197,7 @@ function QuizResults({ result, onExit }) {
       <p>{result.correct} correct · {result.total - result.answered} unanswered · {result.total} questions · {Math.floor(result.elapsedSeconds / 60)}m {result.elapsedSeconds % 60}s</p>
       <div className="practice-result-actions">
         <button className="practice-btn" onClick={onExit}><RotateCcw size={16} />Keep practising</button>
-        <Link className="practice-btn practice-btn-outline" to="/dashboard">My Progress <ArrowRight size={16} /></Link>
+        <Link className="practice-btn practice-btn-outline" to="/practice/progress">My Progress <ArrowRight size={16} /></Link>
       </div>
       <small>Your best scores are saved. Complete a full lesson practice at 70% or more to master it.</small>
     </div>
