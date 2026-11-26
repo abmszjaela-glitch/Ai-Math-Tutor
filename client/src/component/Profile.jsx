@@ -11,6 +11,8 @@ import {
   Trash2,
   Check,
   Sparkles,
+  History,
+  MessageSquare,
 } from "lucide-react";
 import { API_URL } from "../config/api";
 
@@ -28,6 +30,33 @@ const tutorImages = {
   Kangaroo: kangarooImage,
   Panda: pandaImage,
   Koala: koalaImage,
+};
+
+const formatHistoryMessage = (message) => {
+  if (message.role !== "assistant") return message.content;
+
+  try {
+    const tutor = JSON.parse(message.content);
+    if (!tutor || typeof tutor !== "object") return message.content;
+
+    return [
+      tutor.message,
+      ...(Array.isArray(tutor.steps)
+        ? tutor.steps.map((step) =>
+            [step.explanation, step.calculation].filter(Boolean).join(" ")
+          )
+        : []),
+      tutor.answer && `Answer: ${tutor.answer}`,
+      tutor.hint && `Hint: ${tutor.hint}`,
+      tutor.encouragement,
+      tutor.topic && `Topic: ${tutor.topic}`,
+      tutor.difficulty && `Difficulty: ${tutor.difficulty}`,
+    ]
+      .filter(Boolean)
+      .join("\n\n") || message.content;
+  } catch {
+    return message.content;
+  }
 };
 
 const styles = `
@@ -55,6 +84,15 @@ const styles = `
     transition: transform .2s ease, box-shadow .2s ease;
   }
   .pf-back:hover { transform: translateX(-3px); box-shadow: 0 8px 22px var(--color-shadow); }
+  .pf-top-links { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; }
+  .pf-history-shortcut {
+    display: inline-flex; align-items: center; gap: 8px;
+    padding: 10px 16px; border-radius: 24px;
+    border: 1px solid var(--color-border); background: var(--color-surface);
+    color: var(--color-link); font-size: 14px; font-weight: 800;
+    text-decoration: none; box-shadow: var(--shadow-card);
+  }
+  .pf-history-shortcut:hover { border-color: var(--color-primary); }
 
   .pf-heading { margin: 26px 0 22px; }
   .pf-eyebrow {
@@ -187,6 +225,46 @@ const styles = `
   }
   .pf-retry { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
   .pf-retry button { border: 0; background: var(--color-primary); color: var(--color-on-primary); }
+  .pf-history-section {
+    margin-top: 24px; padding: 26px;
+    border: 1px solid var(--color-border); border-radius: 22px;
+    background: var(--color-surface); box-shadow: var(--shadow-card);
+  }
+  .pf-history-heading { display: flex; align-items: flex-start; justify-content: space-between; gap: 14px; margin-bottom: 20px; }
+  .pf-history-heading h2 { margin: 0 0 5px; font-size: 20px; }
+  .pf-history-heading p { margin: 0; color: var(--color-text); font-size: 13px; line-height: 1.5; }
+  .pf-history-group + .pf-history-group { margin-top: 24px; }
+  .pf-history-group h3 { margin: 0 0 12px; font-size: 15px; }
+  .pf-avatar-history { display: flex; flex-wrap: wrap; gap: 10px; }
+  .pf-avatar-history-item {
+    display: inline-flex; align-items: center; gap: 9px;
+    padding: 8px 12px; border: 1px solid var(--color-border);
+    border-radius: 14px; background: var(--color-page); color: var(--color-ink);
+    font-size: 12px; font-weight: 700;
+  }
+  .pf-avatar-history-item img { width: 34px; height: 34px; object-fit: contain; border-radius: 9px; background: var(--color-surface); }
+  .pf-avatar-history-item time { display: block; margin-top: 2px; color: var(--color-text); font-size: 10px; font-weight: 500; }
+  .pf-history-list { display: grid; gap: 12px; }
+  .pf-history-item { border: 1px solid var(--color-border); border-radius: 15px; overflow: hidden; }
+  .pf-history-item summary {
+    display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px;
+    padding: 14px 16px; background: var(--color-page); cursor: pointer; list-style: none;
+  }
+  .pf-history-item summary::-webkit-details-marker { display: none; }
+  .pf-history-item summary:hover { background: var(--color-primary-soft); }
+  .pf-history-title { display: flex; align-items: center; gap: 10px; min-width: 0; }
+  .pf-history-title img { width: 42px; height: 42px; flex: none; object-fit: contain; border-radius: 11px; background: var(--color-surface); }
+  .pf-history-title strong, .pf-history-title small { display: block; }
+  .pf-history-title strong { font-size: 14px; }
+  .pf-history-title small { margin-top: 3px; color: var(--color-text); font-size: 11px; }
+  .pf-history-count { flex: none; color: var(--color-link); font-size: 12px; font-weight: 800; }
+  .pf-history-messages { display: grid; gap: 10px; padding: 14px; }
+  .pf-history-message { padding: 12px 14px; border-radius: 12px; background: var(--color-page); }
+  .pf-history-message.student { background: var(--color-primary-soft); }
+  .pf-history-message strong { display: block; margin-bottom: 5px; font-size: 11px; }
+  .pf-history-message p { margin: 0; color: var(--color-ink); font-size: 13px; line-height: 1.55; white-space: pre-wrap; overflow-wrap: anywhere; }
+  .pf-history-message time { display: block; margin-top: 7px; color: var(--color-text); font-size: 10px; }
+  .pf-history-empty { margin: 0; padding: 16px; border-radius: 12px; background: var(--color-page); color: var(--color-text); font-size: 13px; }
 
   @media (max-width: 800px) {
     .pf-page { padding: 26px 16px 48px; }
@@ -198,6 +276,8 @@ const styles = `
     .pf-page { padding: 18px 13px 36px; }
     .pf-heading { margin: 22px 0 18px; }
     .pf-heading > p { font-size: 14px; }
+    .pf-top-links { align-items: stretch; }
+    .pf-back, .pf-history-shortcut { justify-content: center; padding: 9px 11px; font-size: 12px; }
     .pf-hero { grid-template-columns: 1fr; padding: 20px; gap: 15px; }
     .pf-hero-art { min-height: 76px; }
     .pf-hero-art img { max-width: 200px; }
@@ -206,6 +286,10 @@ const styles = `
     .pf-overview-copy h2 { font-size: 17px; }
     .pf-chip { font-size: 11px; }
     .pf-card { padding: 18px; border-radius: 18px; }
+    .pf-history-section { padding: 18px; border-radius: 18px; }
+    .pf-history-heading { flex-direction: column; }
+    .pf-history-item summary { align-items: flex-start; padding: 12px; }
+    .pf-history-title img { width: 36px; height: 36px; }
     .pf-tutors { gap: 7px; }
     .pf-tutor { padding: 8px 6px; }
     .pf-tutor img { height: 72px; }
@@ -236,6 +320,10 @@ export default function Profile() {
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
   const [loadRetry, setLoadRetry] = useState(0);
+  const [history, setHistory] = useState(null);
+  const [historyLoading, setHistoryLoading] = useState(true);
+  const [historyError, setHistoryError] = useState("");
+  const [historyRetry, setHistoryRetry] = useState(0);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -290,6 +378,47 @@ export default function Profile() {
     };
   }, [navigate, loadRetry]);
 
+  useEffect(() => {
+    const controller = new AbortController();
+    let active = true;
+
+    const loadHistory = async () => {
+      setHistoryLoading(true);
+      setHistoryError("");
+
+      try {
+        const response = await fetch(`${API_URL}/conversations/history`, {
+          credentials: "include",
+          signal: controller.signal,
+        });
+
+        if (response.status === 401) {
+          navigate("/login", { replace: true });
+          return;
+        }
+
+        const data = await response.json();
+        if (!response.ok || !data.success) {
+          throw new Error(data.message || "Unable to load conversation history");
+        }
+
+        if (active) setHistory(data);
+      } catch (loadError) {
+        if (loadError.name !== "AbortError" && active) {
+          setHistoryError(loadError.message);
+        }
+      } finally {
+        if (active) setHistoryLoading(false);
+      }
+    };
+
+    loadHistory();
+    return () => {
+      active = false;
+      controller.abort();
+    };
+  }, [navigate, historyRetry]);
+
   const saveProfile = async (event) => {
     event.preventDefault();
     if (saving) return;
@@ -331,6 +460,7 @@ export default function Profile() {
       }[data.student.avatar?.name] || "kanga";
       localStorage.setItem("selectedTutorId", selectedTutorId);
       setMessage("Profile updated successfully.");
+      setHistoryRetry((attempt) => attempt + 1);
     } catch (saveError) {
       setError(saveError.message);
     } finally {
@@ -387,10 +517,16 @@ export default function Profile() {
       <main className="pf-page">
         <style>{styles}</style>
         <div className="pf-wrap">
-          <Link to="/start-learning" className="pf-back">
-            <ArrowLeft size={18} />
-            Back to learning
-          </Link>
+          <div className="pf-top-links">
+            <Link to="/start-learning" className="pf-back">
+              <ArrowLeft size={18} />
+              Back to learning
+            </Link>
+            <a href="#conversation-history" className="pf-history-shortcut">
+              <History size={17} />
+              Conversation history
+            </a>
+          </div>
           <div className="pf-heading">
             <span className="pf-eyebrow"><Sparkles size={14} /> YOUR NUMORA ACCOUNT</span>
             <h1>Your profile</h1>
@@ -607,6 +743,102 @@ export default function Profile() {
             </button>
           </div>
         </form>
+
+        <section className="pf-history-section" id="conversation-history">
+          <div className="pf-history-heading">
+            <div>
+              <h2>Conversation history</h2>
+              <p>Review your previous maths chats and the tutors you chose.</p>
+            </div>
+            {history && (
+              <span className="pf-chip">
+                <MessageSquare size={14} />
+                {history.conversations.length} conversations
+              </span>
+            )}
+          </div>
+
+          {historyLoading && <p className="pf-history-empty">Loading your conversation history...</p>}
+          {historyError && (
+            <div className="pf-alert error" role="alert">
+              <span>{historyError}</span>
+              <button type="button" className="pf-btn secondary" onClick={() => setHistoryRetry((attempt) => attempt + 1)}>
+                Try again
+              </button>
+            </div>
+          )}
+
+          {!historyLoading && !historyError && history && (
+            <>
+              <div className="pf-history-group">
+                <h3>Avatars you have chosen</h3>
+                {history.avatarSelections.length ? (
+                  <div className="pf-avatar-history">
+                    {history.avatarSelections.map((selection) => {
+                      const image = selection.avatar.imageUrl || tutorImages[selection.avatar.name];
+                      return (
+                        <div className="pf-avatar-history-item" key={selection.id}>
+                          {image && <img src={image} alt="" />}
+                          <span>
+                            {selection.avatar.name}
+                            <time>{new Date(selection.selectedAt).toLocaleString()}</time>
+                          </span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                ) : (
+                  <p className="pf-history-empty">No past avatar changes have been recorded yet.</p>
+                )}
+              </div>
+
+              <div className="pf-history-group">
+                <h3>Past conversations</h3>
+                {history.conversations.length ? (
+                  <div className="pf-history-list">
+                    {history.conversations.map((conversation) => {
+                      const avatarName = conversation.avatar?.name || "Tutor not recorded";
+                      const avatarImage =
+                        conversation.avatar?.imageUrl || tutorImages[conversation.avatar?.name];
+                      return (
+                        <details className="pf-history-item" key={conversation.id}>
+                          <summary>
+                            <span className="pf-history-title">
+                              {avatarImage && <img src={avatarImage} alt="" />}
+                              <span>
+                                <strong>{conversation.title || "Math Tutor Session"}</strong>
+                                <small>
+                                  {avatarName} · {new Date(conversation.updatedAt).toLocaleString()}
+                                </small>
+                              </span>
+                            </span>
+                            <span className="pf-history-count">{conversation.messages.length} messages</span>
+                          </summary>
+                          <div className="pf-history-messages">
+                            {conversation.messages.map((chatMessage) => (
+                              <article
+                                className={`pf-history-message ${chatMessage.role === "user" ? "student" : "tutor"}`}
+                                key={chatMessage.id}
+                              >
+                                <strong>
+                                  {chatMessage.role === "user" ? profile.name : avatarName}
+                                </strong>
+                                <p>{formatHistoryMessage(chatMessage)}</p>
+                                <time>{new Date(chatMessage.createdAt).toLocaleString()}</time>
+                              </article>
+                            ))}
+                          </div>
+                        </details>
+                      );
+                    })}
+                  </div>
+                ) : (
+                  <p className="pf-history-empty">No saved conversations yet.</p>
+                )}
+              </div>
+            </>
+          )}
+        </section>
 
         <section className="pf-danger-zone">
           <div>
