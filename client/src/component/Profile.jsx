@@ -14,10 +14,8 @@ import {
   History,
   MessageSquare,
   Search,
-SlidersHorizontal,
-ArrowUpDown,
-X,
-BookOpen,
+  SlidersHorizontal,
+  X,
 } from "lucide-react";
 import { API_URL } from "../config/api";
 
@@ -36,10 +34,6 @@ const tutorImages = {
   Panda: pandaImage,
   Koala: koalaImage,
 };
-const [historySearch, setHistorySearch] = useState("");
-const [historyDateFilter, setHistoryDateFilter] = useState("all");
-const [historyTutorFilter, setHistoryTutorFilter] = useState("all");
-const [historySort, setHistorySort] = useState("newest");
 const formatHistoryMessage = (message) => {
   if (message.role !== "assistant") return message.content;
 
@@ -582,6 +576,10 @@ export default function Profile() {
   const [historyLoading, setHistoryLoading] = useState(true);
   const [historyError, setHistoryError] = useState("");
   const [historyRetry, setHistoryRetry] = useState(0);
+  const [historySearch, setHistorySearch] = useState("");
+  const [historyDateFilter, setHistoryDateFilter] = useState("all");
+  const [historyTutorFilter, setHistoryTutorFilter] = useState("all");
+  const [historySort, setHistorySort] = useState("newest");
 
   useEffect(() => {
     const controller = new AbortController();
