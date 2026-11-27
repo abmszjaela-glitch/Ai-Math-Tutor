@@ -3,6 +3,7 @@ import { useEffect, useRef, useState } from 'react';
 import { motion } from 'framer-motion';
 import { Check, Volume2, VolumeX, ArrowLeft } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { API_URL } from '../config/api';
 
 import flower from '../assets/img/team/flower.png';
 
@@ -87,6 +88,9 @@ const SelectFriend = ({
   onContinue = () => {},
 }) => {
   const navigate = useNavigate();
+  const [authStatus, setAuthStatus] = useState('checking');
+  const [authError, setAuthError] = useState('');
+  const [authRetry, setAuthRetry] = useState(0);
 
   const [selectedId, setSelectedId] = useState(() => {
     const saved = localStorage.getItem(STORAGE_KEY);
@@ -97,11 +101,57 @@ const SelectFriend = ({
   const audioRef = useRef(null);
   const clickAudioRef = useRef(null);
 
+  useEffect(() => {
+    const controller = new AbortController();
+    let active = true;
+
+    const checkAuthentication = async () => {
+      setAuthStatus('checking');
+      setAuthError('');
+
+      try {
+        const response = await fetch(`${API_URL}/auth/me`, {
+          credentials: 'include',
+          signal: controller.signal,
+        });
+
+        if (response.status === 401) {
+          navigate('/login', { replace: true });
+          return;
+        }
+
+        if (!response.ok) {
+          throw new Error('Unable to verify your login. Please try again.');
+        }
+
+        const data = await response.json();
+        if (!data.success || !data.user) {
+          navigate('/login', { replace: true });
+          return;
+        }
+
+        if (active) setAuthStatus('authenticated');
+      } catch (error) {
+        if (error.name !== 'AbortError' && active) {
+          setAuthError(error.message || 'Unable to verify your login.');
+          setAuthStatus('error');
+        }
+      }
+    };
+
+    checkAuthentication();
+    return () => {
+      active = false;
+      controller.abort();
+    };
+  }, [authRetry, navigate]);
 
   /*
    * Background music
    */
   useEffect(() => {
+    if (authStatus !== 'authenticated') return undefined;
+
     const audio = audioRef.current;
 
     if (!audio) return;
@@ -128,7 +178,7 @@ const SelectFriend = ({
       audio.pause();
       audio.currentTime = 0;
     };
-  }, []);
+  }, [authStatus]);
 
   /*
    * Play click sound
@@ -260,6 +310,25 @@ useEffect(() => {
   }
   // eslint-disable-next-line react-hooks/exhaustive-deps
 }, []);
+
+  if (authStatus === 'checking') {
+    return (
+      <main className="select-friend-auth-state" role="status">
+        Checking your login...
+      </main>
+    );
+  }
+
+  if (authStatus === 'error') {
+    return (
+      <main className="select-friend-auth-state">
+        <p role="alert">{authError}</p>
+        <button type="button" onClick={() => setAuthRetry((attempt) => attempt + 1)}>
+          Try again
+        </button>
+      </main>
+    );
+  }
 
   return (
     <section

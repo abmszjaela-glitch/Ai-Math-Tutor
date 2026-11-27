@@ -776,8 +776,7 @@ export default function Profile() {
           <div className="pf-top-links">
             <Link to="/start-learning" className="pf-back">
               <ArrowLeft size={18} />
-              Back to learning
-            </Link>
+              Find Your <Learnings></Learnings>            </Link>
             <a href="#conversation-history" className="pf-history-shortcut">
               <History size={17} />
               Conversation history
