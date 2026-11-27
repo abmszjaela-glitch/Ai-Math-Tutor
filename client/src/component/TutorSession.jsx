@@ -986,7 +986,7 @@ const TutorSession = () => {
         '--accent': profile.color,
         background: palette.paper,
         backgroundImage: `url("${practiceBackground}")`,
-        backgroundPosition: 'center',
+        backgroundPosition: 'center top',
         backgroundRepeat: 'no-repeat',
         backgroundSize: 'cover',
         display: 'flex',
@@ -1001,7 +1001,30 @@ const TutorSession = () => {
         .ts-root {
           height: 100vh;
           height: 100dvh;
+          min-height: 0;
           overflow: hidden;
+          position: relative;
+          background-position: center top !important;
+        }
+
+        .ts-header {
+          justify-content: flex-start !important;
+          background: rgba(255, 255, 255, 0.94) !important;
+          backdrop-filter: blur(10px);
+          -webkit-backdrop-filter: blur(10px);
+        }
+
+        .ts-header-label {
+          display: none !important;
+        }
+
+        .ts-status-text {
+          z-index: 3;
+          max-width: calc(100vw - 32px);
+        }
+
+        .ts-conversation {
+          overscroll-behavior: contain;
         }
 
         .ts-text-input::placeholder {
@@ -1031,15 +1054,62 @@ const TutorSession = () => {
           }
         }
 
+        @media (max-width: 900px) {
+          .ts-header {
+            padding: 8px 14px !important;
+            min-height: 48px;
+            box-sizing: border-box;
+          }
+
+          .ts-avatar-area {
+            height: 150px !important;
+            padding: 0 12px !important;
+            justify-content: flex-end !important;
+          }
+
+          .ts-status-text {
+            position: absolute !important;
+            left: 50% !important;
+            bottom: -34px !important;
+            transform: translateX(-50%) !important;
+            margin: 0 !important;
+            padding: 9px 14px !important;
+            width: max-content;
+            max-width: calc(100vw - 36px) !important;
+            box-sizing: border-box;
+            justify-content: center;
+            color: #080713 !important;
+            background: rgba(255, 255, 255, 0.98);
+            border: 1px solid #e6e0ff;
+            border-radius: 14px;
+            box-shadow: 0 4px 14px rgba(55, 35, 150, 0.12);
+            font-size: 0.9rem !important;
+            line-height: 1.35;
+            text-align: center;
+          }
+
+          .ts-avatar-stage {
+            right: 7% !important;
+            top: 82px !important;
+            transform: scale(0.78);
+            transform-origin: top right;
+          }
+
+          .ts-conversation {
+            padding: 42px 16px 8px !important;
+          }
+        }
+
         @media (max-width: 575px) {
-          .ts-header { padding: 10px 14px !important; }
-          .ts-header-label { font-size: 0.95rem !important; }
-          .ts-header-status { font-size: 0.66rem !important; }
-          .ts-status-text { font-size: 0.85rem !important; }
-          .ts-avatar-area { height: auto !important; justify-content: center !important; }
+          .ts-header { padding: 7px 12px !important; }
+          .ts-avatar-area { height: 138px !important; }
           .ts-avatar-stage { display: none !important; }
-          .ts-status-text { position: relative !important; left: auto !important; bottom: auto !important; transform: none !important; margin-top: 8px !important; }
-          .ts-conversation { padding: 8px 12px !important; }
+          .ts-status-text {
+            bottom: -34px !important;
+            font-size: 0.84rem !important;
+            padding: 8px 12px !important;
+          }
+          .ts-conversation { padding: 42px 12px 8px !important; }
           .ts-bubble {
             max-width: 90% !important;
             font-size: 0.9rem !important;
@@ -1065,7 +1135,7 @@ const TutorSession = () => {
           flex: 'none',
           display: 'flex',
           alignItems: 'center',
-          justifyContent: 'space-between',
+          justifyContent: 'flex-start',
           padding: '12px 20px',
           background: 'rgba(255, 255, 255, 0.72)',
           backdropFilter: 'blur(6px)',
