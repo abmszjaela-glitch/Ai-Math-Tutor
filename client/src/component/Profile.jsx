@@ -13,6 +13,11 @@ import {
   Sparkles,
   History,
   MessageSquare,
+  Search,
+SlidersHorizontal,
+ArrowUpDown,
+X,
+BookOpen,
 } from "lucide-react";
 import { API_URL } from "../config/api";
 
@@ -31,7 +36,10 @@ const tutorImages = {
   Panda: pandaImage,
   Koala: koalaImage,
 };
-
+const [historySearch, setHistorySearch] = useState("");
+const [historyDateFilter, setHistoryDateFilter] = useState("all");
+const [historyTutorFilter, setHistoryTutorFilter] = useState("all");
+const [historySort, setHistorySort] = useState("newest");
 const formatHistoryMessage = (message) => {
   if (message.role !== "assistant") return message.content;
 
@@ -265,6 +273,256 @@ const styles = `
   .pf-history-message p { margin: 0; color: var(--color-ink); font-size: 13px; line-height: 1.55; white-space: pre-wrap; overflow-wrap: anywhere; }
   .pf-history-message time { display: block; margin-top: 7px; color: var(--color-text); font-size: 10px; }
   .pf-history-empty { margin: 0; padding: 16px; border-radius: 12px; background: var(--color-page); color: var(--color-text); font-size: 13px; }
+
+  .pf-history-section {
+  margin-top: 24px;
+  padding: 28px;
+  border: 1px solid var(--color-border);
+  border-radius: 24px;
+  background: var(--color-surface);
+  box-shadow: var(--shadow-card);
+}
+
+.pf-history-stats {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 13px;
+  margin: 22px 0;
+}
+
+.pf-history-stat {
+  padding: 17px;
+  border: 1px solid var(--color-border);
+  border-radius: 17px;
+  background: var(--color-surface-soft);
+}
+
+.pf-history-stat .stat-icon {
+  display: grid;
+  place-items: center;
+  width: 35px;
+  height: 35px;
+  margin-bottom: 12px;
+  border-radius: 11px;
+}
+
+.pf-history-stat.blue .stat-icon {
+  background: #e4efff;
+  color: #3478db;
+}
+
+.pf-history-stat.green .stat-icon {
+  background: #e1f7eb;
+  color: #219b62;
+}
+
+.pf-history-stat.purple .stat-icon {
+  background: #f0e9ff;
+  color: #8756d6;
+}
+
+.pf-history-stat strong {
+  display: block;
+  font-size: 25px;
+  font-weight: 850;
+}
+
+.pf-history-stat span {
+  color: var(--color-text);
+  font-size: 12px;
+}
+
+.pf-history-toolbar {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 180px 180px;
+  gap: 11px;
+  margin: 20px 0 13px;
+}
+
+.pf-history-search {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+  padding: 0 14px;
+  border: 1px solid var(--color-border);
+  border-radius: 13px;
+  background: var(--color-page);
+  color: var(--color-text);
+}
+
+.pf-history-search input {
+  width: 100%;
+  min-width: 0;
+  height: 46px;
+  border: 0;
+  outline: none;
+  background: transparent;
+  color: var(--color-ink);
+  font: inherit;
+  font-size: 13px;
+}
+
+.pf-history-select {
+  width: 100%;
+  min-width: 0;
+  padding: 0 12px;
+  border: 1px solid var(--color-border);
+  border-radius: 13px;
+  background: var(--color-page);
+  color: var(--color-ink);
+  font: inherit;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.pf-history-select:focus,
+.pf-history-search:focus-within {
+  border-color: var(--color-primary);
+  outline: 2px solid var(--color-focus);
+}
+
+.pf-history-filters {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 15px 0 23px;
+}
+
+.pf-filter-btn {
+  padding: 8px 14px;
+  border: 1px solid var(--color-border);
+  border-radius: 30px;
+  background: var(--color-surface);
+  color: var(--color-text);
+  font: inherit;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: .2s ease;
+}
+
+.pf-filter-btn:hover {
+  border-color: var(--color-primary);
+}
+
+.pf-filter-btn.active {
+  border-color: var(--color-primary);
+  background: var(--color-primary);
+  color: var(--color-on-primary);
+}
+
+.pf-clear-filters {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  border: 0;
+  background: transparent;
+  color: var(--color-link);
+  font: inherit;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.pf-history-results {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 13px;
+}
+
+.pf-history-results strong {
+  font-size: 15px;
+}
+
+.pf-history-results span {
+  color: var(--color-text);
+  font-size: 12px;
+}
+
+.pf-history-item {
+  border: 1px solid var(--color-border);
+  border-radius: 16px;
+  overflow: hidden;
+  background: var(--color-surface);
+  transition: border-color .2s ease, box-shadow .2s ease;
+}
+
+.pf-history-item[open] {
+  border-color: var(--color-primary);
+  box-shadow: 0 5px 20px var(--color-shadow);
+}
+
+.pf-history-item summary {
+  background: var(--color-surface-soft);
+  transition: background .2s ease;
+}
+
+.pf-history-item summary:hover {
+  background: var(--color-primary-soft);
+}
+
+.pf-history-item[open] summary {
+  background: var(--color-primary-soft);
+}
+
+.pf-history-count {
+  padding: 6px 10px;
+  border-radius: 20px;
+  background: var(--color-primary-soft);
+  color: var(--color-link);
+  font-size: 11px;
+  font-weight: 800;
+}
+
+.pf-history-empty {
+  padding: 35px 18px;
+  border: 1px dashed var(--color-border);
+  border-radius: 15px;
+  background: var(--color-surface-soft);
+  color: var(--color-text);
+  text-align: center;
+  line-height: 1.6;
+}
+
+@media (max-width: 700px) {
+  .pf-history-toolbar {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .pf-history-search {
+    grid-column: 1 / -1;
+  }
+}
+
+@media (max-width: 560px) {
+  .pf-history-stats {
+    gap: 8px;
+  }
+
+  .pf-history-stat {
+    padding: 11px;
+  }
+
+  .pf-history-stat strong {
+    font-size: 20px;
+  }
+
+  .pf-history-stat span {
+    font-size: 10px;
+  }
+
+  .pf-history-toolbar {
+    grid-template-columns: 1fr;
+  }
+
+  .pf-history-search {
+    grid-column: auto;
+  }
+}
 
   @media (max-width: 800px) {
     .pf-page { padding: 26px 16px 48px; }
@@ -556,7 +814,78 @@ export default function Profile() {
     form.grade !== String(profile.grade?.number || "") ||
     String(form.avatarId) !== String(profile.avatar?.id || "")
   );
+const conversations = history?.conversations || [];
 
+const tutorOptions = [
+  ...new Set(
+    conversations
+      .map((conversation) => conversation.avatar?.name)
+      .filter(Boolean)
+  ),
+];
+
+const filteredConversations = conversations
+  .filter((conversation) => {
+    const search = historySearch.trim().toLowerCase();
+
+    const searchableText = [
+      conversation.title,
+      conversation.avatar?.name,
+      ...(conversation.messages || []).map((message) =>
+        formatHistoryMessage(message)
+      ),
+    ]
+      .filter(Boolean)
+      .join(" ")
+      .toLowerCase();
+
+    const matchesSearch = !search || searchableText.includes(search);
+
+    const conversationDate = new Date(conversation.updatedAt);
+    const now = new Date();
+
+    const startOfToday = new Date(now);
+    startOfToday.setHours(0, 0, 0, 0);
+
+    const startOfWeek = new Date(now);
+    startOfWeek.setDate(now.getDate() - 7);
+
+    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+
+    const matchesDate =
+      historyDateFilter === "all" ||
+      (historyDateFilter === "today" &&
+        conversationDate >= startOfToday) ||
+      (historyDateFilter === "week" &&
+        conversationDate >= startOfWeek) ||
+      (historyDateFilter === "month" &&
+        conversationDate >= startOfMonth);
+
+    const matchesTutor =
+      historyTutorFilter === "all" ||
+      conversation.avatar?.name === historyTutorFilter;
+
+    return matchesSearch && matchesDate && matchesTutor;
+  })
+  .sort((a, b) => {
+    const difference =
+      new Date(b.updatedAt) - new Date(a.updatedAt);
+
+    return historySort === "newest" ? difference : -difference;
+  });
+
+const conversationsThisWeek = conversations.filter((conversation) => {
+  const date = new Date(conversation.updatedAt);
+  const sevenDaysAgo = new Date();
+  sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+
+  return date >= sevenDaysAgo;
+}).length;
+
+const hasActiveFilters =
+  historySearch.trim() !== "" ||
+  historyDateFilter !== "all" ||
+  historyTutorFilter !== "all";
   return (
     <main className="pf-page">
       <style>{styles}</style>
@@ -792,50 +1121,224 @@ export default function Profile() {
                 )}
               </div>
 
-              <div className="pf-history-group">
-                <h3>Past conversations</h3>
-                {history.conversations.length ? (
-                  <div className="pf-history-list">
-                    {history.conversations.map((conversation) => {
-                      const avatarName = conversation.avatar?.name || "Tutor not recorded";
-                      const avatarImage =
-                        conversation.avatar?.imageUrl || tutorImages[conversation.avatar?.name];
-                      return (
-                        <details className="pf-history-item" key={conversation.id}>
-                          <summary>
-                            <span className="pf-history-title">
-                              {avatarImage && <img src={avatarImage} alt="" />}
-                              <span>
-                                <strong>{conversation.title || "Math Tutor Session"}</strong>
-                                <small>
-                                  {avatarName} · {new Date(conversation.updatedAt).toLocaleString()}
-                                </small>
-                              </span>
-                            </span>
-                            <span className="pf-history-count">{conversation.messages.length} messages</span>
-                          </summary>
-                          <div className="pf-history-messages">
-                            {conversation.messages.map((chatMessage) => (
-                              <article
-                                className={`pf-history-message ${chatMessage.role === "user" ? "student" : "tutor"}`}
-                                key={chatMessage.id}
-                              >
-                                <strong>
-                                  {chatMessage.role === "user" ? profile.name : avatarName}
-                                </strong>
-                                <p>{formatHistoryMessage(chatMessage)}</p>
-                                <time>{new Date(chatMessage.createdAt).toLocaleString()}</time>
-                              </article>
-                            ))}
-                          </div>
-                        </details>
-                      );
-                    })}
-                  </div>
-                ) : (
-                  <p className="pf-history-empty">No saved conversations yet.</p>
+             <div className="pf-history-group">
+  <div className="pf-section-heading">
+    <h3>Past conversations</h3>
+    <p>Search, filter, and revisit your previous learning sessions.</p>
+  </div>
+
+  <div className="pf-history-stats">
+    <div className="pf-history-stat blue">
+      <div className="stat-icon">
+        <MessageSquare size={18} />
+      </div>
+      <strong>{conversations.length}</strong>
+      <span>Total conversations</span>
+    </div>
+
+    <div className="pf-history-stat green">
+      <div className="stat-icon">
+        <CalendarDays size={18} />
+      </div>
+      <strong>{conversationsThisWeek}</strong>
+      <span>Last 7 days</span>
+    </div>
+
+    <div className="pf-history-stat purple">
+      <div className="stat-icon">
+        <User size={18} />
+      </div>
+      <strong>{tutorOptions.length}</strong>
+      <span>Tutors used</span>
+    </div>
+  </div>
+
+  <div className="pf-history-toolbar">
+    <div className="pf-history-search">
+      <Search size={18} />
+      <input
+        type="search"
+        placeholder="Search topics, messages..."
+        value={historySearch}
+        onChange={(event) => setHistorySearch(event.target.value)}
+        aria-label="Search conversations"
+      />
+      {historySearch && (
+        <button
+          type="button"
+          className="pf-clear-filters"
+          onClick={() => setHistorySearch("")}
+          aria-label="Clear search"
+        >
+          <X size={16} />
+        </button>
+      )}
+    </div>
+
+    <select
+      className="pf-history-select"
+      value={historyTutorFilter}
+      onChange={(event) => setHistoryTutorFilter(event.target.value)}
+      aria-label="Filter by tutor"
+    >
+      <option value="all">All tutors</option>
+      {tutorOptions.map((tutor) => (
+        <option key={tutor} value={tutor}>
+          {tutor}
+        </option>
+      ))}
+    </select>
+
+    <select
+      className="pf-history-select"
+      value={historySort}
+      onChange={(event) => setHistorySort(event.target.value)}
+      aria-label="Sort conversations"
+    >
+      <option value="newest">Newest first</option>
+      <option value="oldest">Oldest first</option>
+    </select>
+  </div>
+
+  <div className="pf-history-filters">
+    <SlidersHorizontal size={16} />
+
+    {[
+      { label: "All time", value: "all" },
+      { label: "Today", value: "today" },
+      { label: "This week", value: "week" },
+      { label: "This month", value: "month" },
+    ].map((filter) => (
+      <button
+        key={filter.value}
+        type="button"
+        className={`pf-filter-btn ${
+          historyDateFilter === filter.value ? "active" : ""
+        }`}
+        onClick={() => setHistoryDateFilter(filter.value)}
+      >
+        {filter.label}
+      </button>
+    ))}
+
+    {hasActiveFilters && (
+      <button
+        type="button"
+        className="pf-clear-filters"
+        onClick={() => {
+          setHistorySearch("");
+          setHistoryDateFilter("all");
+          setHistoryTutorFilter("all");
+          setHistorySort("newest");
+        }}
+      >
+        <X size={14} />
+        Clear filters
+      </button>
+    )}
+  </div>
+
+  <div className="pf-history-results">
+    <strong>Your conversations</strong>
+    <span>
+      Showing {filteredConversations.length} of {conversations.length}
+    </span>
+  </div>
+
+  {filteredConversations.length ? (
+    <div className="pf-history-list">
+      {filteredConversations.map((conversation) => {
+        const avatarName =
+          conversation.avatar?.name || "Tutor not recorded";
+
+        const avatarImage =
+          conversation.avatar?.imageUrl ||
+          tutorImages[conversation.avatar?.name];
+
+        return (
+          <details
+            className="pf-history-item"
+            key={conversation.id}
+          >
+            <summary>
+              <span className="pf-history-title">
+                {avatarImage && (
+                  <img src={avatarImage} alt="" />
                 )}
-              </div>
+
+                <span>
+                  <strong>
+                    {conversation.title || "Math Tutor Session"}
+                  </strong>
+
+                  <small>
+                    {avatarName} ·{" "}
+                    {new Date(
+                      conversation.updatedAt
+                    ).toLocaleString()}
+                  </small>
+                </span>
+              </span>
+
+              <span className="pf-history-count">
+                {conversation.messages.length} messages
+              </span>
+            </summary>
+
+            <div className="pf-history-messages">
+              {conversation.messages.map((chatMessage) => (
+                <article
+                  className={`pf-history-message ${
+                    chatMessage.role === "user"
+                      ? "student"
+                      : "tutor"
+                  }`}
+                  key={chatMessage.id}
+                >
+                  <strong>
+                    {chatMessage.role === "user"
+                      ? profile.name
+                      : avatarName}
+                  </strong>
+
+                  <p>{formatHistoryMessage(chatMessage)}</p>
+
+                  <time>
+                    {new Date(
+                      chatMessage.createdAt
+                    ).toLocaleString()}
+                  </time>
+                </article>
+              ))}
+            </div>
+          </details>
+        );
+      })}
+    </div>
+  ) : (
+    <div className="pf-history-empty">
+      <Search size={28} />
+      <h3>No conversations found</h3>
+      <p>
+        Try changing your search or removing some filters
+        to find your previous learning sessions.
+      </p>
+
+      <button
+        type="button"
+        className="pf-btn secondary"
+        onClick={() => {
+          setHistorySearch("");
+          setHistoryDateFilter("all");
+          setHistoryTutorFilter("all");
+          setHistorySort("newest");
+        }}
+      >
+        Reset filters
+      </button>
+    </div>
+  )}
+</div>
             </>
           )}
         </section>
